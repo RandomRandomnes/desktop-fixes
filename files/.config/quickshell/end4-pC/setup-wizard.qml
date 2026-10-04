@@ -796,7 +796,8 @@ ApplicationWindow {
             }
             WSection {
                 title: "Startup"
-                visible: root.boot.uefi === true
+                // only on the Phoenix image's boot layout; a system installed another way keeps its own boot setup
+                visible: root.boot.uefi === true && root.boot.uki === true
                 WCombo {
                     icon: "restart_alt"
                     title: "Boot menu"

@@ -30,6 +30,9 @@ secure_boot() {
     local v; v=$(od -An -t u1 /sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c 2>/dev/null | awk '{print $NF}')
     [ "${v:-0}" = 1 ]
 }
+uki_layout() {   # the Phoenix image's boot layout: mkinitcpio builds unified kernel images, kernel command line in /etc
+    [ -f /etc/kernel/cmdline ] && grep -qs '^[^#]*default_uki=' /etc/mkinitcpio.d/*.preset
+}
 sbctl_keys() { [ -d /var/lib/sbctl/keys ] || [ -d /usr/share/secureboot/keys ]; }
 esp_partuuid() { lsblk -no PARTUUID "$(findmnt -no SOURCE "$ESP" 2>/dev/null)" 2>/dev/null | tr '[:upper:]' '[:lower:]'; }
 # PARTUUIDs of Windows boot entries on another partition than the Arch EFI partition
@@ -61,8 +64,9 @@ cmd_status() {
     local uefi=false sb=false tpm=false win=false
     [ -d /sys/firmware/efi ] && uefi=true; secure_boot && sb=true; [ -e /sys/class/tpm/tpm0 ] && tpm=true
     [ -n "$(windows_other_esp)" ] && win=true
-    printf '{"uefi":%s,"current":"%s","installed":%s,"secureBoot":%s,"tpm":%s,"windowsSeparate":%s}\n' \
-        "$uefi" "$(current)" "$(installed_list)" "$sb" "$tpm" "$win"
+    local uki=false; uki_layout && uki=true
+    printf '{"uefi":%s,"uki":%s,"current":"%s","installed":%s,"secureBoot":%s,"tpm":%s,"windowsSeparate":%s}\n' \
+        "$uefi" "$uki" "$(current)" "$(installed_list)" "$sb" "$tpm" "$win"
 }
 
 # ── root part ──
@@ -205,6 +209,7 @@ use_refind() {
 as_root() {
     [ -d /sys/firmware/efi ] || { echo "This computer does not start in UEFI mode."; exit 1; }
     mountpoint -q "$ESP" || { echo "$ESP is not mounted."; exit 1; }
+    uki_layout || { echo "This system doesn't use the Phoenix image's boot layout (unified kernel images); its boot setup is left alone."; exit 1; }
     case "$1" in
         direct) use_direct ;; grub) use_grub ;; systemd-boot) use_systemd_boot ;; refind) use_refind ;;
         *) exit 2 ;;

@@ -2,6 +2,8 @@ import qs.modules.common
 import qs.modules.common.widgets
 import QtQuick
 import QtQuick.Layouts
+import Quickshell
+import Quickshell.Io
 import Quickshell.Services.UPower
 
 // Battery levels of wireless devices (mouse, keyboard, headphones, controllers...) as reported by UPower.
@@ -9,7 +11,21 @@ import Quickshell.Services.UPower
 Rectangle {
     id: root
 
-    readonly property var devices: UPower.devices.values.filter(d => !d.isLaptopBattery && !d.powerSupply && d.isPresent && d.ready)
+    // Demo: while ~/.local/state/phoenix/battery-demo exists, two sample devices are shown (for screenshots/tests)
+    property bool demo: false
+    FileView {
+        path: `${Quickshell.env("HOME")}/.local/state/phoenix/battery-demo`
+        watchChanges: true
+        onLoaded: root.demo = true
+        onLoadFailed: root.demo = false
+        onFileChanged: reload()
+    }
+    readonly property var demoDevices: [
+        { model: "Wireless mouse (demo)", percentage: 0.53, type: UPowerDeviceType.Mouse, state: UPowerDeviceState.Discharging },
+        { model: "Headphones (demo)", percentage: 0.82, type: UPowerDeviceType.Headphones, state: UPowerDeviceState.Charging },
+    ]
+    readonly property var devices: demo ? demoDevices
+        : UPower.devices.values.filter(d => !d.isLaptopBattery && !d.powerSupply && d.isPresent && d.ready)
     property real horizontalPadding: 12
     property real verticalPadding: 10
 

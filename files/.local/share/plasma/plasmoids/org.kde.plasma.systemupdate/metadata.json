@@ -1,0 +1,14 @@
+{
+    "KPlugin": {
+        "Authors": [{ "Name": "Phoenix" }],
+        "Category": "System Information",
+        "Description": "Pending pacman + AUR updates; click to run ~/.local/bin/system-update",
+        "Icon": "system-software-update",
+        "Id": "org.kde.plasma.systemupdate",
+        "License": "GPL-2.0+",
+        "Name": "System Update",
+        "Version": "1.0"
+    },
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

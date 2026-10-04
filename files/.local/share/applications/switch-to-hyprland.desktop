@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Switch to Hyprland
+Comment=Log out of Plasma and start Hyprland
+Exec=sh -c "\\$HOME/.local/bin/switch-desktop hyprland"
+Icon=system-switch-user
+Categories=System;
+OnlyShowIn=KDE;
