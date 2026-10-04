@@ -72,7 +72,8 @@ MANIFEST = {
     "BarConfig.qml": f"{QS}/modules/ii/settings/pages/BarConfig.qml",
     "Config.qml": f"{QS}/modules/common/Config.qml",
     "get_gpuinfo.sh": f"{QS}/scripts/gpu/get_gpuinfo.sh",
-    "gpustats.py": f"{QS}/scripts/gpu/gpustats.py",   # AMD / NVIDIA / Intel stats for both resource widgets
+    "gpustats.py": f"{QS}/scripts/gpu/gpustats.py",
+    "applycolor.sh": f"{QS}/scripts/colors/applycolor.sh",   # skips kwrited's pty (no color codes as notifications)   # AMD / NVIDIA / Intel stats for both resource widgets
     "get_power.sh": f"{QS}/scripts/power/get_power.sh",
     # Shell: bar resources widget redo (2026-10-03): live CPU/GPU/RAM graphs + detailed popup (all three files ours)
     "ResourceGraph.qml": f"{QS}/modules/ii/bar/ResourceGraph.qml",

@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.54 (2026-10-04, minor)
+- Changing colors or light/dark mode no longer produces "Local System Message Service" notifications full of color codes.
+
 ## v1.53 (2026-10-04, fix)
 - The GPU widget supports NVIDIA (through nvidia-smi) and Intel graphics in addition to AMD; a dedicated card is preferred over integrated graphics, and a powered-down laptop GPU is not woken up.
 - Quick Start guide and app rewritten: shorter, more precise, and updated for starting without a boot menu, setup profiles and Secure Boot without a TPM.

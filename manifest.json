@@ -1,16 +1,15 @@
 {
   "format": "custom-fixes",
-  "version": 1.53,
-  "label": "1.53",
-  "kind": "fix",
+  "version": 1.54,
+  "label": "1.54",
+  "kind": "minor",
   "date": "2026-10-04",
   "publisher": "RandomRandomnes",
   "notes": [
-    "The GPU widget supports NVIDIA (through nvidia-smi) and Intel graphics in addition to AMD; a dedicated card is preferred over integrated graphics, and a powered-down laptop GPU is not woken up.",
-    "Quick Start guide and app rewritten: shorter, more precise, and updated for starting without a boot menu, setup profiles and Secure Boot without a TPM."
+    "Changing colors or light/dark mode no longer produces \"Local System Message Service\" notifications full of color codes."
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "f27e85e74762314990e1537699f870b37ed1311ee2a757e9d653bf9020db87d1",
+  "payloadSha256": "8157c57d070c7fa5b551d630bc80581fe1e4d194c5cd1085e584dc3952c38696",
   "files": {
     ".config/hypr/custom/env.lua": "9ad5c4f1e29959f9dcdfc96846e5f4526fcbcef61e3ac7bf4bb787cc94a8b1f0",
     ".config/hypr/custom/execs.lua": "e1840046232062e73741e9e82f61864d271fe13ed41449554df01a33d9956d98",
@@ -65,6 +64,7 @@
     ".config/quickshell/end4-pC/modules/ii/sidebarRight/quickToggles/classicStyle/DesktopSwitch.qml": "0ce092398acecc2067b1d509426908a7ddafffb47239e0133dc3a5be9cbae0b4",
     ".config/quickshell/end4-pC/panelFamilies/IllogicalImpulseFamily.qml": "c48466acb4163f18fc0e9ec5216430329f5c4e8412dc744bce305b2ae9aae69a",
     ".config/quickshell/end4-pC/quick-start.qml": "f9837a66d77c82b7dc5c64c9e43c2c489cb7bcfd7878e40099645346e63ff6d7",
+    ".config/quickshell/end4-pC/scripts/colors/applycolor.sh": "889e54c50a35af33f8df940c6aa57579605ebc14c06234ae23e7ef6069a5e0df",
     ".config/quickshell/end4-pC/scripts/gpu/get_gpuinfo.sh": "944f4cb3f67492f12809ba9c5ccf054144ab163df7b47f7715a998e6d79fc6c4",
     ".config/quickshell/end4-pC/scripts/gpu/gpustats.py": "fa6e8f49f727ae4f241ef918f5629e426ba9feca8eb6f7b907bfa8bdcce2400b",
     ".config/quickshell/end4-pC/scripts/power/get_power.sh": "5aa325746cc22212bde05a66450b266cd987e825e937d4de6f336881dff6f86f",
@@ -80,7 +80,7 @@
     ".config/quickshell/end4-pC/setup-wizard.qml": "5d88f9c87f582a44a9fa107501f7c9677a53c43f1be80f64e75eaf2fc939298a",
     ".local/bin/boot-loader": "a421be2168e1d307fa8f29e199b87735cb4bb630f9ee51038f02783a8cf25934",
     ".local/bin/custom-update": "19c7eae00428df2c7465621d83d499c5c45f31145dbec1fdabef24003d570804",
-    ".local/bin/hypr-guard": "3ce1fc6d585edb913b1fc8efbeab6493633ff7f0811b4f94c2a9c89c0d313679",
+    ".local/bin/hypr-guard": "e3999dbc31ba6545ca95472ce86e526a73e5597378212a820845bcc441c1cb6a",
     ".local/bin/linux-wallpaper-engine": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/linux-wallpaper-engine-ux": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/setup-apps": "7dacdaaa8bd9d2b6abb30c36769a396a8e7f50b32b562c91d8ac55994e445216",
@@ -132,15 +132,8 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/quickshell/end4-pC/modules/ii/bar/Resources.qml",
-    ".config/quickshell/end4-pC/modules/ii/bar/ResourcesPopup.qml",
-    ".config/quickshell/end4-pC/quick-start.qml",
-    ".config/quickshell/end4-pC/scripts/gpu/get_gpuinfo.sh",
-    ".config/quickshell/end4-pC/scripts/gpu/gpustats.py",
-    ".config/quickshell/end4-pC/scripts/power/get_power.sh",
-    ".config/quickshell/end4-pC/scripts/sysstats/sysstats.py",
-    ".local/bin/hypr-guard",
-    ".local/share/quick-start/index.html"
+    ".config/quickshell/end4-pC/scripts/colors/applycolor.sh",
+    ".local/bin/hypr-guard"
   ],
   "test": false
 }
