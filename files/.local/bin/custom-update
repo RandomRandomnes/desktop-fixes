@@ -271,6 +271,25 @@ def cmd_offers(as_json):
     return 0
 
 
+def baseline(src):
+    """sha256 of every file as it came with this installation: the signed manifest of the release named in base.json
+    (the clone was built from it). Cached; None when it can't be had (offline, no label), and then files that this
+    tool never installed are replaced with a backup, as before."""
+    cache = os.path.join(STATE, "baseline.json")
+    lab = load(BASE, {}).get("label")
+    if not lab:
+        return None
+    c = load(cache, None)
+    if c and c.get("label") == lab:
+        return c["files"]
+    try:
+        m, _ = release(src, lab)
+    except Exception:
+        return None
+    save(cache, {"label": lab, "files": m.get("files", {})})
+    return m.get("files", {})
+
+
 def install(src, label, yes, what):
     try:
         m, base = release(src, label)
@@ -295,6 +314,7 @@ def install(src, label, yes, what):
     backup = os.path.join(STATE, "backups", f"v{vlabel(m)}")
     shutil.rmtree(backup, ignore_errors=True)
     changed, kept, record = [], [], dict(inst["files"])
+    base_files = None if all(r in inst["files"] for r in m["files"]) else baseline(src)
     with tarfile.open(fileobj=io.BytesIO(payload), mode="r:gz") as tar:
         for rel, digest in m["files"].items():
             if rel.startswith("/") or ".." in rel.split("/"):
@@ -310,8 +330,10 @@ def install(src, label, yes, what):
                 if cur == digest:
                     record[rel] = digest
                     continue
-                if rel in inst["files"] and cur != inst["files"][rel]:
-                    # changed by the user since the last fix: keep theirs, put ours next to it
+                edited = (cur != inst["files"][rel]) if rel in inst["files"] else \
+                    (base_files is not None and cur != base_files.get(rel))   # vs. how it came with the install
+                if edited:
+                    # changed by the user (since the last fix, or since installation): keep theirs, put ours next to it
                     with open(dst + ".fixes-new", "wb") as f:
                         f.write(data)
                     kept.append(rel)

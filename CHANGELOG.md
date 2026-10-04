@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.104 (2026-10-04, fix)
+- Updates no longer overwrite files you edited yourself, including files that came with the installation: your version is kept and the new one is saved next to it as .fixes-new.
+
 ## v1.94 (2026-10-04, fix)
 - Undo last now sticks: the undone fix is not reinstalled by the next update or by the login check; newer releases are offered as usual.
 
