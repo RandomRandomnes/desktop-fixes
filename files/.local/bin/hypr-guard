@@ -64,6 +64,7 @@ MANIFEST = {
     "ResourcesPopup.qml": f"{QS}/modules/ii/bar/ResourcesPopup.qml",
     # Shell: custom-feature switches (2026-10-03): Settings › Extras, setup profiles (files ours)
     "Extras.qml": f"{QS}/services/Extras.qml",
+    "FirstRunExperience.qml": f"{QS}/services/FirstRunExperience.qml",   # welcome.qml replaced by setup-wizard.qml
     "setup-wizard.qml": f"{QS}/setup-wizard.qml",   # first-time setup wizard (2026-10-03)
     "quick-start.qml": f"{QS}/quick-start.qml",     # Quick Start guide app (2026-10-03)
     "ResourcesPopupClassic.qml": f"{QS}/modules/ii/bar/ResourcesPopupClassic.qml",

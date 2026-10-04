@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.42 (2026-10-04, fix)
+- The original illogical-impulse welcome window is replaced by the setup assistant: a first start no longer opens it (or resets the wallpaper), and Shift+Super+Alt+/ opens the setup assistant.
+
 ## v1.32 (2026-10-04, fix)
 - A setup profile's accent color is kept when its wallpaper is applied.
 

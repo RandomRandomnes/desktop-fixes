@@ -1,20 +1,20 @@
 {
   "format": "custom-fixes",
-  "version": 1.32,
-  "label": "1.32",
+  "version": 1.42,
+  "label": "1.42",
   "kind": "fix",
   "date": "2026-10-04",
   "publisher": "RandomRandomnes",
   "notes": [
-    "A setup profile's accent color is kept when its wallpaper is applied."
+    "The original illogical-impulse welcome window is replaced by the setup assistant: a first start no longer opens it (or resets the wallpaper), and Shift+Super+Alt+/ opens the setup assistant."
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "216b1a83d42fcb0c8fcdc36cd22c5f9b70b13eb180908276d175653463ba820d",
+  "payloadSha256": "263988c4367e25276eb92c830236092bf1931aa3adbf67ff26a0935dd245e2ac",
   "files": {
     ".config/hypr/custom/env.lua": "9ad5c4f1e29959f9dcdfc96846e5f4526fcbcef61e3ac7bf4bb787cc94a8b1f0",
     ".config/hypr/custom/execs.lua": "e1840046232062e73741e9e82f61864d271fe13ed41449554df01a33d9956d98",
     ".config/hypr/custom/general.lua": "06d1fb865ea7a689006d0e6074778f97539fe87e52e1ad05c5d1083549e1a980",
-    ".config/hypr/custom/keybinds.lua": "d99a33fdf7bbadbbe83176eb5236604c2dfd1498750c4fcb70be4ab95ca7d623",
+    ".config/hypr/custom/keybinds.lua": "8ee638e94053968d19b77a80a8fdb663a107063a0d0e42cf6b24ea142bca1baf",
     ".config/hypr/custom/rules.lua": "1cc3008eff4152a66344c395b7fb6ef5cdd861f936f7daf82f72343bb34b3604",
     ".config/hypr/custom/scripts/autostart.sh": "e378be37ee4e5af7908915345c1f476fea17bf4f23a1036aee515a2aa62fb2f5",
     ".config/hypr/custom/scripts/hb.sh": "e0f841a85cceed0425333d8946884b684edc76a13c35a152ef8ef41fb0206675",
@@ -69,6 +69,7 @@
     ".config/quickshell/end4-pC/scripts/sysstats/sysstats.py": "efa732d1a99d270b62047b39b09d338ad94c1b37ba3b176a9f41fcec97a2756e",
     ".config/quickshell/end4-pC/services/Ai.qml": "51c829d81665e598a139e00560bdf9c28834dee8f9057ccb026f0d4f8e29459d",
     ".config/quickshell/end4-pC/services/Extras.qml": "83422cac4e75a03453008118890648e7630e9da9b8e631858bbdd5cc2e1fbc85",
+    ".config/quickshell/end4-pC/services/FirstRunExperience.qml": "517e071a485ba89a4c50dce972b8b0095983e5e79213a2744c58e715946e5ed7",
     ".config/quickshell/end4-pC/services/Network.qml": "58e672493fdb22e6d04f6b6009ab57360ecf8d3c1576590b8694509d56936b36",
     ".config/quickshell/end4-pC/services/ResourceUsage.qml": "c568b3793040271cf442db99c908400577a2fae93ab9ddd54a35719f08be8f86",
     ".config/quickshell/end4-pC/services/SystemStats.qml": "048b6f87a9dcbb2ef218710d3b2a5f8d655ed21ef1241992a25f908fca017a6c",
@@ -77,7 +78,7 @@
     ".config/quickshell/end4-pC/setup-wizard.qml": "5d88f9c87f582a44a9fa107501f7c9677a53c43f1be80f64e75eaf2fc939298a",
     ".local/bin/boot-loader": "a421be2168e1d307fa8f29e199b87735cb4bb630f9ee51038f02783a8cf25934",
     ".local/bin/custom-update": "19c7eae00428df2c7465621d83d499c5c45f31145dbec1fdabef24003d570804",
-    ".local/bin/hypr-guard": "15a0f9d63c9a10acab1cbbab3089b18ed2b0696d739ffd17ded56235dd46c8b0",
+    ".local/bin/hypr-guard": "276409876b02353abdbf678d9caa493c8eb400dfdf3fb7c43ea0a62ee67df82c",
     ".local/bin/linux-wallpaper-engine": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/linux-wallpaper-engine-ux": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/setup-apps": "7dacdaaa8bd9d2b6abb30c36769a396a8e7f50b32b562c91d8ac55994e445216",
@@ -129,7 +130,9 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".local/bin/setup-profile"
+    ".config/hypr/custom/keybinds.lua",
+    ".config/quickshell/end4-pC/services/FirstRunExperience.qml",
+    ".local/bin/hypr-guard"
   ],
   "test": false
 }
