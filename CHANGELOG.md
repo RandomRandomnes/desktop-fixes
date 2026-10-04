@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.115 (2026-10-04, minor)
+- Upgrading to a new version without a terminal or without confirmation now explains what to do instead of crashing; a failed version check shows a readable error.
+
 ## v1.114 (2026-10-04, fix)
 - A damaged or incomplete update is now rejected as a whole before any file is changed, instead of being half installed.
 

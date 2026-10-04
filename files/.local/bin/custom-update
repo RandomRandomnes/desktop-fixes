@@ -414,7 +414,11 @@ def cmd_upgrade(label, yes):
         print("Custom fixes are disabled or not configured.")
         return 1
     src = source()
-    o = offers(src)
+    try:
+        o = offers(src)
+    except Exception as e:
+        print(f"Checking for versions failed: {e}")
+        return 1
     u = o["upgrade"]
     if not u or (label and label not in (u["label"], str(u["major"]))):
         print("That version is not offered to this system.")
@@ -422,8 +426,17 @@ def cmd_upgrade(label, yes):
     print(f"Upgrade to version {u['major']}: {u['upgrade'].get('title', '')}")
     print(u["upgrade"].get("summary", ""))
     print("\n" + RISK + "\n")
-    if not yes and input("Upgrade now? [y/N] ").strip().lower() != "y":
-        return 0
+    if not yes:
+        if not sys.stdin.isatty():   # no one to ask (script, background process)
+            print("Not upgraded: confirmation needed. Run this in a terminal, or add --yes.")
+            return 1
+        try:
+            if input("Upgrade now? [y/N] ").strip().lower() != "y":
+                print("Not upgraded.")
+                return 0
+        except EOFError:
+            print("\nNot upgraded.")
+            return 1
     return install(src, u["label"], True, f"Version {u['major']}")
 
 
