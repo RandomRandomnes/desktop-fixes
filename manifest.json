@@ -1,15 +1,16 @@
 {
   "format": "custom-fixes",
-  "version": 1.43,
-  "label": "1.43",
-  "kind": "minor",
+  "version": 1.53,
+  "label": "1.53",
+  "kind": "fix",
   "date": "2026-10-04",
   "publisher": "RandomRandomnes",
   "notes": [
-    "The GPU widget shows the correct name after the graphics card is replaced."
+    "The GPU widget supports NVIDIA (through nvidia-smi) and Intel graphics in addition to AMD; a dedicated card is preferred over integrated graphics, and a powered-down laptop GPU is not woken up.",
+    "Quick Start guide and app rewritten: shorter, more precise, and updated for starting without a boot menu, setup profiles and Secure Boot without a TPM."
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "5502ad4645ed926197117e5cc749cb5c0147cf43c9f4ee05596a7515e1a85541",
+  "payloadSha256": "f27e85e74762314990e1537699f870b37ed1311ee2a757e9d653bf9020db87d1",
   "files": {
     ".config/hypr/custom/env.lua": "9ad5c4f1e29959f9dcdfc96846e5f4526fcbcef61e3ac7bf4bb787cc94a8b1f0",
     ".config/hypr/custom/execs.lua": "e1840046232062e73741e9e82f61864d271fe13ed41449554df01a33d9956d98",
@@ -24,8 +25,8 @@
     ".config/quickshell/end4-pC/modules/ii/background/Background.qml": "ce5f82ed8f0470f15566cc8f59d2e1f3da7c89cd75e4ee8ac0bbbfe350ea0f6b",
     ".config/quickshell/end4-pC/modules/ii/background/WallpaperEngineLayer.qml": "0a5ab54ec236b6a17cf58b3387f800ff68bbd71af9c625ff8840dca1cfae9263",
     ".config/quickshell/end4-pC/modules/ii/bar/ResourceGraph.qml": "e4dfaa71c6bf89faca9293669bde98a3378f3907d3f883b0c5d1fdc45a2b4cba",
-    ".config/quickshell/end4-pC/modules/ii/bar/Resources.qml": "34e3ca2f017f01118b04720c03ff79401ae10aaa69f5e1e3d63c85428738b844",
-    ".config/quickshell/end4-pC/modules/ii/bar/ResourcesPopup.qml": "40e8bcf56b5728d0dc1fb68398fa06ddc6ea966774126d12aaffe76f6e640d1c",
+    ".config/quickshell/end4-pC/modules/ii/bar/Resources.qml": "978cf4a0bd78d11d97a39ca1e05c174872d4113e3a78a90070c9067d78f2335c",
+    ".config/quickshell/end4-pC/modules/ii/bar/ResourcesPopup.qml": "05fb3b3db7079875a414302e9e42dfcf957d18c5ccf49f515afebe1704e6b781",
     ".config/quickshell/end4-pC/modules/ii/bar/ResourcesPopupClassic.qml": "2a01d23b08856d5b48bae4482e45fe4b6c6e0b47cc28961f287ca5473dfc2a2f",
     ".config/quickshell/end4-pC/modules/ii/bar/UpdatesCount.qml": "3fa70db35e9924132ef9572da4d2335ef430248674123aa4ad92c7c4992573af",
     ".config/quickshell/end4-pC/modules/ii/overview/AppGridWidget.qml": "dce95ae64732ff8685f5c937f7d44e1d95d511c43a392e2ae1e6b7314fc9cbb1",
@@ -63,10 +64,11 @@
     ".config/quickshell/end4-pC/modules/ii/sidebarRight/WallpaperEngineCard.qml": "a344801c9ad7baadfcefb214f04b920087c22c03ad2b3abdb02fd6d0503752d2",
     ".config/quickshell/end4-pC/modules/ii/sidebarRight/quickToggles/classicStyle/DesktopSwitch.qml": "0ce092398acecc2067b1d509426908a7ddafffb47239e0133dc3a5be9cbae0b4",
     ".config/quickshell/end4-pC/panelFamilies/IllogicalImpulseFamily.qml": "c48466acb4163f18fc0e9ec5216430329f5c4e8412dc744bce305b2ae9aae69a",
-    ".config/quickshell/end4-pC/quick-start.qml": "1dee6020eb8bd1e1a5c8891c55cc6ebb00c4d5e7c15b7ed49418bd177a974881",
-    ".config/quickshell/end4-pC/scripts/gpu/get_gpuinfo.sh": "75fea6231f83a7bdeb890fddc33bb9939567fd3c9cce480900d01b3bf6147a8f",
-    ".config/quickshell/end4-pC/scripts/power/get_power.sh": "5b23e93764e90fb8769bfc69041fb66ac32974c385798aab8974683aff6adafa",
-    ".config/quickshell/end4-pC/scripts/sysstats/sysstats.py": "9db7246b27c25c493527f147c2b34da7fbb4f4e9774bdb3709971ad389e0da75",
+    ".config/quickshell/end4-pC/quick-start.qml": "f9837a66d77c82b7dc5c64c9e43c2c489cb7bcfd7878e40099645346e63ff6d7",
+    ".config/quickshell/end4-pC/scripts/gpu/get_gpuinfo.sh": "944f4cb3f67492f12809ba9c5ccf054144ab163df7b47f7715a998e6d79fc6c4",
+    ".config/quickshell/end4-pC/scripts/gpu/gpustats.py": "fa6e8f49f727ae4f241ef918f5629e426ba9feca8eb6f7b907bfa8bdcce2400b",
+    ".config/quickshell/end4-pC/scripts/power/get_power.sh": "5aa325746cc22212bde05a66450b266cd987e825e937d4de6f336881dff6f86f",
+    ".config/quickshell/end4-pC/scripts/sysstats/sysstats.py": "9e426884ec48ef17561eb6ab8e317e149edced66841af8d7b5b27d6b3386a73e",
     ".config/quickshell/end4-pC/services/Ai.qml": "51c829d81665e598a139e00560bdf9c28834dee8f9057ccb026f0d4f8e29459d",
     ".config/quickshell/end4-pC/services/Extras.qml": "83422cac4e75a03453008118890648e7630e9da9b8e631858bbdd5cc2e1fbc85",
     ".config/quickshell/end4-pC/services/FirstRunExperience.qml": "517e071a485ba89a4c50dce972b8b0095983e5e79213a2744c58e715946e5ed7",
@@ -78,7 +80,7 @@
     ".config/quickshell/end4-pC/setup-wizard.qml": "5d88f9c87f582a44a9fa107501f7c9677a53c43f1be80f64e75eaf2fc939298a",
     ".local/bin/boot-loader": "a421be2168e1d307fa8f29e199b87735cb4bb630f9ee51038f02783a8cf25934",
     ".local/bin/custom-update": "19c7eae00428df2c7465621d83d499c5c45f31145dbec1fdabef24003d570804",
-    ".local/bin/hypr-guard": "276409876b02353abdbf678d9caa493c8eb400dfdf3fb7c43ea0a62ee67df82c",
+    ".local/bin/hypr-guard": "3ce1fc6d585edb913b1fc8efbeab6493633ff7f0811b4f94c2a9c89c0d313679",
     ".local/bin/linux-wallpaper-engine": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/linux-wallpaper-engine-ux": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/setup-apps": "7dacdaaa8bd9d2b6abb30c36769a396a8e7f50b32b562c91d8ac55994e445216",
@@ -94,7 +96,7 @@
     ".local/share/applications/quick-start.desktop": "7a095a43f62a7165dc4b01e28deea66a24fae7a09799dd6caf1fd188f6043c49",
     ".local/share/custom-fixes/allowed_signers": "1bc55052b9f5850a21273aff66d29e2dae2de5da7ea2e52afa341a2ba4740077",
     ".local/share/custom-fixes/source.json": "82c8be64baad08c90ca512fbed1c60a84c291d84cc81b5a92c9bf48a7edc5cf1",
-    ".local/share/quick-start/index.html": "ee38dfebe14f9f3c28393e260990e480d27b720f0edc4e550670c928f37f3436",
+    ".local/share/quick-start/index.html": "3a365fc40815109ee8dcc6bd9415a6a67e06ea04a1bc73abeeebff17a71b43fd",
     ".local/share/setup-profiles/apps.json": "9371280780f7d301ce719649acc884e8dc69438aed6ca05d30bc56cf53ce57f1",
     ".local/share/setup-profiles/default.json": "4b05e507d6504bd38671b07ca8ae714d57eeb8aee6c5854b15a81a01bffdc97c",
     ".local/share/setup-profiles/icons/audacity.png": "1bf093a6ad379007cc5ef9689802487ae315e3bb1808488dda012d77037f502e",
@@ -130,7 +132,15 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/quickshell/end4-pC/scripts/sysstats/sysstats.py"
+    ".config/quickshell/end4-pC/modules/ii/bar/Resources.qml",
+    ".config/quickshell/end4-pC/modules/ii/bar/ResourcesPopup.qml",
+    ".config/quickshell/end4-pC/quick-start.qml",
+    ".config/quickshell/end4-pC/scripts/gpu/get_gpuinfo.sh",
+    ".config/quickshell/end4-pC/scripts/gpu/gpustats.py",
+    ".config/quickshell/end4-pC/scripts/power/get_power.sh",
+    ".config/quickshell/end4-pC/scripts/sysstats/sysstats.py",
+    ".local/bin/hypr-guard",
+    ".local/share/quick-start/index.html"
   ],
   "test": false
 }

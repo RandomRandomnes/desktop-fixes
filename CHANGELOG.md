@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.53 (2026-10-04, fix)
+- The GPU widget supports NVIDIA (through nvidia-smi) and Intel graphics in addition to AMD; a dedicated card is preferred over integrated graphics, and a powered-down laptop GPU is not woken up.
+- Quick Start guide and app rewritten: shorter, more precise, and updated for starting without a boot menu, setup profiles and Secure Boot without a TPM.
+
 ## v1.43 (2026-10-04, minor)
 - The GPU widget shows the correct name after the graphics card is replaced.
 

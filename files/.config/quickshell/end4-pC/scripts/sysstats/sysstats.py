@@ -3,7 +3,7 @@
 
 Runs as one long-lived process (services/SystemStats.qml) and prints one JSON object per line every INTERVAL seconds
 (argv[1], default 1). Reads sysfs/procfs only, no root needed: CPU usage, per-thread clocks, temps (k10temp), package
-power (RAPL energy counter), GPU (amdgpu: busy, clocks, temps, power, fan, voltage, VRAM), memory, zram, disks,
+power (RAPL energy counter), GPU (AMD, NVIDIA or Intel via scripts/gpu/gpustats.py), memory, zram, disks,
 NVMe temps, uptime, processes, network throughput, and an estimated total system power.
 """
 import glob
@@ -67,35 +67,13 @@ k10 = next(hwmon_by_name("k10temp"), None) or next(hwmon_by_name("coretemp"), No
 rapl = "/sys/class/powercap/intel-rapl:0"
 rapl_max = read_int(os.path.join(rapl, "max_energy_range_uj"), 0)
 
-gpu_dev = None
-for card in sorted(glob.glob("/sys/class/drm/card[0-9]")):
-    if os.path.exists(os.path.join(card, "device/gpu_busy_percent")):
-        gpu_dev = os.path.join(card, "device")
-        break
-gpu_hwmon = next(iter(glob.glob(os.path.join(gpu_dev, "hwmon/hwmon*"))), None) if gpu_dev else None
-gpu_name = ""
-if gpu_dev:
-    # The name comes from vulkaninfo (slow, so cached). The cache is tied to the card's PCI id, so another GPU gets
-    # its own name; with several GPUs the entry matching the measured card is used.
-    os.makedirs(CACHE_DIR, exist_ok=True)
-    name_cache = os.path.join(CACHE_DIR, "gpu-name")
-    pci_id = f"{read(os.path.join(gpu_dev, 'vendor'), '').strip()}:{read(os.path.join(gpu_dev, 'device'), '').strip()}"
-    cached_id, _, cached_name = read(name_cache, "").partition("\t")
-    gpu_name = cached_name if cached_id == pci_id else ""
-    if not gpu_name:
-        try:
-            out = subprocess.run(["vulkaninfo", "--summary"], capture_output=True, text=True, timeout=8).stdout
-            for block in re.split(r"\nGPU\d+:", out):
-                ids = dict(re.findall(r"(vendorID|deviceID)\s*=\s*(0x[0-9a-fA-F]+)", block))
-                m = re.search(r"deviceName\s*=\s*(.+)", block)
-                if m and f"{ids.get('vendorID', '').lower()}:{ids.get('deviceID', '').lower()}" == pci_id.lower():
-                    gpu_name = re.sub(r"\s*\(.*\)$", "", m.group(1)).replace("AMD ", "").strip()
-                    break
-        except (OSError, subprocess.SubprocessError):
-            gpu_name = ""
-        if gpu_name:
-            with open(name_cache, "w") as f:
-                f.write(f"{pci_id}\t{gpu_name}")
+# GPU: AMD, NVIDIA or Intel (scripts/gpu/gpustats.py, shared with the classic widget)
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "gpu"))
+try:
+    import gpustats
+    gpu_dev = gpustats.detect()
+except Exception:        # never let GPU detection stop the CPU/RAM/disk stats
+    gpu_dev = None
 
 nvmes = []
 for h in hwmon_by_name("nvme"):
@@ -177,21 +155,10 @@ while True:
 
     gpu = None
     if gpu_dev:
-        gt = labelled_temps(gpu_hwmon) if gpu_hwmon else {}
-        power = read_int(os.path.join(gpu_hwmon, "power1_average"), 0) or read_int(os.path.join(gpu_hwmon, "power1_input"), 0)
-        gpu = {
-            "name": gpu_name,
-            "busy": read_int(os.path.join(gpu_dev, "gpu_busy_percent")) / 100,
-            "vramUsed": read_int(os.path.join(gpu_dev, "mem_info_vram_used")),
-            "vramTotal": read_int(os.path.join(gpu_dev, "mem_info_vram_total")),
-            "sclk": read_int(os.path.join(gpu_hwmon, "freq1_input")) / 1e6 if gpu_hwmon else 0,
-            "mclk": read_int(os.path.join(gpu_hwmon, "freq2_input")) / 1e6 if gpu_hwmon else 0,
-            "edge": gt.get("edge", 0), "junction": gt.get("junction", 0), "mem": gt.get("mem", 0),
-            "power": power / 1e6,
-            "powerCap": read_int(os.path.join(gpu_hwmon, "power1_cap"), 0) / 1e6 if gpu_hwmon else 0,
-            "fan": read_int(os.path.join(gpu_hwmon, "fan1_input")) if gpu_hwmon else 0,
-            "mv": read_int(os.path.join(gpu_hwmon, "in0_input")) if gpu_hwmon else 0,
-        }
+        try:
+            gpu = gpu_dev.sample()
+        except Exception:
+            gpu = None
 
     mi = meminfo()
     zram = None

@@ -51,10 +51,13 @@ BarWidgetSwitcherArea {
                 iconName: "developer_board"
                 detailTemplate: "VRAM 16.0/16G"
                 history: SystemStats.gpuHistory
-                valueText: parent.gpu ? `${Math.round(parent.gpu.busy * 100)}%` : "--"
-                line1: parent.gpu ? `${Math.round(parent.gpu.junction)}°C · ${Math.round(parent.gpu.power)} W` : ""
-                line2: parent.gpu ? `VRAM ${SystemStats.gb(parent.gpu.vramUsed)}/${SystemStats.gb(parent.gpu.vramTotal, 0)}G` : ""
-                warning: parent.gpu !== null && parent.gpu.junction >= 95
+                valueText: parent.gpu ? (parent.gpu.sleeping ? "Off" : `${Math.round(parent.gpu.busy * 100)}%`) : "--"
+                // AMD, NVIDIA or Intel: temperature and power only when the card reports them
+                line1: !parent.gpu ? "" : [parent.gpu.temp > 0 ? `${Math.round(parent.gpu.temp)}°C` : "",
+                                           parent.gpu.power > 0 ? `${Math.round(parent.gpu.power)} W` : ""].filter(x => x).join(" · ")
+                line2: !parent.gpu ? "" : parent.gpu.vramTotal > 0 ? `VRAM ${SystemStats.gb(parent.gpu.vramUsed)}/${SystemStats.gb(parent.gpu.vramTotal, 0)}G`
+                    : parent.gpu.sclk > 0 ? `${(parent.gpu.sclk / 1000).toFixed(1)} GHz` : ""
+                warning: parent.gpu !== null && parent.gpu.temp >= parent.gpu.tempWarn
             }
             ResourceGraph {
                 contentColor: root.contentColor

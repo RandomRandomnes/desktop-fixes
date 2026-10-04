@@ -248,37 +248,52 @@ StyledPopup {
             }
 
             Card {
+                // AMD, NVIDIA or Intel (scripts/gpu/gpustats.py): rows show only what the card reports
                 title: "GPU"
                 iconName: "developer_board"
-                subtitle: root.gpu ? (root.gpu.name || "AMD GPU") : "No GPU found"
+                subtitle: root.gpu ? (root.gpu.name || `${root.gpu.vendor} GPU`) + (root.gpu.integrated ? " (integrated)" : "") : "No supported GPU found"
 
                 BigValue {
-                    value: root.gpu ? `${Math.round(root.gpu.busy * 100)}%` : "--"
-                    note: root.gpu ? `core ${Math.round(root.gpu.sclk)} MHz · memory ${Math.round(root.gpu.mclk)} MHz` : ""
+                    value: root.gpu ? (root.gpu.sleeping ? "Off" : `${Math.round(root.gpu.busy * 100)}%`) : "--"
+                    note: !root.gpu ? "" : root.gpu.sleeping ? "Powered down to save energy"
+                        : root.gpu.sclk > 0 ? `core ${Math.round(root.gpu.sclk)} MHz` + (root.gpu.mclk > 0 ? ` · memory ${Math.round(root.gpu.mclk)} MHz` : "") : ""
                 }
                 InfoRow {
+                    visible: !!root.gpu && root.gpu.vramTotal > 0
                     label: "VRAM"
                     value: root.gpu ? `${SystemStats.gb(root.gpu.vramUsed)} / ${SystemStats.gb(root.gpu.vramTotal, 0)} GB` : ""
                 }
                 Meter {
+                    visible: !!root.gpu && root.gpu.vramTotal > 0
                     value: root.gpu && root.gpu.vramTotal > 0 ? root.gpu.vramUsed / root.gpu.vramTotal : 0
                 }
                 InfoRow {
-                    label: "Temperatures"
-                    value: root.gpu ? `edge ${Math.round(root.gpu.edge)} · hotspot ${Math.round(root.gpu.junction)} · mem ${Math.round(root.gpu.mem)}°C` : ""
-                    warning: (root.gpu?.junction ?? 0) >= 95
+                    visible: !!root.gpu && root.gpu.integrated && root.gpu.vramTotal === 0
+                    label: "Memory"
+                    value: "Shared with the system memory"
                 }
                 InfoRow {
+                    visible: !!root.gpu && root.gpu.temps.length > 0
+                    label: root.gpu && root.gpu.temps.length === 1 ? "Temperature" : "Temperatures"
+                    value: root.gpu ? (root.gpu.temps.length === 1 ? `${Math.round(root.gpu.temps[0][1])}°C`
+                        : root.gpu.temps.map(t => `${t[0]} ${Math.round(t[1])}`).join(" · ") + "°C") : ""
+                    warning: !!root.gpu && root.gpu.temp >= root.gpu.tempWarn
+                }
+                InfoRow {
+                    visible: !!root.gpu && (root.gpu.power > 0 || root.gpu.powerCap > 0)
                     label: "Power"
                     value: root.gpu ? `${Math.round(root.gpu.power)} W` + (root.gpu.powerCap > 0 ? ` of ${Math.round(root.gpu.powerCap)} W` : "") : ""
                 }
                 InfoRow {
+                    visible: !!root.gpu && (root.gpu.fan !== null || root.gpu.fanPercent !== null)
                     label: "Fan"
-                    value: root.gpu ? (root.gpu.fan > 0 ? `${root.gpu.fan} rpm` : "0 rpm (idle stop)") : ""
+                    value: !root.gpu ? "" : root.gpu.fan !== null ? (root.gpu.fan > 0 ? `${root.gpu.fan} rpm` : "0 rpm (idle stop)")
+                        : root.gpu.fanPercent !== null ? `${Math.round(root.gpu.fanPercent)}%` : ""
                 }
                 InfoRow {
+                    visible: !!root.gpu && root.gpu.mv !== null
                     label: "Core voltage"
-                    value: root.gpu ? `${root.gpu.mv} mV` : ""
+                    value: root.gpu && root.gpu.mv !== null ? `${root.gpu.mv} mV` : ""
                 }
             }
 

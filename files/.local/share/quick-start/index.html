@@ -68,13 +68,16 @@ td:first-child { white-space: nowrap }
   <nav aria-label="Contents">
     <p>Contents</p>
     <ol>
-      <li><a href="#need">What you need</a></li>
-      <li><a href="#usb">Make the USB</a></li>
-      <li><a href="#boot">Start from the USB</a></li>
+      <li><a href="#need">Requirements</a></li>
+      <li><a href="#usb">Write the USB stick</a></li>
+      <li><a href="#boot">Start from the stick</a></li>
       <li><a href="#install">Install</a></li>
       <li><a href="#first">First start</a></li>
-      <li><a href="#basics">Everyday basics</a></li>
+      <li><a href="#basics">Shortcuts and windows</a></li>
+      <li><a href="#settings">Settings</a></li>
+      <li><a href="#apps">Applications</a></li>
       <li><a href="#updates">Updates</a></li>
+      <li><a href="#startup">Boot menu and Windows</a></li>
       <li><a href="#extras">Extras</a></li>
       <li><a href="#help">Troubleshooting</a></li>
     </ol>
@@ -82,48 +85,54 @@ td:first-child { white-space: nowrap }
 
   <main>
     <header>
-      <div class="eyebrow">Arch Linux · Hyprland · illogical-impulse</div>
+      <div class="eyebrow">Arch Linux · Hyprland · custom illogical-impulse</div>
       <h1>Quick start</h1>
-      <p class="lede">How to install this desktop on a computer and use it. Installation takes about 15 minutes, followed by a few minutes of setup at the first start.</p>
+      <p class="lede">Installing and using this desktop. It is a custom version of
+        <a href="https://github.com/end-4/dots-hyprland">illogical-impulse</a>, not the official project. Installation
+        takes about 15 minutes; the setup assistant follows at the first start.</p>
     </header>
 
     <section id="need">
-      <h2>What you need</h2>
+      <h2>Requirements</h2>
       <ul>
-        <li>A USB stick of <strong>16 GB or more</strong>. Everything on it is erased.</li>
-        <li>A 64-bit PC that starts in <strong>UEFI</strong> mode (almost every PC from the last ten years).</li>
-        <li>Either a whole disk that can be erased, or <strong>40 GB of free, unallocated space</strong> next to Windows.</li>
-        <li>An internet connection for applications and updates during setup. The installation itself works offline.</li>
+        <li>A USB stick of <strong>16 GB or more</strong>. It is erased.</li>
+        <li>A 64-bit PC that starts in <strong>UEFI</strong> mode.</li>
+        <li>A disk to erase, or <strong>40 GB of unallocated space</strong> next to Windows (shrink a partition in
+          Windows Disk Management first).</li>
+        <li>Internet during the first start, for applications and updates. Installing works offline.</li>
       </ul>
-      <p class="note"><strong>Back up important data first.</strong> "Erase" deletes everything on the selected disk. The "use free space" option leaves existing partitions unchanged.</p>
+      <p class="note"><strong>Back up first.</strong> "Erase" deletes everything on the selected disk. "Use free space"
+        leaves existing partitions untouched.</p>
     </section>
 
     <section id="usb">
-      <h2>Make the USB</h2>
-      <p>Write the file <code>arch-clone-&lt;date&gt;.iso</code> to the USB stick with one of the following tools:</p>
+      <h2>Write the USB stick</h2>
       <div class="table"><table>
-        <thead><tr><th>On</th><th>Use</th></tr></thead>
+        <thead><tr><th>On</th><th>Tool</th></tr></thead>
         <tbody>
-          <tr><td>Windows</td><td><a href="https://rufus.ie">Rufus</a> (when prompted, select <span class="q">Write in DD Image mode</span>) or <a href="https://etcher.balena.io">balenaEtcher</a></td></tr>
+          <tr><td>Windows</td><td><a href="https://rufus.ie">Rufus</a>: select <span class="q">DD Image mode</span> when asked. Or <a href="https://etcher.balena.io">balenaEtcher</a>.</td></tr>
           <tr><td>Mac</td><td><a href="https://etcher.balena.io">balenaEtcher</a></td></tr>
-          <tr><td>Linux</td><td>KDE ISO Image Writer, balenaEtcher, or the command below</td></tr>
+          <tr><td>Linux</td><td>KDE ISO Image Writer, balenaEtcher, or <code>dd</code>:</td></tr>
         </tbody>
       </table></div>
-      <p>On Linux, identify the stick with <code>lsblk</code> (for example <code>sdc</code>), then run:</p>
-      <code class="cmd">sudo dd if=arch-clone-&lt;date&gt;.iso of=/dev/sdX bs=4M status=progress oflag=sync</code>
+      <code class="cmd">lsblk                                   # find the stick, e.g. sdc
+sudo dd if=arch-clone-&lt;date&gt;.iso of=/dev/sdX bs=4M status=progress oflag=sync</code>
     </section>
 
     <section id="boot">
-      <h2>Start from the USB</h2>
+      <h2>Start from the stick</h2>
       <ol class="steps">
-        <li><div>Open the PC's firmware settings (BIOS): usually <kbd>Del</kbd> or <kbd>F2</kbd> right after switching on. Make sure the boot mode is <strong>UEFI</strong> and <strong>Secure Boot is off</strong>.<br><span class="muted">To use Secure Boot, select "Setup Mode" (clear the keys) instead; the installer then creates new keys. This requires a TPM chip.</span></div></li>
-        <li><div>Insert the stick, restart and open the one-time boot menu. Select the USB stick.</div></li>
+        <li><div>Open the firmware settings (<kbd>Del</kbd> or <kbd>F2</kbd> at power-on). Set the boot mode to
+          <strong>UEFI</strong> and turn <strong>Secure Boot off</strong>.<br>
+          <span class="muted">For Secure Boot on the new system: put Secure Boot in <span class="q">Setup Mode</span>
+          (clear the keys) instead. The installer then creates and enrolls keys.</span></div></li>
+        <li><div>Insert the stick, restart, open the one-time boot menu and select the stick.</div></li>
       </ol>
       <div class="table"><table>
-        <thead><tr><th>PC brand</th><th>Boot menu key</th></tr></thead>
+        <thead><tr><th>Brand</th><th>Boot menu key</th></tr></thead>
         <tbody>
           <tr><td>Dell, Lenovo, Gigabyte, Acer</td><td><kbd>F12</kbd></td></tr>
-          <tr><td>ASUS</td><td><kbd>F8</kbd> (desktops) or <kbd>Esc</kbd> (laptops)</td></tr>
+          <tr><td>ASUS</td><td><kbd>F8</kbd> (desktop), <kbd>Esc</kbd> (laptop)</td></tr>
           <tr><td>MSI</td><td><kbd>F11</kbd></td></tr>
           <tr><td>HP</td><td><kbd>Esc</kbd>, then <kbd>F9</kbd></td></tr>
         </tbody>
@@ -132,99 +141,166 @@ td:first-child { white-space: nowrap }
 
     <section id="install">
       <h2>Install</h2>
-      <p>The stick starts to a text screen. Enter the following command:</p>
+      <p>The stick starts to a text prompt. Run:</p>
       <code class="cmd">install-clone</code>
-      <p>The installer asks a few questions and makes no changes until <code>YES</code> is entered at the end:</p>
+      <p>Nothing is written to disk until <code>YES</code> is entered.</p>
       <ol class="steps">
-        <li><div><span class="q">Disk</span>, and whether to <span class="q">erase</span> it or <span class="q">use free space</span> next to Windows. Windows is detected automatically and receives its own boot menu entry.</div></li>
-        <li><div><span class="q">Username, password and computer name.</span></div></li>
-        <li><div><span class="q">Log in automatically?</span> If yes, no password is requested at startup.</div></li>
-        <li><div><span class="q">Encrypt the disk?</span> If yes, a passphrase is required at every startup (until TPM unlock is configured, see <a href="#extras">Extras</a>).</div></li>
-                <li><div>Review the summary and enter <code>YES</code>. Installation takes 5 to 10 minutes.</div></li>
-        <li><div>Remove the stick and enter <code>reboot</code>. If Secure Boot keys were created, enable Secure Boot in the BIOS again.</div></li>
+        <li><div><span class="q">Disk</span>: the USB stick itself is never listed. Disks are tagged
+          <code>[Windows]</code>, <code>[Linux]</code> or <code>[empty]</code>. On a disk with partitions, choose
+          <span class="q">1 erase</span> or <span class="q">2 use free space</span>.</div></li>
+        <li><div><span class="q">Username</span> (lowercase letters, digits, <code>-</code>, <code>_</code>),
+          <span class="q">password</span> and <span class="q">computer name</span>. The password is also the
+          administrator password.</div></li>
+        <li><div><span class="q">Log in automatically?</span> Yes skips the password at startup; the lock screen still
+          uses it.</div></li>
+        <li><div><span class="q">Encrypt the disk?</span> Yes asks for a passphrase at every startup, until TPM unlock
+          is set up (<a href="#extras">Extras</a>).</div></li>
+        <li><div><span class="q">Secure Boot keys</span>: asked only when the firmware is in Setup Mode.</div></li>
+        <li><div>Check the summary, enter <code>YES</code>. Copying takes 5 to 10 minutes.</div></li>
+        <li><div>Remove the stick and run <code>reboot</code>. If keys were created, turn Secure Boot on in the
+          firmware after the first successful start.</div></li>
       </ol>
-      <p class="muted">The new system starts with the Default appearance and no applications other than Firefox. Further applications are selected at the first start. It starts directly, without a boot menu; a boot menu (GRUB, systemd-boot or rEFInd) can be added in the setup assistant under <span class="q">Drivers and updates › Startup</span>.</p>
+      <p class="muted">The new system has the Default appearance and only Firefox. It starts directly, without a boot
+        menu (see <a href="#startup">Boot menu and Windows</a>).</p>
     </section>
 
     <section id="first">
       <h2>First start</h2>
-      <p>The <strong>Set up your PC</strong> assistant opens automatically. Most steps can be skipped and changed later in Settings.</p>
+      <p><strong>Set up your PC</strong> opens automatically. Every step except one can be skipped and changed later
+        in Settings.</p>
       <div class="table"><table>
         <thead><tr><th>Step</th><th>What it does</th></tr></thead>
         <tbody>
-          <tr><td>Wi-Fi, Bluetooth</td><td>Connect to the internet and pair a mouse, headphones or a game controller.</td></tr>
-          <tr><td>Time and region, Keyboard, Display</td><td>Time zone and weather city, keyboard layout, resolution and scale.</td></tr>
-          <tr><td>Your setup</td><td>Select a setup profile: <strong>Default</strong> (Windows-style, grey colors), or a profile file. Further profiles, such as <strong>Custom_01</strong>, can be downloaded from the <a href="https://github.com/RandomRandomnes/desktop-fixes#setup-profiles">project page</a>. A profile does not change the apps in the dock or the app grid, and Wallpaper Engine is always switched on separately in Settings › Extras.</td></tr>
-          <tr><td>Colors, Wallpaper, Account</td><td>Light or dark mode, wallpaper, profile picture and display name.</td></tr>
-          <tr><td>Apps</td><td>Select applications or a bundle (Gaming, Productivity). They are installed after confirmation when Next is pressed; a terminal requests the administrator password.</td></tr>
-          <tr><td>Drivers and updates</td><td>Graphics driver if required (NVIDIA, Intel), installing all updates, and one <strong>required question</strong>: whether to receive custom bug fixes.</td></tr>
-          <tr><td>Shortcuts</td><td>The most important keyboard shortcuts (also listed below).</td></tr>
+          <tr><td>Wi-Fi, Bluetooth</td><td>Connect to a network; pair a mouse, headphones or a controller.</td></tr>
+          <tr><td>Time and region</td><td>Time zone and the weather location on the taskbar.</td></tr>
+          <tr><td>Keyboard, Display</td><td>Layout and key repeat; resolution, refresh rate and scale.</td></tr>
+          <tr><td>Your setup</td><td>Choose a setup profile (<a href="#settings">Settings</a>) or a profile file.</td></tr>
+          <tr><td>Colors, Wallpaper</td><td>Light or dark mode, accent color, wallpaper.</td></tr>
+          <tr><td>Account</td><td>Profile picture and display name.</td></tr>
+          <tr><td>Apps</td><td>Pick applications or a pack. Next asks for confirmation, then a terminal installs them
+            (administrator password required).</td></tr>
+          <tr><td>Drivers and updates</td><td><strong>Required:</strong> whether to receive custom bug fixes. Also: the
+            graphics driver (NVIDIA, Intel), installing all updates, and the boot menu.</td></tr>
+          <tr><td>Shortcuts</td><td>The most important keyboard shortcuts.</td></tr>
         </tbody>
       </table></div>
+      <p class="muted">Run it again: Settings › Extras › <span class="q">Run the first-time setup again</span>, or
+        <kbd>Shift</kbd> + <kbd>Super</kbd> + <kbd>Alt</kbd> + <kbd>/</kbd>.</p>
     </section>
 
     <section id="basics">
-      <h2>Everyday basics</h2>
-      <p>The <kbd>Super</kbd> key is the Windows key.</p>
+      <h2>Shortcuts and windows</h2>
+      <p><kbd>Super</kbd> is the Windows key.</p>
       <div class="table"><table>
-        <thead><tr><th>Keys</th><th>Does</th></tr></thead>
+        <thead><tr><th>Keys</th><th>Action</th></tr></thead>
         <tbody>
           <tr><td><kbd>Super</kbd></td><td>Application menu and search</td></tr>
           <tr><td><kbd>Super</kbd> + <kbd>Tab</kbd></td><td>All workspaces and windows</td></tr>
-          <tr><td><kbd>Super</kbd> + <kbd>Q</kbd></td><td>Close the active window</td></tr>
-          <tr><td><kbd>Super</kbd> + <kbd>D</kbd></td><td>Maximize or restore the active window</td></tr>
-          <tr><td><kbd>Super</kbd> + <kbd>I</kbd></td><td>Settings</td></tr>
+          <tr><td><kbd>Super</kbd> + <kbd>Q</kbd></td><td>Close window</td></tr>
+          <tr><td><kbd>Super</kbd> + <kbd>D</kbd></td><td>Maximize or restore window</td></tr>
+          <tr><td><kbd>Super</kbd> + <kbd>1</kbd>…<kbd>0</kbd></td><td>Switch workspace</td></tr>
           <tr><td><kbd>Super</kbd> + <kbd>W</kbd> / <kbd>E</kbd> / <kbd>Enter</kbd></td><td>Browser / Files / Terminal</td></tr>
+          <tr><td><kbd>Super</kbd> + <kbd>I</kbd></td><td>Settings</td></tr>
           <tr><td><kbd>Super</kbd> + <kbd>A</kbd> / <kbd>N</kbd></td><td>Left sidebar (AI chat) / right sidebar (quick settings, notifications)</td></tr>
           <tr><td><kbd>Super</kbd> + <kbd>V</kbd> / <kbd>.</kbd></td><td>Clipboard history / emoji</td></tr>
           <tr><td><kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd></td><td>Screenshot of an area</td></tr>
-          <tr><td><kbd>Super</kbd> + <kbd>L</kbd></td><td>Lock the screen</td></tr>
-          <tr><td><kbd>Super</kbd> + <kbd>/</kbd></td><td>Show all shortcuts</td></tr>
+          <tr><td><kbd>Ctrl</kbd> + <kbd>Super</kbd> + <kbd>T</kbd></td><td>Change wallpaper</td></tr>
+          <tr><td><kbd>Super</kbd> + <kbd>L</kbd></td><td>Lock</td></tr>
+          <tr><td><kbd>Super</kbd> + <kbd>/</kbd></td><td>List every shortcut</td></tr>
         </tbody>
       </table></div>
-      <h3>Windows</h3>
-      <p>Windows float as on Windows and have a title bar: red closes, green maximizes, yellow minimizes to the dock. Clicking the application in the dock restores it. Double-clicking a title bar maximizes the window.</p>
-      <h3>Settings</h3>
-      <p><kbd>Super</kbd> + <kbd>I</kbd>. <strong>Extras</strong> contains a switch for each additional feature (Windows-style windows, Wallpaper Engine, live system graphs, the KDE switch and more), plus <span class="q">Use a profile file</span>, <span class="q">Share my setup</span> and <span class="q">Run the first-time setup again</span>.</p>
+      <p>Windows float and have a title bar: <strong>red</strong> closes, <strong>green</strong> maximizes
+        (or double-click the title bar), <strong>yellow</strong> minimizes to the dock; click the dock icon to restore.
+        For tiling instead, turn off <span class="q">Windows-style windows</span> in Settings › Extras.</p>
+    </section>
+
+    <section id="settings">
+      <h2>Settings</h2>
+      <p><kbd>Super</kbd> + <kbd>I</kbd>. Laid out like Windows Settings: System, Bluetooth &amp; devices, Network,
+        Personalization, Apps, Update, Extras.</p>
+      <h3>Extras</h3>
+      <p>One switch per added feature; off restores the standard illogical-impulse behavior: Windows-style windows,
+        minimize to dock, app grid, live system graphs (CPU, GPU, RAM), Wallpaper Engine, the KDE switch and more.</p>
+      <h3>Setup profiles</h3>
+      <p>A profile is one file with an appearance and a set of feature switches. Built in: <strong>Default</strong>
+        (Windows-style, monochrome). More, such as <strong>Custom_01</strong>, are on the
+        <a href="https://github.com/RandomRandomnes/desktop-fixes#setup-profiles">project page</a>.</p>
+      <ul>
+        <li>Apply: Settings › Extras › <span class="q">Use a profile file</span>. Current settings are backed up first.</li>
+        <li>Save your own: Settings › Extras › <span class="q">Share my setup</span>.</li>
+        <li>A profile never changes the dock or the app grid, and never turns on Wallpaper Engine.</li>
+      </ul>
+    </section>
+
+    <section id="apps">
+      <h2>Applications</h2>
+      <p>Firefox is preinstalled. Add more in the setup assistant's Apps step, or later in a terminal:</p>
+      <code class="cmd">sudo pacman -S &lt;package&gt;          # Arch repositories
+flatpak install flathub &lt;app-id&gt;      # Flathub</code>
+      <div class="table"><table>
+        <thead><tr><th>Pack</th><th>Contains</th></tr></thead>
+        <tbody>
+          <tr><td>Gaming</td><td>Steam, MangoHud, GameMode, ProtonUp-Qt</td></tr>
+          <tr><td>Productivity</td><td>LibreOffice, Thunderbird, Obsidian, Code - OSS, KeePassXC</td></tr>
+        </tbody>
+      </table></div>
     </section>
 
     <section id="updates">
       <h2>Updates</h2>
-      <p>The update button on the taskbar shows the number of pending updates. One click updates the system, the desktop and, if enabled, the custom bug fixes. The administrator password is requested once.</p>
+      <p>The taskbar's update button shows how many updates are waiting. One click installs system updates and, if
+        enabled, custom bug fixes; the password is asked once. Settings › Update shows the installed version.</p>
       <ul>
-        <li><strong>Bug fixes</strong> (versions such as 1.1 or 1.12) are installed with regular updates.</li>
-        <li><strong>New major versions</strong> (2, 3 and later) are never installed automatically. Settings › Update describes the changes, warns that they may alter or break parts of the current setup, and upgrades only after confirmation.</li>
-        <li>To revert the most recent bug fix: Settings › Update › <span class="q">Undo last</span>.</li>
+        <li><strong>Bug fixes</strong> (1.3, 1.31, …) install with regular updates. Revert the last one:
+          Settings › Update › <span class="q">Undo last</span>.</li>
+        <li><strong>Major versions</strong> (2, 3, …) never install by themselves. Settings › Update explains the
+          changes and the risk, and upgrades only on confirmation.</li>
+        <li>After an update that breaks the desktop: Settings › Update › <span class="q">Run health check</span>.</li>
       </ul>
+    </section>
+
+    <section id="startup">
+      <h2>Boot menu and Windows</h2>
+      <p>The system starts Arch Linux directly, without a menu. Windows stays installed and starts from the firmware's
+        one-time boot menu (<a href="#boot">keys</a>).</p>
+      <p>To get a menu at every start: setup assistant › Drivers and updates › <span class="q">Startup</span>, or in a
+        terminal:</p>
+      <code class="cmd">boot-loader use refind         # graphical menu, finds Windows on any disk
+boot-loader use systemd-boot   # simple menu; lists Windows only on the same EFI partition
+boot-loader use grub           # text menu; only with Secure Boot off
+boot-loader use direct         # back to no menu</code>
+      <p class="muted">Switching only changes which loader the firmware starts first; nothing is deleted.</p>
     </section>
 
     <section id="extras">
       <h2>Extras</h2>
       <h3>Wallpaper Engine</h3>
-      <p>Animated wallpapers require Steam and Wallpaper Engine (purchased on Steam). Install Steam from the setup assistant or the Gaming bundle, install Wallpaper Engine, then enable Settings › Extras › <span class="q">Wallpaper Engine background</span>. A wallpaper picker appears in the right sidebar.</p>
-      <h3>Switch to KDE Plasma</h3>
-      <p>The KDE Plasma desktop is also installed. Enable the KDE switch in Settings › Extras to use it from the right sidebar or the power menu.</p>
-      <h3>Unlocking an encrypted disk automatically</h3>
-      <p>The file <code>WELCOME-clone.txt</code> in the home folder lists the two commands that allow the TPM chip to unlock the disk at startup.</p>
-      <h3>Sharing a setup</h3>
-      <p>Settings › Extras › <span class="q">Share my setup</span> saves the appearance, features and application list to one file. It can be applied in the setup assistant or with <span class="q">Use a profile file</span>.</p>
+      <p>Needs Steam and Wallpaper Engine (bought on Steam). Install both, then turn on Settings › Extras ›
+        <span class="q">Wallpaper Engine background</span>. A picker appears in the right sidebar. It is off by default.</p>
+      <h3>KDE Plasma</h3>
+      <p>Installed alongside. Turn on the KDE switch in Settings › Extras, then switch from the right sidebar or the
+        power menu.</p>
+      <h3>Unlock an encrypted disk with the TPM</h3>
+      <p><code>~/WELCOME-clone.txt</code> lists the two commands. Afterwards the passphrase is only needed if the
+        firmware or Secure Boot state changes.</p>
     </section>
 
     <section id="help">
       <h2>Troubleshooting</h2>
       <div class="table"><table>
-        <thead><tr><th>Problem</th><th>Try</th></tr></thead>
+        <thead><tr><th>Problem</th><th>Fix</th></tr></thead>
         <tbody>
-          <tr><td>The USB stick does not start</td><td>Turn Secure Boot off and set the boot mode to UEFI. Rewrite the stick (Rufus: DD Image mode).</td></tr>
-          <tr><td>Black screen after installation</td><td>Usually caused by an NVIDIA card. Press <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>F2</kbd>, log in, run <code>sudo pacman -S nvidia-open-dkms nvidia-utils</code>, then <code>reboot</code>.</td></tr>
-          <tr><td>Starting Windows or another system</td><td>Open the firmware's one-time boot menu at power-on (see the key table above), or add a boot menu: setup assistant › Drivers and updates › Startup, or <code>boot-loader use refind</code> in a terminal.</td></tr>
-          <tr><td>Text and elements are too small or too large</td><td>Settings › System › Display › Scale.</td></tr>
+          <tr><td>The stick does not start</td><td>UEFI mode on, Secure Boot off. Rewrite the stick (Rufus: DD Image mode).</td></tr>
+          <tr><td>Black screen after installing (NVIDIA)</td><td><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>F2</kbd>, log in, run <code>sudo pacman -S nvidia-open-dkms nvidia-utils linux-headers</code>, then <code>reboot</code>.</td></tr>
+          <tr><td>Black screen after an update</td><td><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>F2</kbd>, log in, run <code>sudo pacman -Syu</code>, then <code>reboot</code>.</td></tr>
+          <tr><td>Windows does not appear</td><td>Use the firmware boot menu, or add a boot menu (<a href="#startup">Boot menu and Windows</a>).</td></tr>
+          <tr><td>Desktop broken after an update</td><td>Settings › Update › <span class="q">Run health check</span>; for a bug fix, <span class="q">Undo last</span>.</td></tr>
+          <tr><td>Text too small or too large</td><td>Settings › System › Display › Scale.</td></tr>
           <tr><td>No Wi-Fi</td><td>Right sidebar (<kbd>Super</kbd> + <kbd>N</kbd>) › Wi-Fi.</td></tr>
-          <tr><td>The desktop misbehaves after an update</td><td>Settings › Update › <span class="q">Run health check</span>, or <span class="q">Undo last</span> for a bug fix.</td></tr>
-          <tr><td>Running the setup assistant again</td><td>Settings › Extras › <span class="q">Run the first-time setup again</span>.</td></tr>
+          <tr><td>No GPU graph on the taskbar</td><td>Turn on Settings › Extras › <span class="q">Live system graphs</span>. AMD, NVIDIA (proprietary driver) and Intel are supported.</td></tr>
         </tbody>
       </table></div>
-      <p class="muted">This guide is also available on the USB stick (<code>clone/QUICK-START.html</code>) and on the installed system (Quick Start in the application menu).</p>
+      <p class="muted">This guide: <code>clone/QUICK-START.html</code> on the stick; on the installed system, Quick Start in the application menu.</p>
     </section>
   </main>
 </div>
