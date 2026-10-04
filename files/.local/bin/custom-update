@@ -762,9 +762,22 @@ def cmd_undo():
     return 0
 
 
+def phoenix_inactive():
+    """Phoenix installed with install.sh but switched off (phoenix deactivate): the user's own illogical-impulse files
+    are in place, so nothing may be installed over them."""
+    try:
+        with open(os.path.join(HOME, ".local", "state", "phoenix", "active")) as f:
+            return f.read().strip() == "no"
+    except OSError:
+        return False
+
+
 def main():
     a = sys.argv[1:]
     cmd = a[0] if a else "status"
+    if cmd in ("apply", "system-apply", "upgrade", "undo") and phoenix_inactive():
+        print("Phoenix is switched off (phoenix activate turns it on); no fixes are installed while it is off.")
+        sys.exit(0)
     if cmd == "status":
         cmd_status()
     elif cmd == "check":

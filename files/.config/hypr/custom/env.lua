@@ -7,3 +7,6 @@ do
 end
 function feature(name) return FEATURES[name] ~= false end
 -- features-end
+-- Phoenix runs its own Quickshell config. Set here (custom/ loads after illogical-impulse's defaults), so swapping
+-- the custom folder (phoenix activate / deactivate) also switches the shell.
+hl.env("qsConfig", "end4-pC")

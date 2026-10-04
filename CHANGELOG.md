@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 1.2 (2026-10-04, fix)
+- Phoenix can be installed on an existing Arch + illogical-impulse system with install.sh, and switched with the new phoenix command (status, activate, deactivate, uninstall); fixes are not installed while Phoenix is switched off.
+
 ## custom 1.1 (2026-10-04, fix)
 - The project is now called Phoenix: the setup assistant, Quick Start, Settings › System › About and the boot entries use the new name, and updates come from github.com/RandomRandomnes/phoenix.
 

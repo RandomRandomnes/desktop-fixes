@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+# phoenix: switch Phoenix on or off, or remove it (2026-10-04). Installed by install.sh from github.com/RandomRandomnes/phoenix
+#
+#   phoenix status               installed? active? versions
+#   phoenix activate             use the Phoenix shell (your own illogical-impulse setup is kept aside)
+#   phoenix deactivate           back to your own illogical-impulse setup (Phoenix is kept aside)
+#   phoenix uninstall [--yes]    remove Phoenix and put back everything it replaced
+#
+# Phoenix and illogical-impulse share two things: the Hyprland user folder ~/.config/hypr/custom and the shell settings
+# ~/.config/illogical-impulse/config.json. Switching swaps those two between the active side and a copy kept in
+# ~/.local/state/phoenix/{phoenix-side,user-side}; nothing is deleted. Everything else Phoenix installs (the end4-pC
+# shell, the helper commands, profiles, the guide) stays in place and does nothing while Phoenix is inactive.
+set -uo pipefail
+STATE="$HOME/.local/state/phoenix"
+SWAP=(".config/hypr/custom" ".config/illogical-impulse/config.json")
+B=$'\e[1m'; N=$'\e[0m'
+die() { echo "phoenix: $*" >&2; exit 1; }
+active() { [ "$(cat "$STATE/active" 2>/dev/null)" = yes ]; }
+installed() { [ -f "$STATE/installed.json" ]; }
+
+need_installer_install() {
+    installed && return 0
+    if [ -f "$HOME/.local/share/custom-fixes/base.json" ]; then
+        die "this system was installed from the Phoenix image; Phoenix is the system's desktop and can't be switched off here"
+    fi
+    die "Phoenix is not installed (see https://github.com/RandomRandomnes/phoenix)"
+}
+
+# move the shared items of the active side to $1 (a state folder) and bring the ones in $2 into place
+swap() {
+    local away="$1" back="$2" item
+    for item in "${SWAP[@]}"; do
+        mkdir -p "$(dirname "$away/$item")" "$(dirname "$HOME/$item")"
+        rm -rf "$away/$item"
+        [ -e "$HOME/$item" ] && mv "$HOME/$item" "$away/$item"
+        [ -e "$back/$item" ] && mv "$back/$item" "$HOME/$item"
+    done
+}
+
+qs_config_of_ii() {   # the shell illogical-impulse starts on its own (its variables.lua; "ii" when unset)
+    sed -n 's/^hl.env("qsConfig", *"\([^"]*\)").*/\1/p' "$HOME/.config/hypr/hyprland/variables.lua" 2>/dev/null | tail -1 | grep . || echo ii
+}
+
+restart_shell() {     # $1 = quickshell config to run now
+    [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] || { echo "Log in to Hyprland to use it."; return; }
+    hyprctl reload >/dev/null 2>&1
+    qs kill >/dev/null 2>&1; sleep 1
+    hyprctl dispatch "hl.dsp.exec_cmd(\"qs -c $1\")" >/dev/null 2>&1
+    echo "The shell was restarted. Log out and back in once to finish switching (login programs, title bars)."
+}
+
+cmd_status() {
+    if ! installed; then
+        [ -f "$HOME/.local/share/custom-fixes/base.json" ] && echo "Phoenix: installed from the Phoenix image (always active)" \
+            || echo "Phoenix: not installed"
+        return
+    fi
+    local custom; custom=$(python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get('label',''))" \
+        "$HOME/.local/state/custom-fixes/installed.json" 2>/dev/null || python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('label',''))" "$HOME/.local/share/custom-fixes/base.json" 2>/dev/null)
+    echo "Phoenix:      installed $(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['date'])" "$STATE/installed.json")"
+    echo "State:        $(active && echo "${B}active${N} (Phoenix shell)" || echo "inactive (your illogical-impulse setup)")"
+    echo "Custom fixes: ${custom:-unknown}"
+    echo "Shell:        end4-pC $(git -C "$HOME/.config/quickshell/end4-pC" rev-parse --short HEAD 2>/dev/null || echo '?')"
+}
+
+cmd_activate() {
+    need_installer_install
+    active && { echo "Phoenix is already active."; return; }
+    swap "$STATE/user-side" "$STATE/phoenix-side"
+    echo yes > "$STATE/active"
+    echo "Phoenix is active. Your own illogical-impulse files are kept in $STATE/user-side."
+    restart_shell end4-pC
+}
+
+cmd_deactivate() {
+    need_installer_install
+    active || { echo "Phoenix is already inactive."; return; }
+    swap "$STATE/phoenix-side" "$STATE/user-side"
+    echo no > "$STATE/active"
+    echo "Phoenix is inactive; your own illogical-impulse setup is back. Switch again with: phoenix activate"
+    restart_shell "$(qs_config_of_ii)"
+}
+
+cmd_uninstall() {
+    need_installer_install
+    if [ "${1:-}" != --yes ]; then
+        read -r -p "Remove Phoenix and restore what it replaced? [y/N] " a
+        [[ "$a" =~ ^[yY] ]] || { echo "Nothing changed."; return; }
+    fi
+    active && { swap "$STATE/phoenix-side" "$STATE/user-side"; echo no > "$STATE/active"; }
+    rm -rf "$STATE/phoenix-side"
+    local n_removed=0 n_restored=0 rel
+    while IFS= read -r rel; do                       # files Phoenix added: removed
+        [ -n "$rel" ] && [ -e "$HOME/$rel" ] && rm -f "$HOME/$rel" && n_removed=$((n_removed + 1))
+    done < "$STATE/added-files.txt"
+    if [ -d "$STATE/backup" ]; then                  # files Phoenix replaced: their originals back
+        while IFS= read -r -d '' f; do
+            rel="${f#"$STATE/backup/"}"
+            mkdir -p "$(dirname "$HOME/$rel")"; cp -a "$f" "$HOME/$rel"; n_restored=$((n_restored + 1))
+        done < <(find "$STATE/backup" -type f -print0)
+    fi
+    if [ "$(cat "$STATE/cloned-end4pC" 2>/dev/null)" = yes ]; then
+        rm -rf "$HOME/.config/quickshell/end4-pC"
+    fi
+    rm -rf "$HOME/.local/state/custom-fixes" "$HOME/.local/share/custom-fixes" "$HOME/.local/state/setup-wizard" \
+           "$HOME/.local/state/setup-profiles" "$HOME/hypr-guard" "$HOME"/hypr-known-good-* "$HOME/.hypr-known-good-latest"
+    local keep="$HOME/.local/state/phoenix-uninstalled-$(date +%Y%m%d-%H%M%S)"
+    mv "$STATE" "$keep"
+    echo "Phoenix removed: $n_removed file(s) removed, $n_restored restored. A copy of the backups stays in $keep."
+    restart_shell "$(qs_config_of_ii)"
+    rm -f "$HOME/.local/bin/phoenix"
+}
+
+case "${1:-status}" in
+    status) cmd_status ;;
+    activate) cmd_activate ;;
+    deactivate) cmd_deactivate ;;
+    uninstall) cmd_uninstall "${2:-}" ;;
+    *) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+esac

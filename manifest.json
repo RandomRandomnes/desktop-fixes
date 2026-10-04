@@ -1,18 +1,18 @@
 {
   "format": "custom-fixes",
   "line": "custom",
-  "version": 1.1,
-  "label": "1.1",
+  "version": 1.2,
+  "label": "1.2",
   "kind": "fix",
   "date": "2026-10-04",
   "publisher": "RandomRandomnes",
   "notes": [
-    "The project is now called Phoenix: the setup assistant, Quick Start, Settings \u203a System \u203a About and the boot entries use the new name, and updates come from github.com/RandomRandomnes/phoenix."
+    "Phoenix can be installed on an existing Arch + illogical-impulse system with install.sh, and switched with the new phoenix command (status, activate, deactivate, uninstall); fixes are not installed while Phoenix is switched off."
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "ecf850f33d68411be99ccd843d0fb30fa86c5dea668491424c94587d6415e7c8",
+  "payloadSha256": "63227ee46c9ba82a927e58e4a526a4a824ef8e6499e8bcf3aaa875f876210c13",
   "files": {
-    ".config/hypr/custom/env.lua": "9ad5c4f1e29959f9dcdfc96846e5f4526fcbcef61e3ac7bf4bb787cc94a8b1f0",
+    ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
     ".config/hypr/custom/execs.lua": "e1840046232062e73741e9e82f61864d271fe13ed41449554df01a33d9956d98",
     ".config/hypr/custom/general.lua": "06d1fb865ea7a689006d0e6074778f97539fe87e52e1ad05c5d1083549e1a980",
     ".config/hypr/custom/keybinds.lua": "8ee638e94053968d19b77a80a8fdb663a107063a0d0e42cf6b24ea142bca1baf",
@@ -80,10 +80,11 @@
     ".config/quickshell/end4-pC/services/ai/ClaudeCodeApiStrategy.qml": "71a1f160c1365a9e6fb56b153f11ae5645f10579ebc175715fc142b16b007131",
     ".config/quickshell/end4-pC/setup-wizard.qml": "8d1b5f34c7e559664298dfc622afe05564d4c2205acd0e589dfb2eaedb1bc4c0",
     ".local/bin/boot-loader": "3ee3af8b50426d5bc044c50e7a233c21447c29932bc938914a8e85c15833dd8f",
-    ".local/bin/custom-update": "2874a422931f9cba25dae2b4f1573fc4ccf44106fc0b6e97af5b28f40ac3e6ac",
+    ".local/bin/custom-update": "1b96da1583135100e5ce183aca9be97fe7d1a4c71f944a86e31919ba23c0b4bc",
     ".local/bin/hypr-guard": "e3999dbc31ba6545ca95472ce86e526a73e5597378212a820845bcc441c1cb6a",
     ".local/bin/linux-wallpaper-engine": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/linux-wallpaper-engine-ux": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
+    ".local/bin/phoenix": "103a3eb46af08bf43f3143d7d402dcbbe5f6724c7e4b38e2011e71a91b191ec3",
     ".local/bin/setup-apps": "7dacdaaa8bd9d2b6abb30c36769a396a8e7f50b32b562c91d8ac55994e445216",
     ".local/bin/setup-features": "7088a7e0d7952b5b71907cd10bc5afe4f2d186539312cab7b7c10feab93dc418",
     ".local/bin/setup-profile": "c74f932514eea6aeddf96864149d162804339f5614fd1ea2ca7f64ec2b3b65f6",
@@ -133,13 +134,9 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/quickshell/end4-pC/modules/ii/settingsW11/PSystem.qml",
-    ".config/quickshell/end4-pC/quick-start.qml",
-    ".config/quickshell/end4-pC/setup-wizard.qml",
-    ".local/bin/boot-loader",
-    ".local/share/applications/quick-start.desktop",
-    ".local/share/custom-fixes/source.json",
-    ".local/share/quick-start/index.html"
+    ".config/hypr/custom/env.lua",
+    ".local/bin/custom-update",
+    ".local/bin/phoenix"
   ],
   "test": false
 }
