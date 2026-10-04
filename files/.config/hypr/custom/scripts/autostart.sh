@@ -3,6 +3,8 @@ log="$HOME/hypr-autostart.log"
 echo "$(date +%T) autostart script started" > "$log"
 # Custom-feature switches (Settings › Extras, written by ~/.local/bin/setup-features). Missing = on.
 feature() { ! grep -q "^ *$1 = false" "$HOME/.config/hypr/custom/features.lua" 2>/dev/null; }
+# Wallpaper Engine is off unless switched on in Settings › Extras (missing = off)
+feature_on() { grep -q "^ *$1 = true" "$HOME/.config/hypr/custom/features.lua" 2>/dev/null; }
 
 i=0
 while [ $i -lt 60 ]; do
@@ -21,7 +23,7 @@ if [ -f "$HOME/.local/state/setup-wizard/pending" ]; then
 fi
 sleep 2
 
-if feature wallpaperEngine; then
+if feature_on wallpaperEngine; then
   echo "$(date +%T) starting wallpaper app" >> "$log"
   linux-wallpaper-engine-ux > /dev/null 2>&1 &
 

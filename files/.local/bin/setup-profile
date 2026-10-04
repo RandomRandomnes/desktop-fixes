@@ -3,7 +3,7 @@
 
   setup-profile list                        built-in profiles (~/.local/share/setup-profiles)
   setup-profile show <profile>              what a profile changes
-  setup-profile apply <profile> [--yes]     apply a built-in name ("default", "custom_01") or a .json file path
+  setup-profile apply <profile> [--yes]     apply a built-in name ("default") or a .json file path
   setup-profile export <file> [--name N] [--description D] [--author A]
                                             write the current setup as a profile (to share)
   setup-profile apps <profile>              app ids the profile lists (installed by setup-apps / the setup wizard)
@@ -20,6 +20,8 @@ A profile:
     "apps": ["steam", "discord", ...]   # optional: apps from ~/.local/share/setup-profiles/apps.json to offer
   }
 Applying a profile never installs apps by itself; the first-time setup wizard offers the listed ones.
+A profile never changes the dock's pinned apps or the app grid (PROTECTED), and never switches Wallpaper Engine
+on (USER_ONLY_FEATURES): the user enables it in Settings › Extras.
 Applying keeps a backup of the previous settings in ~/.local/state/setup-profiles/backups/ and then runs
 setup-features. Outside a desktop session (e.g. the clone installer) the wallpaper and colors are applied at first login.
 """
@@ -46,6 +48,11 @@ SWITCHWALL = os.path.join(SHELL_DIR, "scripts", "colors", "switchwall.sh")
 FEATURES = {k: ("extras", k) for k in ["windowsStyle", "minimizeToDock", "wallpaperEngine", "resourceGraphs",
                                        "appGrid", "powerMenuKde", "claudeCodeAi", "updatesScript", "steamTray"]}
 FEATURES.update({k: ("sidebar", k) for k in ["wallpaperEngineCard", "deviceBatteries", "desktopSwitch"]})
+# Never changed by a profile: what the dock and the app grid contain stays as the user arranged it.
+PROTECTED = [("dock", "pinnedApps"), ("overview", "appGridShowAll"), ("overview", "appGridApps"),
+             ("overview", "appGridHidden"), ("overview", "appGridOrder")]
+# Never switched on by a profile: Wallpaper Engine is enabled by the user in Settings › Extras.
+USER_ONLY_FEATURES = ["wallpaperEngine"]
 
 
 def load_json(path):
@@ -185,9 +192,17 @@ def cmd_apply(name, yes):
     base = from_home(load_json(STOCK)) if p.get("look", "stock") == "stock" else copy.deepcopy(cur)
     merge(base, from_home(p.get("settings") or {}))
     for k, v in (p.get("features") or {}).items():
-        if k in FEATURES:
+        if k in FEATURES and k not in USER_ONLY_FEATURES:
             sect, key = FEATURES[k]
             base.setdefault(sect, {})[key] = bool(v)
+    for k in USER_ONLY_FEATURES:   # keeps the user's own choice; off unless switched on before
+        sect, key = FEATURES[k]
+        base.setdefault(sect, {})[key] = (cur.get(sect) or {}).get(key) is True
+    for sect, key in PROTECTED:    # the current dock and app grid, or the shell's defaults
+        if key in (cur.get(sect) or {}):
+            base.setdefault(sect, {})[key] = copy.deepcopy(cur[sect][key])
+        else:
+            (base.get(sect) or {}).pop(key, None)
     wallpaper = p.get("wallpaper")
     if wallpaper:
         wp = DEFAULT_WALLPAPER if wallpaper == "@default" else from_home(wallpaper)
@@ -208,6 +223,10 @@ def cmd_export(out, name, description, author):
     settings = diff(cur, stock)
     for k, (sect, key) in FEATURES.items():   # switches go in "features", not "settings"
         (settings.get(sect) or {}).pop(key, None)
+    for sect, key in PROTECTED:               # the dock and app grid are personal and never part of a profile
+        (settings.get(sect) or {}).pop(key, None)
+    for k in USER_ONLY_FEATURES:
+        features[k] = False
     wallpaper = (cur.get("background") or {}).get("wallpaperPath") or ""
     (settings.get("background") or {}).pop("wallpaperPath", None)
     (settings.get("background") or {}).pop("thumbnailPath", None)

@@ -1,26 +1,26 @@
 {
   "format": "custom-fixes",
-  "version": 2.0,
-  "label": "2",
-  "kind": "feature",
+  "version": 2.1,
+  "label": "2.1",
+  "kind": "fix",
   "date": "2026-10-04",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Boot menu choice in the setup assistant and the boot-loader command; Quick Start guide updated."
+    "Setup profiles no longer change the apps in the dock or the app grid, and never switch on Wallpaper Engine; Wallpaper Engine is off until it is enabled in Settings \u203a Extras. Custom_01 moved to the project page as a download."
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "c9f232332ddae5dc754203c0c1640e7184dff355bcecf14953849bd40429e375",
+  "payloadSha256": "50ed556c129021fc793998af7883b8d02614c5361176929c29393f7aa1e564cc",
   "files": {
     ".config/hypr/custom/env.lua": "9ad5c4f1e29959f9dcdfc96846e5f4526fcbcef61e3ac7bf4bb787cc94a8b1f0",
     ".config/hypr/custom/execs.lua": "e1840046232062e73741e9e82f61864d271fe13ed41449554df01a33d9956d98",
     ".config/hypr/custom/general.lua": "06d1fb865ea7a689006d0e6074778f97539fe87e52e1ad05c5d1083549e1a980",
     ".config/hypr/custom/keybinds.lua": "d99a33fdf7bbadbbe83176eb5236604c2dfd1498750c4fcb70be4ab95ca7d623",
     ".config/hypr/custom/rules.lua": "1cc3008eff4152a66344c395b7fb6ef5cdd861f936f7daf82f72343bb34b3604",
-    ".config/hypr/custom/scripts/autostart.sh": "40f3716c38d0ebdec491df368e1094c62763484fe905f74149945f7a7dbe9b72",
+    ".config/hypr/custom/scripts/autostart.sh": "e378be37ee4e5af7908915345c1f476fea17bf4f23a1036aee515a2aa62fb2f5",
     ".config/hypr/custom/scripts/hb.sh": "e0f841a85cceed0425333d8946884b684edc76a13c35a152ef8ef41fb0206675",
     ".config/hypr/custom/scripts/reapply-shell-patches.py": "3aa5700fd1f55adc1cd8f22df5a09957eeb1401a51cbb1dea6594e4db403ede2",
     ".config/quickshell/end4-pC/GlobalStates.qml": "5fa32629ed71a95042df6e70d3c16bb932f1ccb6a065761da98c6cd4a9e7ad6f",
-    ".config/quickshell/end4-pC/modules/common/Config.qml": "1a325c742013757a97d5524986c5a1fb69460bee9978c8ec63d15536870d9253",
+    ".config/quickshell/end4-pC/modules/common/Config.qml": "58aeb5fc53e92c76fb4a0aa0936bef3526f038826c3aeaf50ffa571cd78aa6da",
     ".config/quickshell/end4-pC/modules/ii/background/Background.qml": "ce5f82ed8f0470f15566cc8f59d2e1f3da7c89cd75e4ee8ac0bbbfe350ea0f6b",
     ".config/quickshell/end4-pC/modules/ii/background/WallpaperEngineLayer.qml": "0a5ab54ec236b6a17cf58b3387f800ff68bbd71af9c625ff8840dca1cfae9263",
     ".config/quickshell/end4-pC/modules/ii/bar/ResourceGraph.qml": "e4dfaa71c6bf89faca9293669bde98a3378f3907d3f883b0c5d1fdc45a2b4cba",
@@ -81,8 +81,8 @@
     ".local/bin/linux-wallpaper-engine": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/linux-wallpaper-engine-ux": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/setup-apps": "7dacdaaa8bd9d2b6abb30c36769a396a8e7f50b32b562c91d8ac55994e445216",
-    ".local/bin/setup-features": "9724dd7d56e5ddef56e4b044f47d5596e3b39bcbb0df7de87e9d8bd1d3efbc8c",
-    ".local/bin/setup-profile": "64aef34357179dccc0349bb9da122c4fc90ff6830422ba041f59d678bcbd97da",
+    ".local/bin/setup-features": "7088a7e0d7952b5b71907cd10bc5afe4f2d186539312cab7b7c10feab93dc418",
+    ".local/bin/setup-profile": "e87a7e7da80929d119a08b14006416857ae4e6b961224a0831a33ba127e330ac",
     ".local/bin/switch-desktop": "2d1e83bdd546f919736fd2cadcfef4ce078dfc06b8f5fb6a9fb563f04db5b302",
     ".local/bin/system-update": "5f93a1ec2f4bae2e601d98a7dfc2a738f5ce0e3a1c4b454c9b629961815ed30b",
     ".local/bin/wallpaper-engine-ctl": "95e50df6c91a32b8ab58dccc3146cb3321e4dee2966b427141c7dba91dff2d58",
@@ -93,10 +93,9 @@
     ".local/share/applications/quick-start.desktop": "7a095a43f62a7165dc4b01e28deea66a24fae7a09799dd6caf1fd188f6043c49",
     ".local/share/custom-fixes/allowed_signers": "1bc55052b9f5850a21273aff66d29e2dae2de5da7ea2e52afa341a2ba4740077",
     ".local/share/custom-fixes/source.json": "82c8be64baad08c90ca512fbed1c60a84c291d84cc81b5a92c9bf48a7edc5cf1",
-    ".local/share/quick-start/index.html": "0fe7cea9cc787011748c9b3ba5d4271a6db48e00f398ee6665a34139bd24c265",
+    ".local/share/quick-start/index.html": "ee38dfebe14f9f3c28393e260990e480d27b720f0edc4e550670c928f37f3436",
     ".local/share/setup-profiles/apps.json": "9371280780f7d301ce719649acc884e8dc69438aed6ca05d30bc56cf53ce57f1",
-    ".local/share/setup-profiles/custom_01.json": "346b596632a33bdfb0517bb5d97190b9df627939026a01f118c5d79fc2c45e7b",
-    ".local/share/setup-profiles/default.json": "57bd6479b7f6310029cf24f26b2aeb6e781892bddb1d1fa32b3c80100b6b0f70",
+    ".local/share/setup-profiles/default.json": "4b05e507d6504bd38671b07ca8ae714d57eeb8aee6c5854b15a81a01bffdc97c",
     ".local/share/setup-profiles/icons/audacity.png": "1bf093a6ad379007cc5ef9689802487ae315e3bb1808488dda012d77037f502e",
     ".local/share/setup-profiles/icons/bitwarden.png": "c328c55900715d5f7c4c7a68652d1e961f873026aa7d57582bd19b9ad9d2e241",
     ".local/share/setup-profiles/icons/blender.png": "a2384a7a8a9eab094bb02c6ffaee562552d8d5dc00082196b4dfbdb0cb2d131e",
@@ -130,15 +129,12 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/quickshell/end4-pC/quick-start.qml",
-    ".config/quickshell/end4-pC/setup-wizard.qml",
-    ".local/bin/boot-loader",
-    ".local/share/quick-start/index.html"
+    ".config/hypr/custom/scripts/autostart.sh",
+    ".config/quickshell/end4-pC/modules/common/Config.qml",
+    ".local/bin/setup-features",
+    ".local/bin/setup-profile",
+    ".local/share/quick-start/index.html",
+    ".local/share/setup-profiles/default.json"
   ],
-  "test": false,
-  "upgrade": {
-    "title": "Boot menu choice",
-    "summary": "Adds a Startup section to the setup assistant (Drivers and updates) and the boot-loader command: install a fresh GRUB, systemd-boot or rEFInd, or start Arch Linux directly without a boot menu. Changing the boot menu asks for the administrator password; nothing changes until Apply is selected.",
-    "details": []
-  }
+  "test": false
 }

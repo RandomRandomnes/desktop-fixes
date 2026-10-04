@@ -1,5 +1,8 @@
 # Changelog
 
+## v2.1 (2026-10-04, fix)
+- Setup profiles no longer change the apps in the dock or the app grid, and never switch on Wallpaper Engine; Wallpaper Engine is off until it is enabled in Settings › Extras. Custom_01 moved to the project page as a download.
+
 ## v2 (2026-10-04, feature)
 - Boot menu choice in the setup assistant and the boot-loader command; Quick Start guide updated.
 

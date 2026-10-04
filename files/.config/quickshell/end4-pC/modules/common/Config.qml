@@ -820,7 +820,7 @@ Singleton {
             property JsonObject extras: JsonObject {
                 property bool windowsStyle: true      // every window floats + title bars (hyprbars) with close/maximize/minimize
                 property bool minimizeToDock: true    // minimize button hides to the dock; clicking the dock restores (fade)
-                property bool wallpaperEngine: true   // Wallpaper Engine as the desktop background (off = normal static wallpaper)
+                property bool wallpaperEngine: false  // Wallpaper Engine as the desktop background (off = normal static wallpaper); the user switches it on
                 property bool resourceGraphs: true    // bar resources: live CPU/GPU/RAM graphs + detailed popup (off = stock)
                 property bool appGrid: true           // Super menu: app grid under the workspaces
                 property bool powerMenuKde: true      // power menu: "Switch to KDE" instead of Hibernate

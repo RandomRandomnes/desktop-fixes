@@ -14,7 +14,8 @@ features read the config directly; this handles the parts outside the shell:
   steamTray        login only (custom/scripts/autostart.sh)
 Switching wallpaperEngine off also parks the app's own login entry (~/.config/autostart, which KDE runs) in
 ~/.local/state/setup-profiles/; switching it on puts it back.
-A missing key means on, so an old config keeps today's behaviour.
+A missing key means on, so an old config keeps today's behaviour; except wallpaperEngine, which is off unless the
+user switched it on (OFF_BY_DEFAULT).
 """
 import json
 import os
@@ -27,6 +28,7 @@ CONFIG = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.join(HOME, ".
 FEATURES_LUA = os.path.join(HOME, ".config", "hypr", "custom", "features.lua")
 FEATURES = ["windowsStyle", "minimizeToDock", "wallpaperEngine", "resourceGraphs", "appGrid",
             "powerMenuKde", "claudeCodeAi", "updatesScript", "steamTray"]
+OFF_BY_DEFAULT = {"wallpaperEngine"}
 HYPRBARS = "/usr/lib/libhyprbars.so"
 # The Wallpaper Engine app's own login entry (KDE runs it; Hyprland uses autostart.sh). Parked while the switch is off.
 WE_AUTOSTART = os.path.join(HOME, ".config", "autostart", "Linux Wallpaper Engine.desktop")
@@ -39,7 +41,7 @@ def current():
             extras = json.load(f).get("extras") or {}
     except (OSError, ValueError):
         extras = {}
-    return {k: extras.get(k, True) is not False for k in FEATURES}
+    return {k: (extras.get(k) is True) if k in OFF_BY_DEFAULT else (extras.get(k, True) is not False) for k in FEATURES}
 
 
 def previous():
@@ -47,9 +49,9 @@ def previous():
         with open(FEATURES_LUA) as f:
             text = f.read()
     except OSError:
-        return {k: True for k in FEATURES}
+        return {k: k not in OFF_BY_DEFAULT for k in FEATURES}
     found = dict(re.findall(r"^\s*(\w+)\s*=\s*(true|false)", text, re.M))
-    return {k: found.get(k, "true") == "true" for k in FEATURES}
+    return {k: found.get(k, "false" if k in OFF_BY_DEFAULT else "true") == "true" for k in FEATURES}
 
 
 def write_lua(flags):
