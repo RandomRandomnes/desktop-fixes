@@ -168,7 +168,15 @@ def set_wallpaper(path):
     if not os.path.isfile(path):
         path = DEFAULT_WALLPAPER
     if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE") and os.path.isfile(SWITCHWALL):
-        subprocess.Popen([SWITCHWALL, path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        # a new wallpaper image clears the accent color (switchwall.sh); a profile's accent is applied again after it
+        try:
+            accent = ((load_json(CONFIG).get("appearance") or {}).get("palette") or {}).get("accentColor") or ""
+        except (OSError, ValueError):
+            accent = ""
+        cmd = [SWITCHWALL, path]
+        if accent:
+            cmd = ["sh", "-c", '"$0" "$1"; "$0" --color "$2"', SWITCHWALL, path, accent]
+        subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
         if os.path.exists(PENDING):
             os.remove(PENDING)
     else:

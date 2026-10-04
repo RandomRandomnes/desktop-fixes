@@ -1,5 +1,8 @@
 # Changelog
 
+## v2.2 (2026-10-04, fix)
+- A setup profile's accent color is kept when its wallpaper is applied.
+
 ## v2.1 (2026-10-04, fix)
 - Setup profiles no longer change the apps in the dock or the app grid, and never switch on Wallpaper Engine; Wallpaper Engine is off until it is enabled in Settings › Extras. Custom_01 moved to the project page as a download.
 

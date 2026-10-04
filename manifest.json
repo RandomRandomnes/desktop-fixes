@@ -1,15 +1,15 @@
 {
   "format": "custom-fixes",
-  "version": 2.1,
-  "label": "2.1",
+  "version": 2.2,
+  "label": "2.2",
   "kind": "fix",
   "date": "2026-10-04",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Setup profiles no longer change the apps in the dock or the app grid, and never switch on Wallpaper Engine; Wallpaper Engine is off until it is enabled in Settings \u203a Extras. Custom_01 moved to the project page as a download."
+    "A setup profile's accent color is kept when its wallpaper is applied."
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "50ed556c129021fc793998af7883b8d02614c5361176929c29393f7aa1e564cc",
+  "payloadSha256": "216b1a83d42fcb0c8fcdc36cd22c5f9b70b13eb180908276d175653463ba820d",
   "files": {
     ".config/hypr/custom/env.lua": "9ad5c4f1e29959f9dcdfc96846e5f4526fcbcef61e3ac7bf4bb787cc94a8b1f0",
     ".config/hypr/custom/execs.lua": "e1840046232062e73741e9e82f61864d271fe13ed41449554df01a33d9956d98",
@@ -82,7 +82,7 @@
     ".local/bin/linux-wallpaper-engine-ux": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/setup-apps": "7dacdaaa8bd9d2b6abb30c36769a396a8e7f50b32b562c91d8ac55994e445216",
     ".local/bin/setup-features": "7088a7e0d7952b5b71907cd10bc5afe4f2d186539312cab7b7c10feab93dc418",
-    ".local/bin/setup-profile": "e87a7e7da80929d119a08b14006416857ae4e6b961224a0831a33ba127e330ac",
+    ".local/bin/setup-profile": "d69fb397efb64f93b084886ea495e894b74386a602016e2af4ef4f17f31c8a97",
     ".local/bin/switch-desktop": "2d1e83bdd546f919736fd2cadcfef4ce078dfc06b8f5fb6a9fb563f04db5b302",
     ".local/bin/system-update": "5f93a1ec2f4bae2e601d98a7dfc2a738f5ce0e3a1c4b454c9b629961815ed30b",
     ".local/bin/wallpaper-engine-ctl": "95e50df6c91a32b8ab58dccc3146cb3321e4dee2966b427141c7dba91dff2d58",
@@ -129,12 +129,7 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/hypr/custom/scripts/autostart.sh",
-    ".config/quickshell/end4-pC/modules/common/Config.qml",
-    ".local/bin/setup-features",
-    ".local/bin/setup-profile",
-    ".local/share/quick-start/index.html",
-    ".local/share/setup-profiles/default.json"
+    ".local/bin/setup-profile"
   ],
   "test": false
 }
