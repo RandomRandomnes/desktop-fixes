@@ -151,6 +151,41 @@ def cents(v):
     return round(float(v or 0) * 100)
 
 
+def vkey(v):
+    """Release, manifest, installed record or label -> (series, number). The label is authoritative: "2" -> (2, 0),
+    "1.3" -> (1, 30), "1.31" -> (1, 31), "1.104" -> (1, 104) (three digits once a series passes 1.99, so fixes never
+    spill into the next whole number). Records without a label fall back to the decimal "version"."""
+    if isinstance(v, dict):
+        lab = str(v.get("label") or "")
+        if not lab:
+            c = round(float(v.get("version") or 0) * 100)
+            return divmod(c, 100)
+        v = lab
+    v = str(v).removesuffix("-test")
+    whole, _, frac = v.partition(".")
+    if not whole.isdigit() or (frac and not frac.isdigit()):
+        return (0, 0)
+    n = int(frac) * 10 if len(frac) == 1 else int(frac or 0)
+    return (int(whole), n)
+
+
+def vfmt(key):
+    """(series, number) -> label: (1, 30) -> "1.3", (1, 31) -> "1.31", (1, 104) -> "1.104", (2, 0) -> "2"."""
+    series, n = key
+    if n == 0:
+        return str(series)
+    if n >= 100:
+        return f"{series}.{n}"
+    return f"{series}.{n // 10}" if n % 10 == 0 else f"{series}.{n:02d}"
+
+
+def vcompat(key):
+    """Decimal "version" for updaters that predate labels (they read it as a number): at most x.99, so a release
+    numbered x.100 or higher still counts as a bug fix there (it installs the new updater, which reads labels)."""
+    series, n = key
+    return round(series + min(n, 99) / 100, 2)
+
+
 def vlabel(m):
     return str(m.get("label") or m.get("version"))
 
@@ -165,17 +200,17 @@ def installed():
 
 def offers(src):
     """{'fix': entry|None, 'upgrade': entry|None} for this PC."""
-    cur = cents(installed()["version"])
-    major = cur // 100
+    cur = vkey(installed())
+    major = cur[0]
     rel = [r for r in release_index(src) if test_channel() or not r.get("test")]
-    fixes = [r for r in rel if cents(r["version"]) > cur and cents(r["version"]) // 100 == major]
-    higher = [r for r in rel if cents(r["version"]) // 100 > major]
-    fix = max(fixes, key=lambda r: cents(r["version"]), default=None)
+    fixes = [r for r in rel if vkey(r) > cur and vkey(r)[0] == major]
+    higher = [r for r in rel if vkey(r)[0] > major]
+    fix = max(fixes, key=vkey, default=None)
     upgrade = None
     if higher:
-        top_major = max(cents(r["version"]) // 100 for r in higher)
-        line = [r for r in higher if cents(r["version"]) // 100 == top_major]
-        newest = max(line, key=lambda r: cents(r["version"]))          # install the newest of that line
+        top_major = max(vkey(r)[0] for r in higher)
+        line = [r for r in higher if vkey(r)[0] == top_major]
+        newest = max(line, key=vkey)                                    # install the newest of that line
         intro = next((r for r in line if r.get("upgrade")), newest)    # the release that introduced it explains it
         upgrade = dict(newest, upgrade=intro.get("upgrade") or {}, major=top_major)
     return {"fix": fix, "upgrade": upgrade}

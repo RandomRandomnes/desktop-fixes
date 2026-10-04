@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.84 (2026-10-04, fix)
+- Release numbers no longer roll over into a new major version: after 1.94 the next fix is 1.104, and only a feature release starts version 2.
+
 ## v1.74 (2026-10-04, fix)
 - Applying a setup profile keeps the bug-fix update choice, display name, location, language, AI settings, folders and autostart programs.
 

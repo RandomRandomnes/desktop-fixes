@@ -1,15 +1,15 @@
 {
   "format": "custom-fixes",
-  "version": 1.74,
-  "label": "1.74",
+  "version": 1.84,
+  "label": "1.84",
   "kind": "fix",
   "date": "2026-10-04",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Applying a setup profile keeps the bug-fix update choice, display name, location, language, AI settings, folders and autostart programs."
+    "Release numbers no longer roll over into a new major version: after 1.94 the next fix is 1.104, and only a feature release starts version 2."
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "06adf7950871ab1af213cded42c73aab3efee83142bd6534be1d54e05cf4a591",
+  "payloadSha256": "d91f75e961486eded2b37f190d7da3c119cde1d7e854cf884b61ccb24dbba721",
   "files": {
     ".config/hypr/custom/env.lua": "9ad5c4f1e29959f9dcdfc96846e5f4526fcbcef61e3ac7bf4bb787cc94a8b1f0",
     ".config/hypr/custom/execs.lua": "e1840046232062e73741e9e82f61864d271fe13ed41449554df01a33d9956d98",
@@ -79,7 +79,7 @@
     ".config/quickshell/end4-pC/services/ai/ClaudeCodeApiStrategy.qml": "71a1f160c1365a9e6fb56b153f11ae5645f10579ebc175715fc142b16b007131",
     ".config/quickshell/end4-pC/setup-wizard.qml": "5d88f9c87f582a44a9fa107501f7c9677a53c43f1be80f64e75eaf2fc939298a",
     ".local/bin/boot-loader": "a421be2168e1d307fa8f29e199b87735cb4bb630f9ee51038f02783a8cf25934",
-    ".local/bin/custom-update": "19c7eae00428df2c7465621d83d499c5c45f31145dbec1fdabef24003d570804",
+    ".local/bin/custom-update": "944d5f4e57d384626d60ad477818f658db95b5795b7bb223508111665f77b8fc",
     ".local/bin/hypr-guard": "e3999dbc31ba6545ca95472ce86e526a73e5597378212a820845bcc441c1cb6a",
     ".local/bin/linux-wallpaper-engine": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/linux-wallpaper-engine-ux": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
@@ -132,7 +132,7 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".local/bin/setup-profile"
+    ".local/bin/custom-update"
   ],
   "test": false
 }
