@@ -203,7 +203,8 @@ def offers(src):
     cur = vkey(installed())
     major = cur[0]
     rel = [r for r in release_index(src) if test_channel() or not r.get("test")]
-    fixes = [r for r in rel if vkey(r) > cur and vkey(r)[0] == major]
+    skip = installed().get("skip")          # a fix the user undid: it and older ones are not offered again
+    fixes = [r for r in rel if vkey(r) > cur and vkey(r)[0] == major and not (skip and vkey(r) <= vkey(skip))]
     higher = [r for r in rel if vkey(r)[0] > major]
     fix = max(fixes, key=vkey, default=None)
     upgrade = None
@@ -400,9 +401,18 @@ def cmd_undo():
             shutil.copy2(src, os.path.join(HOME, rel))
             inst["files"].pop(rel, None)
             restored += 1
-    # files that were new in that release are left in place; versions before it are restored
-    save(INSTALLED, {"version": inst.get("previous", 0), "label": inst.get("previousLabel", ""), "files": inst["files"]})
-    print(f"Reverted version {inst.get('label') or inst['version']}: {restored} file(s) restored. It will be offered again with the next release.")
+    # files that were new in that release are left in place; versions before it are restored. The undone version is
+    # remembered so updates don't reinstall it; a newer release is offered as usual (and contains its changes too).
+    undone = inst.get("label") or str(inst["version"])
+    save(INSTALLED, {"version": inst.get("previous", 0), "label": inst.get("previousLabel", ""), "files": inst["files"],
+                     "skip": undone})
+    guard = os.path.join(HOME, ".local", "bin", "hypr-guard")
+    if restored and os.access(guard, os.X_OK):     # the restored files are the known-good state now; otherwise the
+        subprocess.run([guard, "snapshot", "--force"], capture_output=True)   # login check would put the fix back
+    if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+        subprocess.run(["hyprctl", "reload"], capture_output=True)
+    print(f"Reverted version {undone}: {restored} file(s) restored. Updates will not reinstall it; the next newer "
+          "release is offered as usual and includes its changes again.")
     return 0
 
 

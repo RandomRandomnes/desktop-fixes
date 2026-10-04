@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.94 (2026-10-04, fix)
+- Undo last now sticks: the undone fix is not reinstalled by the next update or by the login check; newer releases are offered as usual.
+
 ## v1.84 (2026-10-04, fix)
 - Release numbers no longer roll over into a new major version: after 1.94 the next fix is 1.104, and only a feature release starts version 2.
 
