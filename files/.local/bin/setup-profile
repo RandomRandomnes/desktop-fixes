@@ -53,6 +53,48 @@ PROTECTED = [("dock", "pinnedApps"), ("overview", "appGridShowAll"), ("overview"
              ("overview", "appGridHidden"), ("overview", "appGridOrder")]
 # Never switched on by a profile: Wallpaper Engine is enabled by the user in Settings › Extras.
 USER_ONLY_FEATURES = ["wallpaperEngine"]
+# Personal settings: never written by export, ignored when a profile file contains them (a shared file must not carry
+# someone's name, location, AI setup or folders, nor switch on the receiver's bug-fix updates). Dotted paths; a
+# section name covers the whole section.
+PERSONAL = [
+    "extras.customFixes", "extras.customFixesTest",            # update consent, asked in the setup wizard
+    "profile", "ai", "networking", "language",
+    "bar.weather.city", "bar.weather.enableGPS", "background.widgets.worldClock.timezones",
+    "hyprland.autostartApps",
+    "screenRecord.savePath", "screenSnip.savePath",
+    "wallpaperSelector.userPath", "wallpaperSelector.liveWallpapersPath", "wallpaperSelector.wallhavenApiKey",
+    "custom.iconsPath", "background.widgets.customImage.path", "background.widgets.sticker.path",
+    "background.thumbnailPath",
+]
+
+
+def drop_path(d, dotted):
+    """Remove a dotted key from nested dicts; empty parents are left for the caller to prune."""
+    *parents, last = dotted.split(".")
+    for k in parents:
+        d = d.get(k) if isinstance(d, dict) else None
+        if not isinstance(d, dict):
+            return
+    d.pop(last, None)
+
+
+def drop_personal(settings):
+    for dotted in PERSONAL:
+        drop_path(settings, dotted)
+    return settings
+
+
+def drop_home_paths(d):
+    """Export: leave out any other value that points into this home folder (it would not exist on another PC)."""
+    for k in list(d):
+        v = d[k]
+        if isinstance(v, dict):
+            drop_home_paths(v)
+            if not v:
+                del d[k]
+        elif isinstance(v, str) and (v.startswith(HOME + "/") or v.startswith("~/")):
+            del d[k]
+    return d
 
 
 def load_json(path):
@@ -198,7 +240,7 @@ def cmd_apply(name, yes):
         write_json(os.path.join(STATE, "backups", f"config-{stamp}.json"), cur)
     # stock-config.json stores home paths as ~/... (it ships to other PCs)
     base = from_home(load_json(STOCK)) if p.get("look", "stock") == "stock" else copy.deepcopy(cur)
-    merge(base, from_home(p.get("settings") or {}))
+    merge(base, from_home(drop_personal(copy.deepcopy(p.get("settings") or {}))))
     for k, v in (p.get("features") or {}).items():
         if k in FEATURES and k not in USER_ONLY_FEATURES:
             sect, key = FEATURES[k]
@@ -233,6 +275,8 @@ def cmd_export(out, name, description, author):
         (settings.get(sect) or {}).pop(key, None)
     for sect, key in PROTECTED:               # the dock and app grid are personal and never part of a profile
         (settings.get(sect) or {}).pop(key, None)
+    drop_personal(settings)
+    drop_home_paths(settings)
     for k in USER_ONLY_FEATURES:
         features[k] = False
     wallpaper = (cur.get("background") or {}).get("wallpaperPath") or ""
@@ -282,7 +326,7 @@ def main():
     elif cmd == "apply" and len(a) >= 2:
         cmd_apply(a[1], "--yes" in a)
     elif cmd == "export" and len(a) >= 2:
-        cmd_export(a[1], opt("--name", "My setup"), opt("--description"), opt("--author", os.environ.get("USER", "")))
+        cmd_export(a[1], opt("--name", "My setup"), opt("--description"), opt("--author", ""))
     elif cmd == "apps" and len(a) >= 2:
         print("\n".join(read_profile(resolve(a[1])).get("apps") or []))
     elif cmd == "first-login":

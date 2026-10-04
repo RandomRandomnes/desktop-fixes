@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.64 (2026-10-04, fix)
+- Share my setup no longer writes personal settings (name, picture, location, AI settings, folders, language, autostart programs, the update choice) or the login name into the profile file, and applying a profile ignores such settings.
+
 ## v1.54 (2026-10-04, minor)
 - Changing colors or light/dark mode no longer produces "Local System Message Service" notifications full of color codes.
 
