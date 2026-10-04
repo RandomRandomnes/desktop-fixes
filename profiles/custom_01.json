@@ -91,11 +91,6 @@
                     "y": 0
                 },
                 "worldClock": {
-                    "timezones": [
-                        "Asia/Tokyo",
-                        "Europe/London",
-                        "America/New_York"
-                    ],
                     "x": 2268,
                     "y": 588,
                     "z": 7
@@ -157,26 +152,12 @@
             "enable": true,
             "showMedia": false
         },
-        "hyprland": {
-            "autostartApps": {
-                "apps": [
-                    {
-                        "cmd": "",
-                        "delay": 0,
-                        "workspace": 1
-                    }
-                ]
-            }
-        },
         "interactions": {
             "scrolling": {
                 "fasterTouchpadScroll": false,
                 "mouseScrollFactor": 120,
                 "touchpadScrollFactor": 450
             }
-        },
-        "language": {
-            "ui": "en_US"
         },
         "overview": {
             "scale": 0.19
