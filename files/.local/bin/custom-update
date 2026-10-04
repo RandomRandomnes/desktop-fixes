@@ -311,43 +311,61 @@ def install(src, label, yes, what):
         print("The download is corrupted (checksum mismatch); nothing was installed.")
         return 1
 
+    # check the whole release before changing anything: every listed file present with the right checksum
+    contents, problems = {}, []
+    try:
+        with tarfile.open(fileobj=io.BytesIO(payload), mode="r:gz") as tar:
+            for rel, digest in m["files"].items():
+                if rel.startswith("/") or ".." in rel.split("/"):
+                    continue
+                try:
+                    member = tar.getmember(rel)
+                    data = tar.extractfile(member).read()
+                except (KeyError, AttributeError):
+                    problems.append(f"{rel}: missing from the download")
+                    continue
+                if hashlib.sha256(data).hexdigest() != digest:
+                    problems.append(f"{rel}: checksum mismatch")
+                    continue
+                contents[rel] = (data, member.mode & 0o777)
+    except (tarfile.TarError, OSError, EOFError) as e:
+        problems.append(f"the download can't be read ({e})")
+    if problems:
+        print(f"Version {vlabel(m)} is incomplete or damaged; nothing was installed:")
+        for p in problems[:10]:
+            print(f"  {p}")
+        return 1
+
     backup = os.path.join(STATE, "backups", f"v{vlabel(m)}")
     shutil.rmtree(backup, ignore_errors=True)
     changed, kept, record = [], [], dict(inst["files"])
     base_files = None if all(r in inst["files"] for r in m["files"]) else baseline(src)
-    with tarfile.open(fileobj=io.BytesIO(payload), mode="r:gz") as tar:
-        for rel, digest in m["files"].items():
-            if rel.startswith("/") or ".." in rel.split("/"):
+    for rel, (data, mode) in contents.items():
+        digest = m["files"][rel]
+        dst = os.path.join(HOME, rel)
+        if os.path.exists(dst):
+            cur = sha256(dst)
+            if cur == digest:
+                record[rel] = digest
                 continue
-            dst = os.path.join(HOME, rel)
-            member = tar.getmember(rel)
-            data = tar.extractfile(member).read()
-            if hashlib.sha256(data).hexdigest() != digest:
-                print(f"skipped {rel}: checksum mismatch")
+            edited = (cur != inst["files"][rel]) if rel in inst["files"] else \
+                (base_files is not None and cur != base_files.get(rel))   # vs. how it came with the install
+            if edited:
+                # changed by the user (since the last fix, or since installation): keep theirs, put ours next to it
+                with open(dst + ".fixes-new", "wb") as f:
+                    f.write(data)
+                kept.append(rel)
                 continue
-            if os.path.exists(dst):
-                cur = sha256(dst)
-                if cur == digest:
-                    record[rel] = digest
-                    continue
-                edited = (cur != inst["files"][rel]) if rel in inst["files"] else \
-                    (base_files is not None and cur != base_files.get(rel))   # vs. how it came with the install
-                if edited:
-                    # changed by the user (since the last fix, or since installation): keep theirs, put ours next to it
-                    with open(dst + ".fixes-new", "wb") as f:
-                        f.write(data)
-                    kept.append(rel)
-                    continue
-                os.makedirs(os.path.dirname(os.path.join(backup, rel)), exist_ok=True)
-                shutil.copy2(dst, os.path.join(backup, rel))
-            os.makedirs(os.path.dirname(dst), exist_ok=True)
-            tmp = dst + ".fixes-tmp"
-            with open(tmp, "wb") as f:
-                f.write(data)
-            os.chmod(tmp, member.mode & 0o777)
-            os.replace(tmp, dst)
-            record[rel] = digest
-            changed.append(rel)
+            os.makedirs(os.path.dirname(os.path.join(backup, rel)), exist_ok=True)
+            shutil.copy2(dst, os.path.join(backup, rel))
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        tmp = dst + ".fixes-tmp"
+        with open(tmp, "wb") as f:
+            f.write(data)
+        os.chmod(tmp, mode)
+        os.replace(tmp, dst)
+        record[rel] = digest
+        changed.append(rel)
     save(INSTALLED, {"version": m["version"], "label": vlabel(m), "previous": inst["version"],
                      "previousLabel": inst.get("label") or str(inst["version"]), "date": m.get("date", ""),
                      "files": record, "changed": changed, "installedAt": datetime.datetime.now().isoformat(timespec="seconds")})

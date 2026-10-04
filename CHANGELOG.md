@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.114 (2026-10-04, fix)
+- A damaged or incomplete update is now rejected as a whole before any file is changed, instead of being half installed.
+
 ## v1.104 (2026-10-04, fix)
 - Updates no longer overwrite files you edited yourself, including files that came with the installation: your version is kept and the new one is saved next to it as .fixes-new.
 

@@ -1,15 +1,15 @@
 {
   "format": "custom-fixes",
   "version": 1.99,
-  "label": "1.104",
+  "label": "1.114",
   "kind": "fix",
   "date": "2026-10-04",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Updates no longer overwrite files you edited yourself, including files that came with the installation: your version is kept and the new one is saved next to it as .fixes-new."
+    "A damaged or incomplete update is now rejected as a whole before any file is changed, instead of being half installed."
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "842788423b548b0642423f0ddf2059c517bdfd4bd12dffad1180636e62f012fc",
+  "payloadSha256": "9291d2252ca39285ac961f7e47232ac34b0aae7d56d737b458c6fadf2f038d0d",
   "files": {
     ".config/hypr/custom/env.lua": "9ad5c4f1e29959f9dcdfc96846e5f4526fcbcef61e3ac7bf4bb787cc94a8b1f0",
     ".config/hypr/custom/execs.lua": "e1840046232062e73741e9e82f61864d271fe13ed41449554df01a33d9956d98",
@@ -79,7 +79,7 @@
     ".config/quickshell/end4-pC/services/ai/ClaudeCodeApiStrategy.qml": "71a1f160c1365a9e6fb56b153f11ae5645f10579ebc175715fc142b16b007131",
     ".config/quickshell/end4-pC/setup-wizard.qml": "5d88f9c87f582a44a9fa107501f7c9677a53c43f1be80f64e75eaf2fc939298a",
     ".local/bin/boot-loader": "a421be2168e1d307fa8f29e199b87735cb4bb630f9ee51038f02783a8cf25934",
-    ".local/bin/custom-update": "0b0a79c59ee5e5044711307d1d2fb5a9973d3a41a9cbbe7d0d1af4fe2351031d",
+    ".local/bin/custom-update": "22d7320ff0d6d946fe702a3e7077504d283f1d917bae6143d075f2ac96beb637",
     ".local/bin/hypr-guard": "e3999dbc31ba6545ca95472ce86e526a73e5597378212a820845bcc441c1cb6a",
     ".local/bin/linux-wallpaper-engine": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/linux-wallpaper-engine-ux": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
