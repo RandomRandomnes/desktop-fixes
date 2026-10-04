@@ -1,0 +1,36 @@
+#!/bin/bash
+# Switch between Hyprland and KDE Plasma.
+# Writes the next session to ~/.config/desktop-session, then logs out.
+# tty1 autologin + ~/.bash_profile then starts the chosen session.
+
+state=~/.config/desktop-session
+
+if [ -n "$1" ]; then
+    target="$1"
+elif [ "$XDG_CURRENT_DESKTOP" = "KDE" ]; then
+    target=hyprland
+else
+    target=plasma
+fi
+
+case "$target" in
+    plasma|hyprland) ;;
+    *) echo "usage: switch-desktop [plasma|hyprland]" >&2; exit 1 ;;
+esac
+
+echo "$target" > "$state"
+
+if [ "$XDG_CURRENT_DESKTOP" = "KDE" ]; then
+    qdbus6 org.kde.Shutdown /Shutdown logout
+else
+    # Close the wallpaper app first: Hyprland segfaults while exiting, and the app then aborts
+    # (SIGILL) without a compositor, which DrKonqi reports in the next session. SIGTERM exits it
+    # cleanly but leaves its renderer running, so stop both and give them up to 5s.
+    pkill -TERM -f 'linux-wallpaper-engine-ux/app.asar'
+    pkill -TERM -x linux-wallpaper
+    for _ in $(seq 10); do
+        pgrep -f 'linux-wallpaper-engine-ux/app.asar|linux-wallpaperengine --' > /dev/null || break
+        sleep 0.5
+    done
+    pkill -i Hyprland
+fi

@@ -1,0 +1,284 @@
+{
+    "format": "end4-setup-profile",
+    "version": 1,
+    "name": "Custom_01",
+    "description": "Extended setup with a Wallpaper Engine background, live system graphs, the KDE switch, Claude Code, a customized taskbar, dock and desktop widgets.",
+    "author": "RandomRandomnes",
+    "look": "stock",
+    "features": {
+        "windowsStyle": true,
+        "minimizeToDock": true,
+        "wallpaperEngine": true,
+        "resourceGraphs": true,
+        "appGrid": true,
+        "powerMenuKde": true,
+        "claudeCodeAi": true,
+        "updatesScript": true,
+        "steamTray": true,
+        "wallpaperEngineCard": true,
+        "deviceBatteries": true,
+        "desktopSwitch": true
+    },
+    "settings": {
+        "appearance": {
+            "palette": {
+                "accentColor": "#DCE8ED",
+                "type": "scheme-neutral"
+            },
+            "transparency": {
+                "automatic": false,
+                "enable": true
+            }
+        },
+        "apps": {
+            "taskManager": "missioncenter"
+        },
+        "background": {
+            "parallax": {
+                "enableSidebar": false,
+                "enableWorkspace": false,
+                "workspaceZoom": 1.07
+            },
+            "wallpaperAnimation": "stripes",
+            "widgets": {
+                "calendar": {
+                    "x": 2268,
+                    "y": 324,
+                    "z": 8
+                },
+                "clock": {
+                    "cookie": {
+                        "hourHandStyle": "classic"
+                    },
+                    "enable": false,
+                    "placementStrategy": "free",
+                    "x": 108,
+                    "y": 216
+                },
+                "media": {
+                    "x": 816,
+                    "y": 60
+                },
+                "notes": {
+                    "x": 2268,
+                    "y": 60,
+                    "z": 2
+                },
+                "resources": {
+                    "x": 1320,
+                    "y": 60
+                },
+                "timers": {
+                    "x": 12,
+                    "y": 48
+                },
+                "todo": {
+                    "x": 2268,
+                    "y": 852
+                },
+                "userCard": {
+                    "x": 1404,
+                    "y": 0
+                },
+                "visualizer": {
+                    "ringSize": 373,
+                    "style": "ring",
+                    "x": 2184,
+                    "y": 1056
+                },
+                "weather": {
+                    "x": 732,
+                    "y": 0
+                },
+                "worldClock": {
+                    "timezones": [
+                        "America/Detroit",
+                        "Asia/Tokyo",
+                        "Europe/London",
+                        "America/New_York"
+                    ],
+                    "x": 2268,
+                    "y": 588,
+                    "z": 7
+                }
+            }
+        },
+        "bar": {
+            "borderless": "false",
+            "cornerStyle": 3,
+            "frameThickness": 5,
+            "groupColor": "layer0",
+            "layouts": {
+                "leftLayout": [
+                    "launcherButton",
+                    "workspaces",
+                    "activeWindow",
+                    "networkSpeed",
+                    "media",
+                    "visualizer"
+                ],
+                "rightLayout": [
+                    "sysTray",
+                    "updatesCount",
+                    "weatherBar",
+                    "resources",
+                    "utilButtons",
+                    "systemIcons",
+                    "powerButton"
+                ]
+            },
+            "media": {
+                "preferredPlayer": "spotify"
+            },
+            "resources": {
+                "alwaysShowCpuTemp": true,
+                "alwaysShowDisk": true,
+                "alwaysShowGpu": true,
+                "alwaysShowSwap": true
+            },
+            "utilButtons": {
+                "showColorPicker": false,
+                "showDarkModeToggle": true,
+                "showKeyboardToggle": true,
+                "showMicToggle": true,
+                "showPerformanceProfileToggle": true
+            },
+            "workspaces": {
+                "alwaysShowNumbers": false,
+                "showAppIcons": true
+            }
+        },
+        "conflictKiller": {
+            "autoKillTrays": true
+        },
+        "custom": {
+            "distroIcon": "spark"
+        },
+        "dock": {
+            "enable": true,
+            "pinnedApps": [
+                "firefox",
+                "spotify",
+                "steam",
+                "discord",
+                "org.kde.dolphin",
+                "kitty",
+                "md.obsidian.obsidian"
+            ],
+            "showMedia": false
+        },
+        "hyprland": {
+            "autostartApps": {
+                "apps": [
+                    {
+                        "cmd": "",
+                        "delay": 0,
+                        "workspace": 1
+                    }
+                ]
+            }
+        },
+        "interactions": {
+            "scrolling": {
+                "fasterTouchpadScroll": false,
+                "mouseScrollFactor": 120,
+                "touchpadScrollFactor": 450
+            }
+        },
+        "language": {
+            "ui": "en_US"
+        },
+        "overview": {
+            "appGridApps": [
+                "firefox",
+                "steam",
+                "spotify",
+                "md.obsidian.Obsidian",
+                "kitty",
+                "discord",
+                "dolphin",
+                "mpv",
+                "com.anthropic.Claude",
+                "Wallpaper Engine",
+                "openrgb",
+                "io.missioncenter.MissionCenter",
+                "ascendara",
+                "gvim",
+                "solaar",
+                "linux-wallpaper-engine-ux",
+                "btop",
+                "Persona 5 Royal",
+                "Persona 4 Golden",
+                "rsi launcher.exe",
+                "THE FINALS",
+                "ARK Survival Ascended",
+                "Persona 3 Reload",
+                "The Witcher 3 Wild Hunt  Remastered",
+                "Dune Awakening",
+                "Project Zomboid"
+            ],
+            "appGridHidden": [],
+            "appGridOrder": [],
+            "appGridShowAll": false,
+            "scale": 0.19
+        },
+        "resources": {
+            "updateInterval": 1000
+        },
+        "sidebar": {
+            "cornerOpen": {
+                "bottomLeftAction": "overviewOpen"
+            },
+            "media": {
+                "artColors": true
+            },
+            "mediaPlayer": true,
+            "quickToggles": {
+                "android": {
+                    "toggles": [
+                        {
+                            "size": 2,
+                            "type": "bluetooth"
+                        },
+                        {
+                            "size": 1,
+                            "type": "idleInhibitor"
+                        },
+                        {
+                            "size": 1,
+                            "type": "mic"
+                        },
+                        {
+                            "size": 2,
+                            "type": "audio"
+                        },
+                        {
+                            "size": 2,
+                            "type": "nightLight"
+                        },
+                        {
+                            "size": 1,
+                            "type": "network"
+                        }
+                    ]
+                },
+                "style": "classic"
+            }
+        },
+        "time": {
+            "secondPrecision": true
+        }
+    },
+    "wallpaper": "~/Pictures/Wallpapers/wallhaven-wejm7r.jpg",
+    "apps": [
+        "discord",
+        "steam",
+        "mangohud",
+        "protonup-qt",
+        "spotify",
+        "missioncenter",
+        "btop",
+        "openrgb",
+        "ollama"
+    ]
+}

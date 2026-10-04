@@ -1,0 +1,64 @@
+#!/bin/bash
+# Run by the update button in the Hyprland top bar (UpdatesCount.qml, inside kitty) and by the KDE panel
+# widget (~/.local/share/plasma/plasmoids/org.kde.plasma.systemupdate, inside Konsole).
+# 1) system packages via yay  2) end4-pC shell via hypr-guard (pull + reapply customizations + verify)
+# Step 2 is skipped when Quickshell isn't running (e.g. in Plasma): hypr-guard's verify needs the live shell,
+# and would otherwise roll back and relaunch Quickshell inside KDE. It runs next time from Hyprland.
+# Unattended apart from the sudo password at the start. The window closes by itself on success
+# and stays open on failure.
+hypr_before=$(pacman -Q hyprland 2>/dev/null)
+kernel_before=$(pacman -Q linux 2>/dev/null)
+plasma_before=$(pacman -Q plasma-workspace 2>/dev/null)
+pgrep -f '^qs -c end4-pC$' >/dev/null && in_hypr=1 || in_hypr=0
+
+echo -e "\e[1m==> System packages\e[0m"
+# --noconfirm: accept pacman's default answers. --answer*: skip yay's clean/diff/edit review menus.
+# --sudoloop: keep sudo alive through long AUR builds so the password is only asked once.
+yay -Syu --combinedupgrade=false --noconfirm --sudoloop \
+    --answerclean None --answerdiff None --answeredit None --removemake
+yay_rc=$?
+
+echo
+echo -e "\e[1m==> Desktop shell and customizations\e[0m"
+if [ $in_hypr -eq 1 ]; then
+    "$HOME/.local/bin/hypr-guard" update --no-notify
+    guard_rc=$?
+else
+    echo "Skipped: the Hyprland shell is not running. It is updated the next time the update runs in Hyprland."
+    guard_rc=-1
+fi
+
+# 3) custom bug fixes (only when enabled; see ~/.local/bin/custom-update)
+fixes_rc=0
+if grep -q '"customFixes": *true' "$HOME/.config/illogical-impulse/config.json" 2>/dev/null; then
+    echo
+    echo -e "\e[1m==> Custom bug fixes\e[0m"
+    "$HOME/.local/bin/custom-update" apply --yes
+    fixes_rc=$?
+fi
+
+msgs=()
+[ $yay_rc -eq 0 ] && msgs+=("System packages: updated.") || msgs+=("System packages: update failed (exit code $yay_rc). See the output above.")
+if [ $guard_rc -eq -1 ]; then :
+elif [ $guard_rc -eq 0 ]; then msgs+=("Desktop shell: up to date, customizations intact.")
+else msgs+=("Desktop shell: needs attention. Open Settings › Update › Run health check.")
+fi
+[ $fixes_rc -ne 0 ] && msgs+=("Custom fixes: installation failed (see the output above).")
+[ "$hypr_before" != "$(pacman -Q hyprland 2>/dev/null)" ] && [ $in_hypr -eq 1 ] && msgs+=("Hyprland was updated: log out and log in again to complete the update.")
+[ "$plasma_before" != "$(pacman -Q plasma-workspace 2>/dev/null)" ] && [ $in_hypr -eq 0 ] && msgs+=("Plasma was updated: log out and log in again to complete the update.")
+[ "$kernel_before" != "$(pacman -Q linux 2>/dev/null)" ] && msgs+=("The kernel was updated: restart the computer when convenient.")
+
+echo
+echo -e "\e[1m==> Summary\e[0m"
+printf '%s\n' "${msgs[@]}"
+echo
+
+if [ $yay_rc -eq 0 ] && [ $guard_rc -le 0 ] && [ $fixes_rc -eq 0 ]; then
+    notify-send -a "System update" "Update finished" "$(printf '%s\n' "${msgs[@]}")"
+    # A timed-out `read -t` returns 142 (SIGALRM). Exit 0 explicitly, or kitty reports it as a failure.
+    read -t 10 -n 1 -s -p "Closing in 10s. Press any key to keep this window open." && read -r -p $'\nPress Enter to close.'
+    exit 0
+else
+    notify-send -a "System update" -u critical "Update needs attention" "$(printf '%s\n' "${msgs[@]}")"
+    read -r -p "Press Enter to close."
+fi

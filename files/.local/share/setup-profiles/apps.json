@@ -1,0 +1,429 @@
+{
+    "format": "end4-app-catalog",
+    "version": 1,
+    "comment": "Apps offered by the first-time setup wizard and listed in setup profiles (\"apps\": [ids]). Installed by ~/.local/bin/setup-apps. kind: pacman | aur | flatpak. iconFile: the app's own icon (official icons from Flathub's app listings, btop from its package, Ollama from ollama.com, MangoHud from its GitHub repo data/), relative to this folder; apps without one use the Material symbol in \"icon\".",
+    "groups": [
+        {
+            "id": "internet",
+            "name": "Internet and chat"
+        },
+        {
+            "id": "games",
+            "name": "Gaming"
+        },
+        {
+            "id": "media",
+            "name": "Music and video"
+        },
+        {
+            "id": "work",
+            "name": "Office and creative"
+        },
+        {
+            "id": "tools",
+            "name": "Tools"
+        }
+    ],
+    "packs": [
+        {
+            "id": "gaming-pack",
+            "name": "Gaming pack",
+            "icon": "sports_esports",
+            "description": "Steam, MangoHud (FPS overlay), GameMode and ProtonUp-Qt (newer Proton versions) in one go",
+            "apps": [
+                "steam",
+                "mangohud",
+                "gamemode",
+                "protonup-qt"
+            ]
+        },
+        {
+            "id": "productivity-pack",
+            "name": "Productivity pack",
+            "icon": "work",
+            "description": "LibreOffice (documents, spreadsheets, slides), Thunderbird (email and calendar), Obsidian (notes), Code - OSS (code editor) and KeePassXC (passwords)",
+            "apps": [
+                "libreoffice",
+                "thunderbird",
+                "obsidian",
+                "vscode",
+                "keepassxc"
+            ]
+        }
+    ],
+    "apps": [
+        {
+            "id": "chromium",
+            "group": "internet",
+            "name": "Chromium",
+            "icon": "public",
+            "description": "Open-source web browser (Firefox is already installed)",
+            "kind": "pacman",
+            "packages": [
+                "chromium"
+            ],
+            "iconFile": "icons/chromium.png"
+        },
+        {
+            "id": "discord",
+            "group": "internet",
+            "name": "Discord",
+            "icon": "forum",
+            "description": "Voice, video and text chat",
+            "kind": "pacman",
+            "packages": [
+                "discord"
+            ],
+            "iconFile": "icons/discord.png"
+        },
+        {
+            "id": "telegram",
+            "group": "internet",
+            "name": "Telegram",
+            "icon": "send",
+            "description": "Messenger",
+            "kind": "pacman",
+            "packages": [
+                "telegram-desktop"
+            ],
+            "iconFile": "icons/telegram.png"
+        },
+        {
+            "id": "signal",
+            "group": "internet",
+            "name": "Signal",
+            "icon": "chat",
+            "description": "Private messenger",
+            "kind": "pacman",
+            "packages": [
+                "signal-desktop"
+            ],
+            "iconFile": "icons/signal.png"
+        },
+        {
+            "id": "thunderbird",
+            "group": "internet",
+            "name": "Thunderbird",
+            "icon": "mail",
+            "description": "Email and calendar",
+            "kind": "pacman",
+            "packages": [
+                "thunderbird"
+            ],
+            "iconFile": "icons/thunderbird.png"
+        },
+        {
+            "id": "qbittorrent",
+            "group": "internet",
+            "name": "qBittorrent",
+            "icon": "download",
+            "description": "Torrent client",
+            "kind": "pacman",
+            "packages": [
+                "qbittorrent"
+            ],
+            "iconFile": "icons/qbittorrent.png"
+        },
+        {
+            "id": "steam",
+            "group": "games",
+            "name": "Steam",
+            "icon": "sports_esports",
+            "description": "Valve's game store and launcher (also needed for Wallpaper Engine)",
+            "kind": "pacman",
+            "packages": [
+                "steam"
+            ],
+            "iconFile": "icons/steam.png"
+        },
+        {
+            "id": "lutris",
+            "group": "games",
+            "name": "Lutris",
+            "icon": "stadia_controller",
+            "description": "Games from other stores and emulators",
+            "kind": "pacman",
+            "packages": [
+                "lutris"
+            ],
+            "iconFile": "icons/lutris.png"
+        },
+        {
+            "id": "heroic",
+            "group": "games",
+            "name": "Heroic",
+            "icon": "storefront",
+            "description": "Epic Games, GOG and Amazon games",
+            "kind": "aur",
+            "packages": [
+                "heroic-games-launcher-bin"
+            ],
+            "iconFile": "icons/heroic.png"
+        },
+        {
+            "id": "prismlauncher",
+            "group": "games",
+            "name": "Prism Launcher",
+            "icon": "deployed_code",
+            "description": "Minecraft launcher",
+            "kind": "pacman",
+            "packages": [
+                "prismlauncher"
+            ],
+            "iconFile": "icons/prismlauncher.png"
+        },
+        {
+            "id": "mangohud",
+            "group": "games",
+            "name": "MangoHud",
+            "icon": "speed",
+            "description": "FPS and temperature overlay in games",
+            "kind": "pacman",
+            "packages": [
+                "mangohud",
+                "lib32-mangohud"
+            ],
+            "iconFile": "icons/mangohud.svg"
+        },
+        {
+            "id": "gamemode",
+            "group": "games",
+            "name": "GameMode",
+            "icon": "bolt",
+            "description": "Boosts performance while a game runs",
+            "kind": "pacman",
+            "packages": [
+                "gamemode",
+                "lib32-gamemode"
+            ]
+        },
+        {
+            "id": "protonup-qt",
+            "group": "games",
+            "name": "ProtonUp-Qt",
+            "icon": "upgrade",
+            "description": "Install newer Proton/Wine versions for Steam and Lutris",
+            "kind": "flatpak",
+            "packages": [
+                "net.davidotek.pupgui2"
+            ],
+            "iconFile": "icons/protonup-qt.png"
+        },
+        {
+            "id": "spotify",
+            "group": "media",
+            "name": "Spotify",
+            "icon": "music_note",
+            "description": "Music streaming",
+            "kind": "pacman",
+            "packages": [
+                "spotify-launcher"
+            ],
+            "iconFile": "icons/spotify.png"
+        },
+        {
+            "id": "vlc",
+            "group": "media",
+            "name": "VLC",
+            "icon": "play_circle",
+            "description": "Plays almost any video or audio file",
+            "kind": "pacman",
+            "packages": [
+                "vlc"
+            ],
+            "iconFile": "icons/vlc.png"
+        },
+        {
+            "id": "obs",
+            "group": "media",
+            "name": "OBS Studio",
+            "icon": "videocam",
+            "description": "Screen recording and streaming",
+            "kind": "pacman",
+            "packages": [
+                "obs-studio"
+            ],
+            "iconFile": "icons/obs.png"
+        },
+        {
+            "id": "kdenlive",
+            "group": "media",
+            "name": "Kdenlive",
+            "icon": "movie_edit",
+            "description": "Video editor",
+            "kind": "pacman",
+            "packages": [
+                "kdenlive"
+            ],
+            "iconFile": "icons/kdenlive.png"
+        },
+        {
+            "id": "audacity",
+            "group": "media",
+            "name": "Audacity",
+            "icon": "graphic_eq",
+            "description": "Audio recording and editing",
+            "kind": "pacman",
+            "packages": [
+                "audacity"
+            ],
+            "iconFile": "icons/audacity.png"
+        },
+        {
+            "id": "libreoffice",
+            "group": "work",
+            "name": "LibreOffice",
+            "icon": "description",
+            "description": "Documents, spreadsheets and presentations",
+            "kind": "pacman",
+            "packages": [
+                "libreoffice-fresh"
+            ],
+            "iconFile": "icons/libreoffice.png"
+        },
+        {
+            "id": "obsidian",
+            "group": "work",
+            "name": "Obsidian",
+            "icon": "edit_note",
+            "description": "Notes",
+            "kind": "pacman",
+            "packages": [
+                "obsidian"
+            ],
+            "iconFile": "icons/obsidian.png"
+        },
+        {
+            "id": "vscode",
+            "group": "work",
+            "name": "Code - OSS",
+            "icon": "code",
+            "description": "Code editor (open-source VS Code)",
+            "kind": "pacman",
+            "packages": [
+                "code"
+            ],
+            "iconFile": "icons/vscode.png"
+        },
+        {
+            "id": "gimp",
+            "group": "work",
+            "name": "GIMP",
+            "icon": "brush",
+            "description": "Photo editing",
+            "kind": "pacman",
+            "packages": [
+                "gimp"
+            ],
+            "iconFile": "icons/gimp.png"
+        },
+        {
+            "id": "krita",
+            "group": "work",
+            "name": "Krita",
+            "icon": "draw",
+            "description": "Digital painting",
+            "kind": "pacman",
+            "packages": [
+                "krita"
+            ],
+            "iconFile": "icons/krita.png"
+        },
+        {
+            "id": "inkscape",
+            "group": "work",
+            "name": "Inkscape",
+            "icon": "shape_line",
+            "description": "Vector graphics",
+            "kind": "pacman",
+            "packages": [
+                "inkscape"
+            ],
+            "iconFile": "icons/inkscape.png"
+        },
+        {
+            "id": "blender",
+            "group": "work",
+            "name": "Blender",
+            "icon": "view_in_ar",
+            "description": "3D modelling and animation",
+            "kind": "pacman",
+            "packages": [
+                "blender"
+            ],
+            "iconFile": "icons/blender.png"
+        },
+        {
+            "id": "missioncenter",
+            "group": "tools",
+            "name": "Mission Center",
+            "icon": "monitoring",
+            "description": "Task manager: CPU, memory, disk and GPU use per app",
+            "kind": "pacman",
+            "packages": [
+                "mission-center"
+            ],
+            "iconFile": "icons/missioncenter.png"
+        },
+        {
+            "id": "btop",
+            "group": "tools",
+            "name": "btop",
+            "icon": "terminal",
+            "description": "System monitor in the terminal",
+            "kind": "pacman",
+            "packages": [
+                "btop"
+            ],
+            "iconFile": "icons/btop.svg"
+        },
+        {
+            "id": "keepassxc",
+            "group": "tools",
+            "name": "KeePassXC",
+            "icon": "key",
+            "description": "Password manager (offline)",
+            "kind": "pacman",
+            "packages": [
+                "keepassxc"
+            ],
+            "iconFile": "icons/keepassxc.png"
+        },
+        {
+            "id": "bitwarden",
+            "group": "tools",
+            "name": "Bitwarden",
+            "icon": "lock",
+            "description": "Password manager (synced)",
+            "kind": "pacman",
+            "packages": [
+                "bitwarden"
+            ],
+            "iconFile": "icons/bitwarden.png"
+        },
+        {
+            "id": "openrgb",
+            "group": "tools",
+            "name": "OpenRGB",
+            "icon": "lightbulb",
+            "description": "Control RGB lighting",
+            "kind": "pacman",
+            "packages": [
+                "openrgb"
+            ],
+            "iconFile": "icons/openrgb.png"
+        },
+        {
+            "id": "ollama",
+            "group": "tools",
+            "name": "Ollama",
+            "icon": "smart_toy",
+            "description": "Run AI models locally (for the AI sidebar)",
+            "kind": "pacman",
+            "packages": [
+                "ollama"
+            ],
+            "iconFile": "icons/ollama.png"
+        }
+    ]
+}

@@ -1,0 +1,268 @@
+#!/usr/bin/env python3
+"""Setup profiles: share a whole desktop setup as one JSON file (2026-10-03, ours).
+
+  setup-profile list                        built-in profiles (~/.local/share/setup-profiles)
+  setup-profile show <profile>              what a profile changes
+  setup-profile apply <profile> [--yes]     apply a built-in name ("default", "custom_01") or a .json file path
+  setup-profile export <file> [--name N] [--description D] [--author A]
+                                            write the current setup as a profile (to share)
+  setup-profile apps <profile>              app ids the profile lists (installed by setup-apps / the setup wizard)
+  setup-profile first-login                 (autostart) finish steps that need a running desktop
+
+A profile:
+  {
+    "format": "end4-setup-profile", "version": 1,
+    "name": "...", "description": "...", "author": "...",
+    "look": "stock",              # start from the stock illogical-impulse settings ("current" = keep this PC's)
+    "features": { ... },          # on/off switches, the same as Settings › Extras
+    "settings": { ... },          # shell settings that differ from stock (same shape as config.json)
+    "wallpaper": "~/Pictures/Wallpapers/x.jpg" | "@default",  # static wallpaper; colors are generated from it
+    "apps": ["steam", "discord", ...]   # optional: apps from ~/.local/share/setup-profiles/apps.json to offer
+  }
+Applying a profile never installs apps by itself; the first-time setup wizard offers the listed ones.
+Applying keeps a backup of the previous settings in ~/.local/state/setup-profiles/backups/ and then runs
+setup-features. Outside a desktop session (e.g. the clone installer) the wallpaper and colors are applied at first login.
+"""
+import copy
+import datetime
+import json
+import os
+import shutil
+import subprocess
+import sys
+
+HOME = os.path.expanduser("~")
+CONFIG_HOME = os.environ.get("XDG_CONFIG_HOME") or os.path.join(HOME, ".config")
+CONFIG = os.path.join(CONFIG_HOME, "illogical-impulse", "config.json")
+SHARE = os.path.join(HOME, ".local", "share", "setup-profiles")
+STOCK = os.path.join(SHARE, "stock-config.json")       # upstream defaults (generated from the untouched shell)
+STATE = os.path.join(HOME, ".local", "state", "setup-profiles")
+PENDING = os.path.join(STATE, "pending-wallpaper")
+SHELL_DIR = os.path.join(CONFIG_HOME, "quickshell", "end4-pC")
+DEFAULT_WALLPAPER = os.path.join(SHELL_DIR, "assets", "images", "default_wallpaper.png")
+SWITCHWALL = os.path.join(SHELL_DIR, "scripts", "colors", "switchwall.sh")
+
+# switch name -> where it lives in config.json
+FEATURES = {k: ("extras", k) for k in ["windowsStyle", "minimizeToDock", "wallpaperEngine", "resourceGraphs",
+                                       "appGrid", "powerMenuKde", "claudeCodeAi", "updatesScript", "steamTray"]}
+FEATURES.update({k: ("sidebar", k) for k in ["wallpaperEngineCard", "deviceBatteries", "desktopSwitch"]})
+
+
+def load_json(path):
+    with open(path) as f:
+        return json.load(f)
+
+
+def write_json(path, data):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(data, f, indent=4)
+        f.write("\n")
+    os.replace(tmp, path)
+
+
+def to_home(value):
+    """Store paths under the home folder as ~/... so profiles work for any user name."""
+    if isinstance(value, str) and (value == HOME or value.startswith(HOME + "/")):
+        return "~" + value[len(HOME):]
+    if isinstance(value, list):
+        return [to_home(v) for v in value]
+    if isinstance(value, dict):
+        return {k: to_home(v) for k, v in value.items()}
+    return value
+
+
+def from_home(value):
+    if isinstance(value, str) and (value == "~" or value.startswith("~/")):
+        return HOME + value[1:]
+    if isinstance(value, list):
+        return [from_home(v) for v in value]
+    if isinstance(value, dict):
+        return {k: from_home(v) for k, v in value.items()}
+    return value
+
+
+def merge(base, over):
+    for k, v in over.items():
+        if isinstance(v, dict) and isinstance(base.get(k), dict):
+            merge(base[k], v)
+        else:
+            base[k] = copy.deepcopy(v)
+    return base
+
+
+def diff(cur, stock):
+    """The parts of cur that differ from stock (nested)."""
+    out = {}
+    for k, v in cur.items():
+        if isinstance(v, dict) and isinstance(stock.get(k), dict):
+            d = diff(v, stock[k])
+            if d:
+                out[k] = d
+        elif stock.get(k, object()) != v:
+            out[k] = v
+    return out
+
+
+def resolve(name):
+    if os.path.isfile(name):
+        return name
+    builtin = os.path.join(SHARE, name.lower() + ".json")
+    if os.path.isfile(builtin):
+        return builtin
+    sys.exit(f"setup-profile: no profile '{name}' (try: setup-profile list)")
+
+
+def read_profile(path):
+    try:
+        p = load_json(path)
+    except (OSError, ValueError) as e:
+        sys.exit(f"setup-profile: can't read {path}: {e}")
+    if p.get("format") != "end4-setup-profile":
+        sys.exit(f"setup-profile: {path} is not a setup profile")
+    return p
+
+
+def cmd_list():
+    for f in sorted(os.listdir(SHARE)) if os.path.isdir(SHARE) else []:
+        if f.endswith(".json") and f != "stock-config.json":
+            try:
+                p = load_json(os.path.join(SHARE, f))
+            except (OSError, ValueError):
+                continue
+            if p.get("format") != "end4-setup-profile":   # e.g. apps.json (the app catalog)
+                continue
+            print(f"{f[:-5]:12} {p.get('name', '')}: {p.get('description', '')}")
+
+
+def cmd_show(name):
+    p = read_profile(resolve(name))
+    print(f"{p.get('name')} by {p.get('author') or 'unknown'}: {p.get('description', '')}")
+    print(f"look: {p.get('look', 'stock')}   wallpaper: {p.get('wallpaper') or '(unchanged)'}")
+    for k, v in (p.get("features") or {}).items():
+        print(f"  {k:20} {'on' if v else 'off'}")
+    n = sum(1 for _ in leaves(p.get("settings") or {}))
+    print(f"  + {n} other settings")
+    if p.get("apps"):
+        print("  apps: " + ", ".join(p["apps"]))
+
+
+def leaves(d, prefix=""):
+    for k, v in d.items():
+        if isinstance(v, dict):
+            yield from leaves(v, f"{prefix}{k}.")
+        else:
+            yield f"{prefix}{k}", v
+
+
+def set_wallpaper(path):
+    """Static wallpaper + generated colors. Needs a running Hyprland session; otherwise queued for first login."""
+    if not os.path.isfile(path):
+        path = DEFAULT_WALLPAPER
+    if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE") and os.path.isfile(SWITCHWALL):
+        subprocess.Popen([SWITCHWALL, path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        if os.path.exists(PENDING):
+            os.remove(PENDING)
+    else:
+        os.makedirs(STATE, exist_ok=True)
+        with open(PENDING, "w") as f:
+            f.write(path + "\n")
+
+
+def cmd_apply(name, yes):
+    path = resolve(name)
+    p = read_profile(path)
+    if not yes and sys.stdin.isatty():
+        cmd_show(path)
+        if input("Apply this profile? Your current settings are backed up first. [y/N] ").strip().lower() != "y":
+            return
+    cur = load_json(CONFIG) if os.path.isfile(CONFIG) else {}
+    if cur:
+        stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        write_json(os.path.join(STATE, "backups", f"config-{stamp}.json"), cur)
+    # stock-config.json stores home paths as ~/... (it ships to other PCs)
+    base = from_home(load_json(STOCK)) if p.get("look", "stock") == "stock" else copy.deepcopy(cur)
+    merge(base, from_home(p.get("settings") or {}))
+    for k, v in (p.get("features") or {}).items():
+        if k in FEATURES:
+            sect, key = FEATURES[k]
+            base.setdefault(sect, {})[key] = bool(v)
+    wallpaper = p.get("wallpaper")
+    if wallpaper:
+        wp = DEFAULT_WALLPAPER if wallpaper == "@default" else from_home(wallpaper)
+        base.setdefault("background", {})["wallpaperPath"] = wp if os.path.isfile(wp) else DEFAULT_WALLPAPER
+    write_json(CONFIG, base)
+    subprocess.run([os.path.join(HOME, ".local", "bin", "setup-features"), "apply"])
+    if wallpaper:
+        set_wallpaper(base["background"]["wallpaperPath"])
+    print(f"Applied profile: {p.get('name')}")
+
+
+def cmd_export(out, name, description, author):
+    cur = load_json(CONFIG)
+    stock = from_home(load_json(STOCK))
+    features = {}
+    for k, (sect, key) in FEATURES.items():
+        features[k] = (cur.get(sect) or {}).get(key, True) is not False
+    settings = diff(cur, stock)
+    for k, (sect, key) in FEATURES.items():   # switches go in "features", not "settings"
+        (settings.get(sect) or {}).pop(key, None)
+    wallpaper = (cur.get("background") or {}).get("wallpaperPath") or ""
+    (settings.get("background") or {}).pop("wallpaperPath", None)
+    (settings.get("background") or {}).pop("thumbnailPath", None)
+    settings = {k: v for k, v in settings.items() if v != {}}
+    profile = {
+        "format": "end4-setup-profile", "version": 1,
+        "name": name, "description": description, "author": author,
+        "look": "stock",
+        "features": features,
+        "settings": to_home(settings),
+        "wallpaper": to_home(wallpaper) if wallpaper and wallpaper != DEFAULT_WALLPAPER else "@default",
+        "apps": installed_apps(),
+    }
+    write_json(os.path.abspath(out), profile)
+    print(f"Exported '{name}' to {out}")
+
+
+def installed_apps():
+    try:
+        out = subprocess.run([os.path.join(HOME, ".local", "bin", "setup-apps"), "installed"],
+                             capture_output=True, text=True, timeout=60).stdout
+    except (OSError, subprocess.SubprocessError):
+        return []
+    return [l for l in out.split("\n") if l.strip()]
+
+
+def cmd_first_login():
+    if os.path.isfile(PENDING):
+        with open(PENDING) as f:
+            path = f.read().strip()
+        set_wallpaper(path)
+
+
+def main():
+    a = sys.argv[1:]
+    cmd = a[0] if a else "list"
+
+    def opt(flag, default=""):
+        return a[a.index(flag) + 1] if flag in a and a.index(flag) + 1 < len(a) else default
+
+    if cmd == "list":
+        cmd_list()
+    elif cmd == "show" and len(a) >= 2:
+        cmd_show(a[1])
+    elif cmd == "apply" and len(a) >= 2:
+        cmd_apply(a[1], "--yes" in a)
+    elif cmd == "export" and len(a) >= 2:
+        cmd_export(a[1], opt("--name", "My setup"), opt("--description"), opt("--author", os.environ.get("USER", "")))
+    elif cmd == "apps" and len(a) >= 2:
+        print("\n".join(read_profile(resolve(a[1])).get("apps") or []))
+    elif cmd == "first-login":
+        cmd_first_login()
+    else:
+        sys.exit(__doc__)
+
+
+if __name__ == "__main__":
+    main()

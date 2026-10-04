@@ -1,0 +1,74 @@
+#!/bin/bash
+# Stand-in for the Wallpaper Engine renderer on Hyprland (2026-10-03).
+# ~/.local/bin/linux-wallpaper-engine-ux puts this folder first on PATH when it starts the Wallpaper Engine app
+# outside KDE, so the app runs this instead of /usr/bin/linux-wallpaperengine.
+#  - Desktop wallpaper (--screen-root ... --bg <dir>) whose type the shell draws itself (video):
+#    stay alive and render nothing. The shell (end4-pC GlobalStates.qml + background/WallpaperEngineLayer.qml)
+#    sees this process, reads the wallpaper from its arguments and draws it inside its own background surface.
+#    The process name keeps "linux-wallpaperengine" and the arguments, so the app's own
+#    pkill -f "linux-wallpaperengine.*--screen-root.*<screen>" still stops it.
+#  - Web wallpaper: run web-host.py (wallpaper-engine-hyprland on the background layer), named
+#    "linux-wallpaperengine-web" for the same reason. The real renderer crashes on every web wallpaper here.
+#  - Anything else (scenes, mixed types, playlists, the app's compatibility scan): run the real renderer. Desktop
+#    wallpapers get --layer background, so the renderer sits below the shell's background surface and the widgets
+#    stay on top. Scenes go here (since 2026-10-03 ~09:20) because the KDE plugin's scene renderer has no audio
+#    input: most scenes use Wallpaper Engine's audio response (g_AudioSpectrum16*), even the subtle ones.
+# Revert: delete this folder and the PATH line in ~/.local/bin/linux-wallpaper-engine-ux.
+REAL=/usr/bin/linux-wallpaperengine
+# Patched build (audio capture fix, ~/.local/share/linux-wallpaperengine-audio.patch), built from the same commit as the
+# system package into ~/.local/opt by ~/.cache/lwe-build. Started the same way as /usr/bin/linux-wallpaperengine does
+# (cd + LD_LIBRARY_PATH), so the process is still "./linux-wallpaperengine" for the app's pkill and the shell.
+LOCAL_RENDERER="$HOME/.local/opt/linux-wallpaperengine"
+if [ -x "$LOCAL_RENDERER/linux-wallpaperengine" ]; then
+    real() { export LD_LIBRARY_PATH="$LOCAL_RENDERER/lib:$LD_LIBRARY_PATH"; cd "$LOCAL_RENDERER" && exec ./linux-wallpaperengine "$@"; }
+else
+    real() { exec "$REAL" "$@"; }
+fi
+WORKSHOP="$HOME/.local/share/Steam/steamapps/workshop/content/431960"
+
+# muted via the sidebar / wallpaper-engine-ctl mute: start renderers silent (the app ignores per-wallpaper "silent")
+if [ -e "${XDG_STATE_HOME:-$HOME/.local/state}/wallpaper-engine-muted" ] && [[ " $* " == *" --screen-root "* ]]; then
+    args=(); skip=0
+    for a in "$@"; do
+        if [ "$skip" = 1 ]; then skip=0; continue; fi
+        case "$a" in --volume) skip=1; continue ;; --silent) continue ;; esac
+        args+=("$a")
+    done
+    set -- "${args[@]}" --silent
+fi
+
+inshell=0
+web=1
+if [[ " $* " == *" --screen-root "* && " $* " != *" --playlist "* ]]; then
+    inshell=1
+    prev=""
+    for a in "$@"; do
+        if [ "$prev" = "--bg" ]; then
+            dir=$a
+            [ -d "$dir" ] || dir="$WORKSHOP/$a"
+            type=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]+"/project.json")).get("type","").lower())' "$dir" 2>/dev/null)
+            [ "$type" = video ] || inshell=0
+            [ "$type" = web ] || web=0
+        fi
+        prev=$a
+    done
+    [[ " $* " == *" --bg "* ]] || { inshell=0; web=0; }
+else
+    web=0
+fi
+
+if [ "$inshell" = 1 ]; then
+    exec -a linux-wallpaperengine-inshell python3 -c 'import signal; signal.pause()' "$@"
+fi
+if [ "$web" = 1 ] && [ -x "$HOME/.local/bin/wallpaper-engine-hyprland" ]; then
+    exec -a linux-wallpaperengine-web python3 "$(dirname "$0")/web-host.py" "$@"
+fi
+if [[ " $* " == *" --screen-root "* ]]; then
+    # render scenes at the monitor's real resolution (patched build; e.g. a 900x600 scene was stretched to 4K)
+    screen=""; prev=""
+    for a in "$@"; do [ "$prev" = "--screen-root" ] && screen=$a && break; prev=$a; done
+    h=$(hyprctl monitors -j 2>/dev/null | python3 -c 'import json,sys; s=sys.argv[1]; print(max([m["height"] for m in json.load(sys.stdin) if not s or m["name"]==s] or [0]))' "$screen" 2>/dev/null)
+    [ -n "$h" ] && [ "$h" -gt 0 ] 2>/dev/null && export LWE_RENDER_HEIGHT=$h
+    real "$@" --layer background
+fi
+real "$@"

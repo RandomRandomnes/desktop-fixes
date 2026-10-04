@@ -1,0 +1,278 @@
+#!/usr/bin/env python3
+"""Switch Wallpaper Engine wallpapers without the app's window (2026-10-03).
+
+  wallpaper-engine-ctl list [--refresh]   JSON list of installed workshop wallpapers (cached)
+  wallpaper-engine-ctl current            id of the active wallpaper ("" if none)
+  wallpaper-engine-ctl set <id>           apply a wallpaper
+  wallpaper-engine-ctl random             apply a random scene/video/web wallpaper
+  wallpaper-engine-ctl mute [on|off|toggle]  mute or unmute the wallpaper's sound (remembered)
+  wallpaper-engine-ctl muted              prints 1 if muted, else 0
+  wallpaper-engine-ctl stop|start        stop or start the Wallpaper Engine background (Hyprland; used by setup-features)
+
+Hyprland: writes the choice into the Linux Wallpaper Engine app's own state
+(~/.config/Linux Wallpaper Engine/active-wallpapers.json, keeping the screen's other settings) and restarts the app
+(it starts minimized and re-applies its saved wallpaper), so the app, the shell and the next login all agree.
+KDE Plasma: switches the Plasma Wallpaper Engine plugin instead (see ~/.local/bin/wallpaper-engine-kde).
+Used by the right sidebar card (end4-pC modules/ii/sidebarRight/WallpaperEngineCard.qml).
+"""
+import json
+import os
+import random
+import subprocess
+import sys
+import time
+
+HOME = os.path.expanduser("~")
+WORKSHOP = os.path.join(HOME, ".local/share/Steam/steamapps/workshop/content/431960")
+APP_STATE = os.path.join(HOME, ".config/Linux Wallpaper Engine/active-wallpapers.json")
+CACHE = os.path.join(os.environ.get("XDG_CACHE_HOME") or os.path.join(HOME, ".cache"), "wallpaper-engine-ctl", "list.json")
+KDE_PLUGIN = "com.github.catsout.wallpaperEngineKde"
+# flag file the shell watches for its own (in-shell) video wallpapers; exists = muted
+MUTE_FLAG = os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.join(HOME, ".local/state"), "wallpaper-engine-muted")
+DEFAULT_ENTRY = {"scaling": "fill", "fps": 60, "volume": 100, "silent": False, "noAutomute": False,
+                 "noAudioProcessing": False, "disableMouse": False, "disableParallax": False,
+                 "disableParticles": False, "noFullscreenPause": False}
+
+
+def is_kde():
+    return "KDE" in os.environ.get("XDG_CURRENT_DESKTOP", "").split(":")
+
+
+def scan():
+    items = []
+    for wid in os.listdir(WORKSHOP):
+        folder = os.path.join(WORKSHOP, wid)
+        try:
+            with open(os.path.join(folder, "project.json"), encoding="utf-8", errors="replace") as f:
+                project = json.load(f)
+        except (OSError, ValueError):
+            continue
+        kind = str(project.get("type", "")).lower()
+        if kind not in ("scene", "video", "web"):
+            continue
+        preview = project.get("preview") or ""
+        preview_path = os.path.join(folder, preview) if preview else ""
+        if not preview_path or not os.path.exists(preview_path):
+            preview_path = next((os.path.join(folder, n) for n in ("preview.jpg", "preview.png", "preview.gif")
+                                 if os.path.exists(os.path.join(folder, n))), "")
+        items.append({"id": wid, "title": str(project.get("title") or wid).strip(), "type": kind,
+                      "preview": preview_path, "path": folder})
+    items.sort(key=lambda it: it["title"].lower())
+    return items
+
+
+def load_list(refresh=False):
+    try:
+        if not refresh and os.path.getmtime(CACHE) >= os.path.getmtime(WORKSHOP):
+            with open(CACHE) as f:
+                return json.load(f)
+    except (OSError, ValueError):
+        pass
+    items = scan()
+    os.makedirs(os.path.dirname(CACHE), exist_ok=True)
+    tmp = CACHE + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(items, f)
+    os.replace(tmp, CACHE)
+    return items
+
+
+def current():
+    if is_kde():
+        out = subprocess.run(["qdbus6", "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript",
+                              "var d=desktops()[0]; d.currentConfigGroup=['Wallpaper','%s','General'];"
+                              "print(d.readConfig('WallpaperWorkShopId'))" % KDE_PLUGIN],
+                             capture_output=True, text=True)
+        return out.stdout.strip()
+    try:
+        with open(APP_STATE) as f:
+            active = json.load(f).get("activeWallpapers", {})
+    except (OSError, ValueError):
+        return ""
+    for entry in active.values():
+        return os.path.basename(str(entry.get("backgroundId", "")).rstrip("/"))
+    return ""
+
+
+def renderer_pids():
+    pids = []
+    for pid in os.listdir("/proc"):
+        if not pid.isdigit():
+            continue
+        try:
+            with open(f"/proc/{pid}/cmdline", "rb") as f:
+                argv0 = f.read().split(b"\0", 1)[0].decode(errors="replace")
+        except OSError:
+            continue
+        if argv0.endswith(("linux-wallpaperengine", "linux-wallpaperengine-inshell", "linux-wallpaperengine-web")):
+            pids.append(int(pid))
+    return pids
+
+
+def set_hyprland(wid):
+    folder = os.path.join(WORKSHOP, wid)
+    with open(APP_STATE) as f:
+        state = json.load(f)
+    active = state.get("activeWallpapers") or {}
+    if active:
+        screen, entry = next(iter(active.items()))
+    else:
+        mons = json.loads(subprocess.run(["hyprctl", "monitors", "-j"], capture_output=True, text=True).stdout or "[]")
+        screen = (next((m for m in mons if m.get("focused")), mons[0] if mons else {}) or {}).get("name", "default")
+        entry = dict(DEFAULT_ENTRY)
+    entry = dict(entry, backgroundId=folder, screen=screen)
+    state["activeWallpapers"] = {screen: entry}
+
+    stop_hyprland()
+    tmp = APP_STATE + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(state, f, indent="\t")
+    os.replace(tmp, APP_STATE)
+    start_hyprland()
+
+
+def stop_hyprland():
+    """Stop the app first (it would rewrite its state on exit), then the renderers it started."""
+    subprocess.run(["pkill", "-f", "[/]usr/lib/linux-wallpaper-engine-ux/app.asar"])
+    for _ in range(30):
+        if subprocess.run(["pgrep", "-f", "[/]usr/lib/linux-wallpaper-engine-ux/app.asar"],
+                          capture_output=True).returncode != 0:
+            break
+        time.sleep(0.1)
+    for pid in renderer_pids():
+        try:
+            os.kill(pid, 15)
+        except OSError:
+            pass
+
+
+def start_hyprland():
+    """The wrapper puts the renderer stand-in on PATH; the app starts minimized and applies the saved wallpaper."""
+    subprocess.Popen(["setsid", "-f", "linux-wallpaper-engine-ux"], stdout=subprocess.DEVNULL,
+                     stderr=subprocess.DEVNULL, start_new_session=True)
+
+
+def set_kde(wid):
+    folder = os.path.join(WORKSHOP, wid)
+    with open(os.path.join(folder, "project.json"), encoding="utf-8", errors="replace") as f:
+        project = json.load(f)
+    source = "file://%s/%s+%s" % (folder, project.get("file", ""), str(project.get("type", "")).lower())
+    script = ("var ds=desktops(); for (var i=0;i<ds.length;i++){var d=ds[i]; d.wallpaperPlugin='%s';"
+              "d.currentConfigGroup=['Wallpaper','%s','General']; d.writeConfig('WallpaperSource',%s);"
+              "d.writeConfig('WallpaperWorkShopId',%s);}" % (KDE_PLUGIN, KDE_PLUGIN, json.dumps(source), json.dumps(wid)))
+    subprocess.run(["qdbus6", "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", script],
+                   capture_output=True)
+
+
+def read_state():
+    try:
+        with open(APP_STATE) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def write_state(state):
+    tmp = APP_STATE + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(state, f, indent="\t")
+    os.replace(tmp, APP_STATE)
+
+
+def is_muted():
+    if is_kde():
+        out = subprocess.run(["qdbus6", "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript",
+                              "var d=desktops()[0]; d.currentConfigGroup=['Wallpaper','%s','General'];"
+                              "print(d.readConfig('MuteAudio'))" % KDE_PLUGIN], capture_output=True, text=True)
+        return out.stdout.strip() == "true"
+    return os.path.exists(MUTE_FLAG)
+
+
+def renderer_started_silent():
+    for pid in renderer_pids():
+        try:
+            with open(f"/proc/{pid}/cmdline", "rb") as f:
+                if b"\0--silent\0" in f.read() + b"\0":
+                    return True
+        except OSError:
+            pass
+    return False
+
+
+def set_mute(muted):
+    if is_kde():
+        subprocess.run(["qdbus6", "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript",
+                        "var ds=desktops(); for (var i=0;i<ds.length;i++){var d=ds[i];"
+                        "d.currentConfigGroup=['Wallpaper','%s','General']; d.writeConfig('MuteAudio',%s);}"
+                        % (KDE_PLUGIN, "true" if muted else "false")], capture_output=True)
+        return
+    # remember it: the app passes --silent to the renderer on the next start (switches, login)
+    state = read_state()
+    for entry in (state.get("activeWallpapers") or {}).values():
+        entry["silent"] = muted
+    if state:
+        write_state(state)
+    # the shell's own video layer follows this flag
+    os.makedirs(os.path.dirname(MUTE_FLAG), exist_ok=True)
+    if muted:
+        open(MUTE_FLAG, "w").close()
+    elif os.path.exists(MUTE_FLAG):
+        os.remove(MUTE_FLAG)
+    # instant effect on the renderer's audio stream (scenes; web pages run in the host's own stream)
+    try:
+        inputs = json.loads(subprocess.run(["pactl", "-f", "json", "list", "sink-inputs"],
+                                           capture_output=True, text=True).stdout or "[]")
+    except ValueError:
+        inputs = []
+    for sink_input in inputs:
+        name = str(sink_input.get("properties", {}).get("application.name", ""))
+        if name in ("linux-wallpaperengine", "wallpaper-engine-hyprland") or name.startswith("QtWebEngine"):
+            subprocess.run(["pactl", "set-sink-input-mute", str(sink_input["index"]), "1" if muted else "0"])
+    # a renderer started with --silent never opened audio: re-apply so the sound comes back
+    if not muted and renderer_started_silent():
+        cur = current()
+        if cur:
+            set_hyprland(cur)
+
+
+def apply(wid):
+    if not wid.isdigit() or not os.path.isfile(os.path.join(WORKSHOP, wid, "project.json")):
+        sys.exit(f"unknown wallpaper id: {wid}")
+    (set_kde if is_kde() else set_hyprland)(wid)
+    print(wid)
+
+
+def main():
+    args = sys.argv[1:]
+    cmd = args[0] if args else "list"
+    if cmd == "list":
+        json.dump(load_list("--refresh" in args), sys.stdout)
+    elif cmd == "current":
+        print(current())
+    elif cmd == "set" and len(args) == 2:
+        apply(args[1])
+    elif cmd == "mute":
+        mode = args[1] if len(args) > 1 else "toggle"
+        set_mute(not is_muted() if mode == "toggle" else mode == "on")
+        print("1" if is_muted() else "0")
+    elif cmd == "stop":
+        # used by setup-features when the Wallpaper Engine background is switched off (Hyprland only)
+        if not is_kde():
+            stop_hyprland()
+    elif cmd == "start":
+        if not is_kde() and subprocess.run(["pgrep", "-f", "[/]usr/lib/linux-wallpaper-engine-ux/app.asar"],
+                                           capture_output=True).returncode != 0:
+            start_hyprland()
+    elif cmd == "muted":
+        print("1" if is_muted() else "0")
+    elif cmd == "random":
+        cur = current()
+        choices = [it["id"] for it in load_list() if it["id"] != cur]
+        if choices:
+            apply(random.choice(choices))
+    else:
+        sys.exit(__doc__)
+
+
+if __name__ == "__main__":
+    main()

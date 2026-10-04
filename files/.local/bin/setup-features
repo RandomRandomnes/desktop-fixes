@@ -1,0 +1,128 @@
+#!/usr/bin/env python3
+"""Apply the custom-feature switches outside the shell (2026-10-03, ours).
+
+  setup-features apply     write ~/.config/hypr/custom/features.lua from config.json "extras" and apply changes now
+  setup-features status    print every switch
+
+The switches live in the shell config (~/.config/illogical-impulse/config.json, key "extras"); Settings › Extras edits
+them and setup profiles set them. The shell runs `apply` when one changes (services/Extras.qml). The shell-side
+features read the config directly; this handles the parts outside the shell:
+  windowsStyle     Hyprland: float-all rules, hyprbars title bars, float-over-maximized fix (custom/*.lua)
+  minimizeToDock   Hyprland: minimize/restore handlers + the title bar's minimize button; switching it off brings
+                   minimized windows back
+  wallpaperEngine  starts/stops the Wallpaper Engine background (the shell falls back to the static wallpaper)
+  steamTray        login only (custom/scripts/autostart.sh)
+Switching wallpaperEngine off also parks the app's own login entry (~/.config/autostart, which KDE runs) in
+~/.local/state/setup-profiles/; switching it on puts it back.
+A missing key means on, so an old config keeps today's behaviour.
+"""
+import json
+import os
+import re
+import subprocess
+import sys
+
+HOME = os.path.expanduser("~")
+CONFIG = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.join(HOME, ".config"), "illogical-impulse", "config.json")
+FEATURES_LUA = os.path.join(HOME, ".config", "hypr", "custom", "features.lua")
+FEATURES = ["windowsStyle", "minimizeToDock", "wallpaperEngine", "resourceGraphs", "appGrid",
+            "powerMenuKde", "claudeCodeAi", "updatesScript", "steamTray"]
+HYPRBARS = "/usr/lib/libhyprbars.so"
+# The Wallpaper Engine app's own login entry (KDE runs it; Hyprland uses autostart.sh). Parked while the switch is off.
+WE_AUTOSTART = os.path.join(HOME, ".config", "autostart", "Linux Wallpaper Engine.desktop")
+WE_AUTOSTART_PARKED = os.path.join(HOME, ".local", "state", "setup-profiles", "Linux Wallpaper Engine.desktop")
+
+
+def current():
+    try:
+        with open(CONFIG) as f:
+            extras = json.load(f).get("extras") or {}
+    except (OSError, ValueError):
+        extras = {}
+    return {k: extras.get(k, True) is not False for k in FEATURES}
+
+
+def previous():
+    try:
+        with open(FEATURES_LUA) as f:
+            text = f.read()
+    except OSError:
+        return {k: True for k in FEATURES}
+    found = dict(re.findall(r"^\s*(\w+)\s*=\s*(true|false)", text, re.M))
+    return {k: found.get(k, "true") == "true" for k in FEATURES}
+
+
+def write_lua(flags):
+    body = "".join(f"    {k} = {'true' if v else 'false'},\n" for k, v in flags.items())
+    text = ("-- Written by ~/.local/bin/setup-features from the shell config (\"extras\"). Edit in Settings › Extras.\n"
+            "return {\n" + body + "}\n")
+    tmp = FEATURES_LUA + ".tmp"
+    with open(tmp, "w") as f:
+        f.write(text)
+    os.replace(tmp, FEATURES_LUA)
+
+
+def hyprctl(*args):
+    return subprocess.run(["hyprctl", *args], capture_output=True, text=True).stdout
+
+
+def restore_minimized():
+    """Bring windows hidden by the minimize feature back to the active workspace, visible."""
+    try:
+        clients = json.loads(hyprctl("clients", "-j") or "[]")
+        active = json.loads(hyprctl("activeworkspace", "-j") or "{}").get("id", 1)
+    except ValueError:
+        return
+    for c in clients:
+        if c.get("workspace", {}).get("name") == "special:minimized":
+            sel = "address:" + c["address"]
+            hyprctl("dispatch", f'hl.dsp.window.move({{ workspace = {active}, follow = false, window = "{sel}" }})')
+            for prop in ("opacity", "opacity_inactive"):
+                hyprctl("dispatch", f'hl.dsp.window.set_prop({{ window = "{sel}", prop = "{prop}", value = "1" }})')
+
+
+def park_we_autostart(on):
+    src, dst = (WE_AUTOSTART_PARKED, WE_AUTOSTART) if on else (WE_AUTOSTART, WE_AUTOSTART_PARKED)
+    if os.path.exists(src) and not os.path.exists(dst):
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        os.replace(src, dst)
+
+
+def apply():
+    new, old = current(), previous()
+    write_lua(new)
+    park_we_autostart(new["wallpaperEngine"])   # also outside Hyprland (installer, KDE)
+    changed = [k for k in FEATURES if new[k] != old[k]]
+    if not changed:
+        print("no changes")
+        return
+    print("changed: " + ", ".join(f"{k}={'on' if new[k] else 'off'}" for k in changed))
+    if not os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+        return  # not in a Hyprland session (KDE, installer chroot): applies at the next Hyprland login
+    if "minimizeToDock" in changed and not new["minimizeToDock"]:
+        restore_minimized()
+    if "windowsStyle" in changed or "minimizeToDock" in changed:
+        loaded = "hyprbars" in hyprctl("plugin", "list")
+        if new["windowsStyle"] and not loaded and os.path.exists(HYPRBARS):
+            hyprctl("plugin", "load", HYPRBARS)
+        elif not new["windowsStyle"] and loaded:
+            hyprctl("plugin", "unload", HYPRBARS)
+        hyprctl("reload")
+    if "wallpaperEngine" in changed:
+        subprocess.run([os.path.join(HOME, ".local", "bin", "wallpaper-engine-ctl"),
+                        "start" if new["wallpaperEngine"] else "stop"])
+
+
+def main():
+    cmd = sys.argv[1] if len(sys.argv) > 1 else "status"
+    if cmd == "apply":
+        apply()
+    elif cmd == "status":
+        for k, v in current().items():
+            print(f"{k:16} {'on' if v else 'off'}")
+    else:
+        sys.exit(__doc__)
+
+
+if __name__ == "__main__":
+    main()

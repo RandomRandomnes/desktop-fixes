@@ -1,0 +1,401 @@
+#!/usr/bin/env python3
+"""Install the custom bug fixes published for this system (2026-10-03).
+
+  custom-update status              on/off, installed version, where fixes come from
+  custom-update check               is a bug fix for the installed version available? (exit 0 = yes, 1 = no, 2 = off/error)
+  custom-update apply [--yes]       install the newest bug fix for the installed version (x.1 / x.01 steps)
+  custom-update offers [--json]     what's available: a bug fix for the installed version and/or a new major version
+  custom-update upgrade <ver> [--yes]  move to a new major version (only when you ask; it can change a lot)
+  custom-update undo                put back the files from before the last install
+  custom-update consent yes|no      turn fixes on/off (the setup wizard and Settings › Update do this)
+  custom-update test-channel on|off also see test releases (for testing new versions)
+
+Versions: a new whole number (1 -> 2) is a major version with new features; it is never installed by itself and is
+offered in Settings › Update with an explanation. Steps of 0.1 / 0.01 are bug fixes for the version you are on and
+install with regular updates.
+
+Releases live in the GitHub repo named in ~/.local/share/custom-fixes/source.json: a signed list of releases
+(the "index" release: index.json + .sig), and per release v<ver>: manifest.json (+ .sig) and fixes.tar.gz.
+Signatures are ssh-keygen ones checked against ~/.local/share/custom-fixes/allowed_signers. A release never contains
+settings or personal files. A file you changed yourself is never overwritten: the new version is saved next to it as
+<file>.fixes-new. Consent is the shell setting extras.customFixes (off unless you said yes). On the PC that publishes
+the fixes (~/.local/state/custom-fixes-publisher exists) this does nothing; use custom-publish there.
+"""
+import datetime
+import hashlib
+import io
+import json
+import os
+import shutil
+import subprocess
+import sys
+import tarfile
+import tempfile
+import urllib.request
+
+HOME = os.path.expanduser("~")
+CONFIG = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.join(HOME, ".config"), "illogical-impulse", "config.json")
+SHARE = os.path.join(HOME, ".local", "share", "custom-fixes")
+SOURCE = os.path.join(SHARE, "source.json")
+SIGNERS = os.path.join(SHARE, "allowed_signers")
+BASE = os.path.join(SHARE, "base.json")          # version the clone was built with (written by custom-publish)
+STATE = os.path.join(HOME, ".local", "state", "custom-fixes")
+INSTALLED = os.path.join(STATE, "installed.json")
+PUBLISHER = os.path.join(HOME, ".local", "state", "custom-fixes-publisher")
+NAMESPACE = "custom-fixes"
+RISK = ("A major version changes how parts of the desktop work and may break the existing setup "
+        "(for example, local changes to the files it replaces). The current files are backed up first, "
+        "and the upgrade can be reverted in Settings › Update.")
+
+
+def load(path, default):
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return default
+
+
+def save(path, data):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(data, f, indent=2)
+    os.replace(tmp, path)
+
+
+def sha256(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def extras():
+    return load(CONFIG, {}).get("extras") or {}
+
+
+def consent():
+    return extras().get("customFixes", False) is True
+
+
+def test_channel():
+    return extras().get("customFixesTest", False) is True
+
+
+def set_extra(key, on):
+    cfg = load(CONFIG, None)
+    if cfg is None:
+        sys.exit("custom-update: no shell config yet")
+    cfg.setdefault("extras", {})[key] = on
+    save(CONFIG, cfg)
+
+
+def source():
+    s = load(SOURCE, {})
+    return s if s.get("repo") else None
+
+
+def fetch(url):
+    req = urllib.request.Request(url, headers={"User-Agent": "custom-update", "Cache-Control": "no-cache"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return r.read()
+
+
+def verified(src, data, sig):
+    with tempfile.TemporaryDirectory() as d:
+        sigf = os.path.join(d, "x.sig")
+        with open(sigf, "wb") as f:
+            f.write(sig)
+        r = subprocess.run(["ssh-keygen", "-Y", "verify", "-f", SIGNERS, "-I", src["signer"], "-n", NAMESPACE, "-s", sigf],
+                           input=data, capture_output=True)
+    if r.returncode != 0:
+        raise RuntimeError("the release signature is not valid; nothing was installed")
+    return json.loads(data)
+
+
+def fetch_index_files(src):
+    """index.json + .sig. The index is re-uploaded under the same name on every release, and the plain download
+    address is cached for minutes, so read the uploads by their unique API ids (fallback: the plain address)."""
+    try:
+        rel = json.loads(fetch(f"https://api.github.com/repos/{src['repo']}/releases/tags/index"))
+        urls = {a["name"]: a["url"] for a in rel.get("assets", [])}
+        def get(name):
+            req = urllib.request.Request(urls[name], headers={"User-Agent": "custom-update", "Accept": "application/octet-stream"})
+            with urllib.request.urlopen(req, timeout=60) as r:
+                return r.read()
+        return get("index.json"), get("index.json.sig")
+    except Exception:   # API unreachable or rate-limited (60 requests/hour)
+        base = f"https://github.com/{src['repo']}/releases/download/index"
+        return fetch(f"{base}/index.json"), fetch(f"{base}/index.json.sig")
+
+
+def release_index(src):
+    """Signed list of every release: [{label, version, kind, test, date, notes, upgrade?}]."""
+    idx = verified(src, *fetch_index_files(src))
+    if idx.get("format") != "custom-fixes-index":
+        raise RuntimeError("not a release index")
+    return idx["releases"]
+
+
+def release(src, label):
+    base = f"https://github.com/{src['repo']}/releases/download/v{label}"
+    m = verified(src, fetch(f"{base}/manifest.json"), fetch(f"{base}/manifest.json.sig"))
+    if m.get("format") != "custom-fixes":
+        raise RuntimeError("not a fixes release")
+    return m, base
+
+
+def cents(v):
+    return round(float(v or 0) * 100)
+
+
+def vlabel(m):
+    return str(m.get("label") or m.get("version"))
+
+
+def installed():
+    inst = load(INSTALLED, None)
+    if inst is None:   # nothing installed by this tool yet: the files are the ones the clone was built with
+        b = load(BASE, {})
+        inst = {"version": b.get("version", 0), "label": b.get("label", ""), "files": {}}
+    return inst
+
+
+def offers(src):
+    """{'fix': entry|None, 'upgrade': entry|None} for this PC."""
+    cur = cents(installed()["version"])
+    major = cur // 100
+    rel = [r for r in release_index(src) if test_channel() or not r.get("test")]
+    fixes = [r for r in rel if cents(r["version"]) > cur and cents(r["version"]) // 100 == major]
+    higher = [r for r in rel if cents(r["version"]) // 100 > major]
+    fix = max(fixes, key=lambda r: cents(r["version"]), default=None)
+    upgrade = None
+    if higher:
+        top_major = max(cents(r["version"]) // 100 for r in higher)
+        line = [r for r in higher if cents(r["version"]) // 100 == top_major]
+        newest = max(line, key=lambda r: cents(r["version"]))          # install the newest of that line
+        intro = next((r for r in line if r.get("upgrade")), newest)    # the release that introduced it explains it
+        upgrade = dict(newest, upgrade=intro.get("upgrade") or {}, major=top_major)
+    return {"fix": fix, "upgrade": upgrade}
+
+
+def cmd_status():
+    src = source()
+    inst = installed()
+    print(f"fixes:     {'on' if consent() else 'off'}" + ("  (this system publishes them)" if os.path.isdir(PUBLISHER) else "")
+          + ("  (test releases on)" if test_channel() else ""))
+    print(f"source:    {src['repo'] if src else 'not configured'}")
+    print(f"installed: {'v' + str(inst.get('label') or inst['version']) if inst['version'] else 'none'}")
+
+
+def usable():
+    return not os.path.isdir(PUBLISHER) and consent() and source()
+
+
+def cmd_check(quiet=False):
+    if not usable():
+        return 2
+    try:
+        fix = offers(source())["fix"]
+    except Exception as e:
+        if not quiet:
+            print(f"Checking for fixes failed: {e}")
+        return 2
+    if fix:
+        if not quiet:
+            print(f"v{fix['label']} ({fix.get('date', '')}):")
+            for n in fix.get("notes", []):
+                print(f"  - {n}")
+        return 0
+    if not quiet:
+        inst = installed()
+        print(f"Up to date (v{inst.get('label') or inst['version']}).")
+    return 1
+
+
+def cmd_offers(as_json):
+    out = {"installed": installed().get("label") or str(installed()["version"]), "fix": None, "upgrade": None,
+           "risk": RISK, "enabled": bool(usable()), "error": ""}
+    if usable():
+        try:
+            out.update(offers(source()))
+        except Exception as e:
+            out["error"] = str(e)
+    if as_json:
+        print(json.dumps(out))
+    else:
+        print(f"installed: v{out['installed']}")
+        print(f"bug fix:   {'v' + out['fix']['label'] if out['fix'] else 'none'}")
+        u = out["upgrade"]
+        print(f"upgrade:   {('version ' + str(u['major']) + ' (v' + u['label'] + '): ' + u['upgrade'].get('title', '')) if u else 'none'}")
+        if out["error"]:
+            print(f"error:     {out['error']}")
+    return 0
+
+
+def install(src, label, yes, what):
+    try:
+        m, base = release(src, label)
+    except Exception as e:
+        print(f"Downloading version {label} failed: {e}")
+        return 1
+    inst = installed()
+    print(f"{what} v{vlabel(m)}:")
+    for n in m.get("notes", []):
+        print(f"  - {n}")
+    if not yes and sys.stdin.isatty() and input("Install? [Y/n] ").strip().lower() == "n":
+        return 0
+    try:
+        payload = fetch(f"{base}/{m['payload']}")
+    except Exception as e:
+        print(f"Download failed: {e}")
+        return 1
+    if hashlib.sha256(payload).hexdigest() != m["payloadSha256"]:
+        print("The download is corrupted (checksum mismatch); nothing was installed.")
+        return 1
+
+    backup = os.path.join(STATE, "backups", f"v{vlabel(m)}")
+    shutil.rmtree(backup, ignore_errors=True)
+    changed, kept, record = [], [], dict(inst["files"])
+    with tarfile.open(fileobj=io.BytesIO(payload), mode="r:gz") as tar:
+        for rel, digest in m["files"].items():
+            if rel.startswith("/") or ".." in rel.split("/"):
+                continue
+            dst = os.path.join(HOME, rel)
+            member = tar.getmember(rel)
+            data = tar.extractfile(member).read()
+            if hashlib.sha256(data).hexdigest() != digest:
+                print(f"skipped {rel}: checksum mismatch")
+                continue
+            if os.path.exists(dst):
+                cur = sha256(dst)
+                if cur == digest:
+                    record[rel] = digest
+                    continue
+                if rel in inst["files"] and cur != inst["files"][rel]:
+                    # changed by the user since the last fix: keep theirs, put ours next to it
+                    with open(dst + ".fixes-new", "wb") as f:
+                        f.write(data)
+                    kept.append(rel)
+                    continue
+                os.makedirs(os.path.dirname(os.path.join(backup, rel)), exist_ok=True)
+                shutil.copy2(dst, os.path.join(backup, rel))
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            tmp = dst + ".fixes-tmp"
+            with open(tmp, "wb") as f:
+                f.write(data)
+            os.chmod(tmp, member.mode & 0o777)
+            os.replace(tmp, dst)
+            record[rel] = digest
+            changed.append(rel)
+    save(INSTALLED, {"version": m["version"], "label": vlabel(m), "previous": inst["version"],
+                     "previousLabel": inst.get("label") or str(inst["version"]), "date": m.get("date", ""),
+                     "files": record, "changed": changed, "installedAt": datetime.datetime.now().isoformat(timespec="seconds")})
+
+    if any(r.startswith(".config/hypr/") for r in changed) and os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+        subprocess.run(["hyprctl", "reload"], capture_output=True)
+    guard = os.path.join(HOME, ".local", "bin", "hypr-guard")
+    if changed and os.access(guard, os.X_OK):
+        subprocess.run([guard, "snapshot", "--force"], capture_output=True)   # the fixes are the new known-good state
+    print(f"Installed version {vlabel(m)}: {len(changed)} file(s) updated.")
+    for rel in kept:
+        print(f"  kept the locally modified ~/{rel} (the new version is saved as ~/{rel}.fixes-new)")
+    return 0
+
+
+def cmd_apply(yes):
+    if os.path.isdir(PUBLISHER):
+        print("This system publishes the fixes (custom-publish); nothing to install.")
+        return 0
+    if not consent():
+        print("Custom fixes are disabled (enable them in Settings › Update).")
+        return 0
+    src = source()
+    if not src:
+        print("No fixes source is configured.")
+        return 0
+    try:
+        o = offers(src)
+    except Exception as e:
+        print(f"Downloading fixes failed: {e}")
+        return 1
+    if o["upgrade"]:
+        print(f"Version {o['upgrade']['major']} is available; see Settings › Update for details and to upgrade.")
+    if not o["fix"]:
+        inst = installed()
+        print(f"Custom fixes: up to date (v{inst.get('label') or inst['version']}).")
+        return 0
+    return install(src, o["fix"]["label"], yes, "Custom fixes")
+
+
+def cmd_upgrade(label, yes):
+    if os.path.isdir(PUBLISHER):
+        print("This system publishes the fixes (custom-publish); nothing to install.")
+        return 0
+    if not usable():
+        print("Custom fixes are disabled or not configured.")
+        return 1
+    src = source()
+    o = offers(src)
+    u = o["upgrade"]
+    if not u or (label and label not in (u["label"], str(u["major"]))):
+        print("That version is not offered to this system.")
+        return 1
+    print(f"Upgrade to version {u['major']}: {u['upgrade'].get('title', '')}")
+    print(u["upgrade"].get("summary", ""))
+    print("\n" + RISK + "\n")
+    if not yes and input("Upgrade now? [y/N] ").strip().lower() != "y":
+        return 0
+    return install(src, u["label"], True, f"Version {u['major']}")
+
+
+def cmd_undo():
+    inst = installed()
+    backup = os.path.join(STATE, "backups", f"v{inst.get('label') or inst['version']}")
+    if not inst["version"] or not os.path.isdir(backup):
+        print("Nothing to undo.")
+        return 0
+    restored = 0
+    for root, _, files in os.walk(backup):
+        for f in files:
+            src = os.path.join(root, f)
+            rel = os.path.relpath(src, backup)
+            shutil.copy2(src, os.path.join(HOME, rel))
+            inst["files"].pop(rel, None)
+            restored += 1
+    # files that were new in that release are left in place; versions before it are restored
+    save(INSTALLED, {"version": inst.get("previous", 0), "label": inst.get("previousLabel", ""), "files": inst["files"]})
+    print(f"Reverted version {inst.get('label') or inst['version']}: {restored} file(s) restored. It will be offered again with the next release.")
+    return 0
+
+
+def main():
+    a = sys.argv[1:]
+    cmd = a[0] if a else "status"
+    if cmd == "status":
+        cmd_status()
+    elif cmd == "check":
+        sys.exit(cmd_check("--quiet" in a))
+    elif cmd == "apply":
+        sys.exit(cmd_apply("--yes" in a))
+    elif cmd == "offers":
+        sys.exit(cmd_offers("--json" in a))
+    elif cmd == "upgrade":
+        label = next((x for x in a[1:] if not x.startswith("-")), "")
+        sys.exit(cmd_upgrade(label, "--yes" in a))
+    elif cmd == "undo":
+        sys.exit(cmd_undo())
+    elif cmd == "consent" and len(a) == 2 and a[1] in ("yes", "no"):
+        set_extra("customFixes", a[1] == "yes")
+        print(f"Custom fixes: {'enabled' if a[1] == 'yes' else 'disabled'}")
+    elif cmd == "test-channel" and len(a) == 2 and a[1] in ("on", "off"):
+        set_extra("customFixesTest", a[1] == "on")
+        print(f"Test releases: {a[1]}")
+    else:
+        sys.exit(__doc__)
+
+
+if __name__ == "__main__":
+    main()

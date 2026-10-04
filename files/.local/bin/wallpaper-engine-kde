@@ -1,0 +1,50 @@
+#!/bin/bash
+# KDE Plasma launcher for Wallpaper Engine (2026-10-03). Called by ~/.local/bin/linux-wallpaper-engine-ux when
+# XDG_CURRENT_DESKTOP is KDE. On Plasma the standalone renderer (linux-wallpaperengine) is a separate layer-shell
+# surface that covers the desktop icons, so Plasma uses the wallpaper plugin instead (AUR wallpaper-engine-kde-plugin-git):
+#  - stops the standalone app/renderer if it is running,
+#  - switches every desktop to the plugin (first time only: carries over the wallpaper and sound setting the
+#    standalone app last used, from ~/.config/Linux Wallpaper Engine/active-wallpapers.json),
+#  - opens the wallpaper settings so you can pick a different wallpaper.
+# Revert: delete this file and the KDE block at the top of ~/.local/bin/linux-wallpaper-engine-ux.
+PLUGIN=com.github.catsout.wallpaperEngineKde
+QDBUS=$(command -v qdbus6 || command -v qdbus)
+
+if [ ! -d "/usr/share/plasma/wallpapers/$PLUGIN" ]; then
+    notify-send -a "Wallpaper Engine" "Wallpaper Engine KDE plugin not installed" \
+        "Install it with: yay -S wallpaper-engine-kde-plugin-git"
+    exit 1
+fi
+
+pkill -f '/usr/lib/linux-wallpaper-engine-ux/app.asar' 2>/dev/null
+pkill -f 'linux-wallpaperengine --' 2>/dev/null
+
+# Wallpaper + sound the standalone app last used (empty if none)
+read -r src muted < <(python3 - <<'EOF' 2>/dev/null
+import json, os
+p = os.path.expanduser("~/.config/Linux Wallpaper Engine/active-wallpapers.json")
+w = next(iter(json.load(open(p))["activeWallpapers"].values()))
+d = w["backgroundId"]
+t = json.load(open(os.path.join(d, "project.json")))
+print(f'file://{d}/{t["file"]}+{t["type"].lower()}', "true" if w.get("silent") or not w.get("volume") else "false")
+EOF
+)
+muted=${muted:-true}
+wsid=$(basename "$(dirname "${src%%+*}")" 2>/dev/null)
+
+"$QDBUS" org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "
+var ds = desktops();
+for (var i = 0; i < ds.length; i++) {
+    var d = ds[i];
+    if (d.wallpaperPlugin != '$PLUGIN') {
+        d.wallpaperPlugin = '$PLUGIN';
+        d.currentConfigGroup = ['Wallpaper', '$PLUGIN', 'General'];
+        if (!d.readConfig('WallpaperSource') && '$src') {
+            d.writeConfig('WallpaperSource', '$src');
+            d.writeConfig('WallpaperWorkShopId', '$wsid');
+            d.writeConfig('MuteAudio', $muted);
+        }
+    }
+}
+ds[0].showConfigurationInterface();
+" >/dev/null
