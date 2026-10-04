@@ -1,0 +1,245 @@
+#!/bin/bash
+# Boot menu choice (2026-10-04). By default the firmware starts Arch Linux directly from its unified kernel image
+# (/boot/EFI/Linux/arch-linux.efi), without a boot menu. A boot menu can be installed fresh from the repositories:
+#
+#   boot-loader status         JSON for the setup wizard and Settings
+#   boot-loader use direct     start Arch Linux directly, no boot menu (the default after installation)
+#   boot-loader use grub       install the current GRUB and start it first (only with Secure Boot off)
+#   boot-loader use systemd-boot
+#   boot-loader use refind
+#
+# "use" asks for the administrator password. Installed boot menus are not removed when switching; only the firmware
+# boot order changes, so every installed option stays available in the firmware boot menu.
+set -uo pipefail
+ESP=/boot
+UKI='\EFI\Linux\arch-linux.efi'
+UKI_FB='\EFI\Linux\arch-linux-fallback.efi'
+GRUB_EFI='\EFI\GRUB\grubx64.efi'
+SDB_EFI='\EFI\systemd\systemd-bootx64.efi'
+REFIND_EFI='\EFI\refind\refind_x64.efi'
+HOOKS=/etc/pacman.d/hooks
+
+# firmware entry number whose loader path is $1 (case-insensitive), empty if none
+entry_for() {
+    P="$1" efibootmgr -v 2>/dev/null | P="$1" awk '
+        BEGIN { p = tolower(ENVIRON["P"]) }
+        /^Boot[0-9A-Fa-f]{4}/ { if (index(tolower($0), p)) { print substr($1, 5, 4); exit } }'
+}
+boot_order() { efibootmgr 2>/dev/null | sed -n 's/^BootOrder: //p'; }
+secure_boot() {
+    local v; v=$(od -An -t u1 /sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c 2>/dev/null | awk '{print $NF}')
+    [ "${v:-0}" = 1 ]
+}
+sbctl_keys() { [ -d /var/lib/sbctl/keys ] || [ -d /usr/share/secureboot/keys ]; }
+esp_partuuid() { lsblk -no PARTUUID "$(findmnt -no SOURCE "$ESP" 2>/dev/null)" 2>/dev/null | tr '[:upper:]' '[:lower:]'; }
+# PARTUUIDs of Windows boot entries on another partition than the Arch EFI partition
+windows_other_esp() {
+    local ours; ours=$(esp_partuuid)
+    efibootmgr -v 2>/dev/null | tr '[:upper:]' '[:lower:]' | grep -F 'microsoft\boot\bootmgfw.efi' \
+        | grep -o 'gpt,[0-9a-f-]*' | cut -d, -f2 | grep -vx "${ours:-none}" | sort -u
+}
+current() {
+    local first; first=$(boot_order | cut -d, -f1)
+    [ -n "$first" ] || { echo other; return; }
+    case "$first" in
+        "$(entry_for "$UKI")") echo direct ;;
+        "$(entry_for "$GRUB_EFI")") echo grub ;;
+        "$(entry_for "$SDB_EFI")") echo systemd-boot ;;
+        "$(entry_for "$REFIND_EFI")") echo refind ;;
+        *) echo other ;;
+    esac
+}
+installed_list() {   # options with a firmware boot entry (/boot itself is readable only by root)
+    local out=() k p
+    for k in direct:"$UKI" grub:"$GRUB_EFI" systemd-boot:"$SDB_EFI" refind:"$REFIND_EFI"; do
+        p="${k#*:}"; [ -n "$(entry_for "$p")" ] && out+=("\"${k%%:*}\"")
+    done
+    local IFS=,; echo "[${out[*]}]"
+}
+
+cmd_status() {
+    local uefi=false sb=false tpm=false win=false
+    [ -d /sys/firmware/efi ] && uefi=true; secure_boot && sb=true; [ -e /sys/class/tpm/tpm0 ] && tpm=true
+    [ -n "$(windows_other_esp)" ] && win=true
+    printf '{"uefi":%s,"current":"%s","installed":%s,"secureBoot":%s,"tpm":%s,"windowsSeparate":%s}\n' \
+        "$uefi" "$(current)" "$(installed_list)" "$sb" "$tpm" "$win"
+}
+
+# ── root part ──
+first_in_order() {
+    local rest; rest=$(boot_order | tr ',' '\n' | grep -vix "$1" | paste -sd,)
+    efibootmgr -q -o "$1${rest:+,$rest}"
+}
+ensure_entry() {   # $1 loader path, $2 label -> prints the entry number
+    local n src disk part
+    n=$(entry_for "$1")
+    if [ -z "$n" ]; then
+        src=$(findmnt -no SOURCE "$ESP"); disk="/dev/$(lsblk -no PKNAME "$src" | head -1)"
+        part=$(cat "/sys/class/block/$(basename "$src")/partition")
+        efibootmgr -q --create --disk "$disk" --part "$part" --loader "$1" --label "$2" >/dev/null
+        n=$(entry_for "$1")
+    fi
+    [ -n "$n" ] || { echo "The firmware did not accept the boot entry \"$2\"." >&2; return 1; }
+    echo "$n"
+}
+ours() { [ ! -f "$1" ] || head -1 "$1" | grep -q 'written by boot-loader'; }   # missing, or not edited by hand
+sign() { sbctl_keys && sbctl sign -s "$1" >/dev/null; true; }
+need_signing() {
+    if secure_boot && ! sbctl_keys; then
+        echo "Secure Boot is on, but this system has no signing keys (sbctl). The boot menu would be blocked; nothing was changed."
+        exit 1
+    fi
+}
+update_hook() {   # $1 hook name, $2 package, $3 shell command run after the package is updated
+    install -Dm644 /dev/stdin "$HOOKS/$1.hook" <<EOF
+[Trigger]
+Type = Package
+Operation = Upgrade
+Target = $2
+
+[Action]
+Description = Updating the $2 boot menu on the EFI partition...
+When = PostTransaction
+Exec = /usr/bin/sh -c '$3'
+EOF
+}
+SIGN_SH='if [ -d /var/lib/sbctl/keys ] || [ -d /usr/share/secureboot/keys ]; then sbctl sign -s "$f" >/dev/null; fi'
+
+use_direct() {
+    [ -f "$ESP/EFI/Linux/arch-linux.efi" ] || { echo "The kernel image $ESP/EFI/Linux/arch-linux.efi is missing."; exit 1; }
+    ensure_entry "$UKI_FB" "Arch Linux (fallback)" >/dev/null || exit 1
+    first_in_order "$(ensure_entry "$UKI" "Arch Linux")" || exit 1
+}
+
+use_grub() {
+    if secure_boot; then
+        echo "Secure Boot is on. The current GRUB cannot start the signed kernel image under Secure Boot (it would"
+        echo "need shim). Choose systemd-boot or rEFInd, or turn Secure Boot off first. Nothing was changed."
+        exit 1
+    fi
+    echo "-- downloading and installing the current GRUB"
+    pacman -S --noconfirm grub || exit 1
+    # The kernel is only available as unified images (no separate initramfs), so GRUB's generated Linux entries
+    # cannot start it; GRUB chainloads the images instead. 31_efi_bootnext (GRUB 2.16) would list every firmware
+    # boot entry again. "UEFI Firmware Settings" stays, and "Arch Linux" is the default entry.
+    GRUB_OFF="/etc/grub.d/10_linux /etc/grub.d/15_uki /etc/grub.d/31_efi_bootnext"
+    chmod -x $GRUB_OFF 2>/dev/null || true
+    sed -i 's/^GRUB_DEFAULT=.*/GRUB_DEFAULT="Arch Linux"/' /etc/default/grub
+    install -Dm644 /dev/stdin "$HOOKS/90-grub-unified-images.hook" <<'EOF'
+[Trigger]
+Type = Package
+Operation = Install
+Operation = Upgrade
+Target = grub
+
+[Action]
+Description = Keeping GRUB's generated Linux and firmware entries off (the system uses unified kernel images)...
+When = PostTransaction
+Exec = /usr/bin/sh -c 'chmod -x /etc/grub.d/10_linux /etc/grub.d/15_uki /etc/grub.d/31_efi_bootnext 2>/dev/null; true'
+EOF
+    local esp_uuid; esp_uuid=$(lsblk -no UUID "$(findmnt -no SOURCE "$ESP")")
+    {
+        printf '#!/bin/sh\nexec tail -n +3 $0\n'
+        printf '# Entries written by boot-loader. Keep the exec tail line above.\n'
+        for e in "Arch Linux|arch-linux.efi" "Arch Linux (fallback)|arch-linux-fallback.efi"; do
+            printf '\nmenuentry "%s" --class arch --class os {\n    insmod part_gpt\n    insmod fat\n    insmod chain\n    search --fs-uuid --no-floppy --set=root %s\n    chainloader /EFI/Linux/%s\n}\n' \
+                "${e%%|*}" "$esp_uuid" "${e#*|}"
+        done
+        local w wuuid
+        for w in $(windows_other_esp) $( [ -f "$ESP/EFI/Microsoft/Boot/bootmgfw.efi" ] && esp_partuuid ); do
+            wuuid=$(blkid -t PARTUUID="$w" -o value -s UUID 2>/dev/null | head -1)
+            [ -n "$wuuid" ] || continue
+            printf '\nmenuentry "Windows" --class windows --class os {\n    insmod part_gpt\n    insmod fat\n    insmod chain\n    search --fs-uuid --no-floppy --set=root %s\n    chainloader /EFI/Microsoft/Boot/bootmgfw.efi\n}\n' "$wuuid"
+            break
+        done
+    } > /etc/grub.d/40_custom
+    chmod 755 /etc/grub.d/40_custom
+    echo "-- installing GRUB on the EFI partition"
+    grub-install --target=x86_64-efi --efi-directory="$ESP" --bootloader-id=GRUB || exit 1
+    grub-mkconfig -o "$ESP/grub/grub.cfg" 2>/dev/null || exit 1
+    echo "   menu: $(grep '^menuentry' "$ESP/grub/grub.cfg" | cut -d'"' -f2 | paste -sd, | sed 's/,/, /g')"
+    first_in_order "$(ensure_entry "$GRUB_EFI" "GRUB")" || exit 1
+}
+
+use_systemd_boot() {
+    need_signing
+    echo "-- installing systemd-boot (part of systemd)"
+    install -Dm644 /usr/lib/systemd/boot/efi/systemd-bootx64.efi "$ESP/EFI/systemd/systemd-bootx64.efi"
+    sign "$ESP/EFI/systemd/systemd-bootx64.efi"
+    if ours "$ESP/loader/loader.conf"; then
+        install -Dm644 /dev/stdin "$ESP/loader/loader.conf" <<'EOF'
+# systemd-boot menu (written by boot-loader). The kernel images in /EFI/Linux are listed automatically.
+default arch-linux.efi
+timeout 5
+editor no
+EOF
+    fi
+    update_hook 95-systemd-boot-update systemd \
+        'f=/boot/EFI/systemd/systemd-bootx64.efi; [ -f "$f" ] || exit 0; install -m644 /usr/lib/systemd/boot/efi/systemd-bootx64.efi "$f"; '"$SIGN_SH"
+    first_in_order "$(ensure_entry "$SDB_EFI" "Linux Boot Manager")" || exit 1
+}
+
+use_refind() {
+    need_signing
+    echo "-- downloading and installing the current rEFInd"
+    pacman -S --noconfirm refind || exit 1
+    local d="$ESP/EFI/refind"
+    install -d "$d"
+    install -m644 /usr/share/refind/refind_x64.efi "$d/refind_x64.efi"
+    rm -rf "$d/icons"; cp -r /usr/share/refind/icons "$d/icons"
+    sign "$d/refind_x64.efi"
+    if ours "$d/refind.conf"; then
+        # the kernel file next to the images is only the source for building them; it cannot start the system alone
+        { printf '# rEFInd menu (written by boot-loader). Kernel images in /EFI/Linux and Windows are found automatically.\n'
+          printf 'timeout 5\nuse_graphics_for linux,windows\ndont_scan_files vmlinuz-linux,shimx64.efi,mmx64.efi\n'
+          printf 'default_selection "arch-linux.efi"\n'
+          printf 'dont_scan_dirs EFI/BOOT\n'
+        } > "$d/refind.conf"
+    fi
+    rm -f "$ESP/refind_linux.conf"
+    update_hook 95-refind-update refind \
+        'f=/boot/EFI/refind/refind_x64.efi; [ -f "$f" ] || exit 0; install -m644 /usr/share/refind/refind_x64.efi "$f"; '"$SIGN_SH"
+    first_in_order "$(ensure_entry "$REFIND_EFI" "rEFInd")" || exit 1
+}
+
+as_root() {
+    [ -d /sys/firmware/efi ] || { echo "This computer does not start in UEFI mode."; exit 1; }
+    mountpoint -q "$ESP" || { echo "$ESP is not mounted."; exit 1; }
+    case "$1" in
+        direct) use_direct ;; grub) use_grub ;; systemd-boot) use_systemd_boot ;; refind) use_refind ;;
+        *) exit 2 ;;
+    esac
+    echo "-- firmware boot order: $(efibootmgr | sed -n 's/^Boot\([0-9A-F]\{4\}\)\* \([^\t]*\).*/\1 \2/p' \
+        | awk -v o="$(boot_order)" 'BEGIN{n=split(o,a,",")} {name[$1]=substr($0,6)} END{for(i=1;i<=n;i++) if(a[i] in name) printf "%s%s", (i>1?", ":""), name[a[i]]; print ""}')"
+}
+
+pause() { [ -t 0 ] && read -r -p $'\nPress Enter to close this window.' _ || true; }
+
+cmd_use() {
+    local want="${1:-}" name
+    case "$want" in
+        direct) name="Arch Linux without a boot menu" ;; grub) name="GRUB" ;;
+        systemd-boot) name="systemd-boot" ;; refind) name="rEFInd" ;;
+        *) echo "use: direct | grub | systemd-boot | refind"; exit 2 ;;
+    esac
+    if [ "$(current)" = "$want" ] && [ "$want" = direct ]; then echo "The computer already starts $name."; pause; exit 0; fi
+    echo "From the next restart, the computer starts with: $name."
+    [ "$want" != direct ] && echo "A fresh copy is installed. Other boot options stay installed and remain available in the firmware boot menu."
+    [ "$want" = systemd-boot ] && [ -n "$(windows_other_esp)" ] && \
+        echo "Note: Windows is on a separate EFI partition and does not appear in the systemd-boot menu; use the firmware boot menu to start it."
+    echo
+    local rc
+    if [ "$(id -u)" = 0 ]; then ( as_root "$want" ); rc=$?
+    else sudo "$(readlink -f "$0")" __root "$want"; rc=$?; fi
+    echo
+    [ $rc = 0 ] && echo "Completed. The change takes effect at the next restart." || echo "The boot setup was not changed."
+    pause
+    exit $rc
+}
+
+case "${1:-status}" in
+    status) cmd_status ;;
+    use) cmd_use "${2:-}" ;;
+    __root) [ "$(id -u)" = 0 ] || exit 1; as_root "${2:-}" ;;
+    *) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+esac

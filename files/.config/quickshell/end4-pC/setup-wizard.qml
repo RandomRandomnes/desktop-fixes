@@ -72,7 +72,7 @@ ApplicationWindow {
           text: "Firefox is installed by default. Select additional applications to install. Installation runs in a terminal window and requires the administrator password." },
         { id: "system",    title: "Drivers and updates", icon: "memory",
           heading: "Drivers and updates",
-          text: "Install available updates and any required graphics drivers." },
+          text: "Install available updates and any required graphics drivers, and choose how the computer starts." },
         { id: "shortcuts", title: "Shortcuts",         icon: "keyboard_command_key",
           heading: "Keyboard shortcuts",
           text: "The Super key is the Windows key. Super+/ displays all shortcuts at any time." },
@@ -102,6 +102,27 @@ ApplicationWindow {
     property bool needsDriver: false
     property bool laptop: false
     property string sysStatus: ""
+
+    // startup (Drivers and updates step): ~/.local/bin/boot-loader; the computer starts without a boot menu by default
+    property var boot: ({})
+    property string bootChoice: ""
+    readonly property var bootOptions: [
+        { displayName: "No boot menu", value: "direct" },
+        { displayName: "GRUB", value: "grub" },
+        { displayName: "systemd-boot", value: "systemd-boot" },
+        { displayName: "rEFInd", value: "refind" },
+    ]
+    readonly property string bootNote: {
+        const c = root.bootChoice
+        if (c === root.boot.current && c !== "direct") return "In use. To install a fresh copy, choose another option first, or run boot-loader in a terminal."
+        if (c === "direct") return "The computer starts Arch Linux directly. Other systems, such as Windows, start from the firmware boot menu (often F8, F11 or F12 at power-on)."
+        if (c === "grub") return root.boot.secureBoot ? "Not available while Secure Boot is on: the current GRUB cannot start the signed system without shim. Choose systemd-boot or rEFInd."
+            : "A text menu at startup that lists Arch Linux, the fallback image and Windows. Downloaded fresh; requires an internet connection."
+        if (c === "systemd-boot") return root.boot.windowsSeparate ? "A simple menu at startup. Windows is on a separate partition and is not listed; it starts from the firmware boot menu."
+            : "A simple menu at startup that lists Arch Linux, the fallback image and Windows."
+        if (c === "refind") return "A graphical menu with icons at startup that finds Arch Linux and Windows automatically. Downloaded fresh; requires an internet connection."
+        return ""
+    }
 
     // bug fixes consent (Drivers and updates step): must be answered, Yes or No, when a fixes source exists
     property var fixSource: ({})
@@ -243,6 +264,18 @@ ApplicationWindow {
             root.appsStatus = root.appsStatus === "Installation in progress in the terminal window…" ? "Installation finished. The terminal window can be closed." : root.appsStatus
             root.sysStatus = root.sysStatus.endsWith("…") ? "Completed." : root.sysStatus
             installedProc.running = true
+            bootProc.running = true
+        }
+    }
+    Process {
+        id: bootProc
+        running: true
+        command: [`${root.bin}/boot-loader`, "status"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try { root.boot = JSON.parse(text) } catch (e) { root.boot = ({}) }
+                if (root.bootChoice === "" || root.bootChoice === "other") root.bootChoice = root.boot.current || "direct"
+            }
         }
     }
     Process {
@@ -758,6 +791,27 @@ ApplicationWindow {
                     ].concat(PowerProfiles.hasPerformanceProfile ? [{ displayName: "Best performance", value: PowerProfile.Performance }] : [])
                     currentValue: PowerProfiles.profile
                     onSelected: v => PowerProfiles.profile = v
+                }
+            }
+            WSection {
+                title: "Startup"
+                visible: root.boot.uefi === true
+                WCombo {
+                    icon: "restart_alt"
+                    title: "Boot menu"
+                    description: root.bootNote
+                    model: root.bootOptions
+                    currentValue: root.bootChoice
+                    fieldWidth: 170
+                    onSelected: v => root.bootChoice = v
+                    WButton {
+                        enabled: !termProc.running && root.bootChoice !== root.boot.current
+                            && !(root.bootChoice === "grub" && root.boot.secureBoot)
+                        buttonText: "Apply"
+                        onClicked: {
+                            root.terminal([`${root.bin}/boot-loader`, "use", root.bootChoice], "Boot menu")
+                        }
+                    }
                 }
             }
             WSection {

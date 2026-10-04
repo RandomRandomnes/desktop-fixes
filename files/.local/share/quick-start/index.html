@@ -143,7 +143,7 @@ td:first-child { white-space: nowrap }
                 <li><div>Review the summary and enter <code>YES</code>. Installation takes 5 to 10 minutes.</div></li>
         <li><div>Remove the stick and enter <code>reboot</code>. If Secure Boot keys were created, enable Secure Boot in the BIOS again.</div></li>
       </ol>
-      <p class="muted">The new system starts with the Default appearance and no applications other than Firefox. Further applications are selected at the first start.</p>
+      <p class="muted">The new system starts with the Default appearance and no applications other than Firefox. Further applications are selected at the first start. It starts directly, without a boot menu; a boot menu (GRUB, systemd-boot or rEFInd) can be added in the setup assistant under <span class="q">Drivers and updates › Startup</span>.</p>
     </section>
 
     <section id="first">
@@ -217,6 +217,7 @@ td:first-child { white-space: nowrap }
         <tbody>
           <tr><td>The USB stick does not start</td><td>Turn Secure Boot off and set the boot mode to UEFI. Rewrite the stick (Rufus: DD Image mode).</td></tr>
           <tr><td>Black screen after installation</td><td>Usually caused by an NVIDIA card. Press <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>F2</kbd>, log in, run <code>sudo pacman -S nvidia-open-dkms nvidia-utils</code>, then <code>reboot</code>.</td></tr>
+          <tr><td>Starting Windows or another system</td><td>Open the firmware's one-time boot menu at power-on (see the key table above), or add a boot menu: setup assistant › Drivers and updates › Startup, or <code>boot-loader use refind</code> in a terminal.</td></tr>
           <tr><td>Text and elements are too small or too large</td><td>Settings › System › Display › Scale.</td></tr>
           <tr><td>No Wi-Fi</td><td>Right sidebar (<kbd>Super</kbd> + <kbd>N</kbd>) › Wi-Fi.</td></tr>
           <tr><td>The desktop misbehaves after an update</td><td>Settings › Update › <span class="q">Run health check</span>, or <span class="q">Undo last</span> for a bug fix.</td></tr>

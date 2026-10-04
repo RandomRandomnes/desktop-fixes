@@ -1,15 +1,15 @@
 {
   "format": "custom-fixes",
-  "version": 1.26,
-  "label": "1.26",
-  "kind": "fix",
+  "version": 2.0,
+  "label": "2",
+  "kind": "feature",
   "date": "2026-10-04",
   "publisher": "RandomRandomnes",
   "notes": [
-    "A new installation no longer shows a desktop-check alert at first login; the first snapshot is taken automatically. Neutral alert wording."
+    "Boot menu choice in the setup assistant and the boot-loader command; Quick Start guide updated."
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "42f78dfe028a1285933fa23c9e0b3dfccbbd53397bebc66ecead2d2ef07c7678",
+  "payloadSha256": "c9f232332ddae5dc754203c0c1640e7184dff355bcecf14953849bd40429e375",
   "files": {
     ".config/hypr/custom/env.lua": "9ad5c4f1e29959f9dcdfc96846e5f4526fcbcef61e3ac7bf4bb787cc94a8b1f0",
     ".config/hypr/custom/execs.lua": "e1840046232062e73741e9e82f61864d271fe13ed41449554df01a33d9956d98",
@@ -63,7 +63,7 @@
     ".config/quickshell/end4-pC/modules/ii/sidebarRight/WallpaperEngineCard.qml": "a344801c9ad7baadfcefb214f04b920087c22c03ad2b3abdb02fd6d0503752d2",
     ".config/quickshell/end4-pC/modules/ii/sidebarRight/quickToggles/classicStyle/DesktopSwitch.qml": "0ce092398acecc2067b1d509426908a7ddafffb47239e0133dc3a5be9cbae0b4",
     ".config/quickshell/end4-pC/panelFamilies/IllogicalImpulseFamily.qml": "c48466acb4163f18fc0e9ec5216430329f5c4e8412dc744bce305b2ae9aae69a",
-    ".config/quickshell/end4-pC/quick-start.qml": "df5fe802942243eb8989eb5b802794076569fef94541edbb89e8a69b4f52e5b8",
+    ".config/quickshell/end4-pC/quick-start.qml": "1dee6020eb8bd1e1a5c8891c55cc6ebb00c4d5e7c15b7ed49418bd177a974881",
     ".config/quickshell/end4-pC/scripts/gpu/get_gpuinfo.sh": "75fea6231f83a7bdeb890fddc33bb9939567fd3c9cce480900d01b3bf6147a8f",
     ".config/quickshell/end4-pC/scripts/power/get_power.sh": "5b23e93764e90fb8769bfc69041fb66ac32974c385798aab8974683aff6adafa",
     ".config/quickshell/end4-pC/scripts/sysstats/sysstats.py": "efa732d1a99d270b62047b39b09d338ad94c1b37ba3b176a9f41fcec97a2756e",
@@ -74,7 +74,8 @@
     ".config/quickshell/end4-pC/services/SystemStats.qml": "048b6f87a9dcbb2ef218710d3b2a5f8d655ed21ef1241992a25f908fca017a6c",
     ".config/quickshell/end4-pC/services/Updates.qml": "fea9f057abeae155ac89dcb02d30b2239c1fe5f92d648e63cf1d572ae6dc968a",
     ".config/quickshell/end4-pC/services/ai/ClaudeCodeApiStrategy.qml": "71a1f160c1365a9e6fb56b153f11ae5645f10579ebc175715fc142b16b007131",
-    ".config/quickshell/end4-pC/setup-wizard.qml": "294df327afdf044b6883476444faaad944dd2c7d0b3483134fca2fd62633d02d",
+    ".config/quickshell/end4-pC/setup-wizard.qml": "5d88f9c87f582a44a9fa107501f7c9677a53c43f1be80f64e75eaf2fc939298a",
+    ".local/bin/boot-loader": "a421be2168e1d307fa8f29e199b87735cb4bb630f9ee51038f02783a8cf25934",
     ".local/bin/custom-update": "19c7eae00428df2c7465621d83d499c5c45f31145dbec1fdabef24003d570804",
     ".local/bin/hypr-guard": "15a0f9d63c9a10acab1cbbab3089b18ed2b0696d739ffd17ded56235dd46c8b0",
     ".local/bin/linux-wallpaper-engine": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
@@ -92,7 +93,7 @@
     ".local/share/applications/quick-start.desktop": "7a095a43f62a7165dc4b01e28deea66a24fae7a09799dd6caf1fd188f6043c49",
     ".local/share/custom-fixes/allowed_signers": "1bc55052b9f5850a21273aff66d29e2dae2de5da7ea2e52afa341a2ba4740077",
     ".local/share/custom-fixes/source.json": "82c8be64baad08c90ca512fbed1c60a84c291d84cc81b5a92c9bf48a7edc5cf1",
-    ".local/share/quick-start/index.html": "5fba2081d530ab11ebb2170281095c35c7ed7693439a4b226154a87063fc3287",
+    ".local/share/quick-start/index.html": "0fe7cea9cc787011748c9b3ba5d4271a6db48e00f398ee6665a34139bd24c265",
     ".local/share/setup-profiles/apps.json": "9371280780f7d301ce719649acc884e8dc69438aed6ca05d30bc56cf53ce57f1",
     ".local/share/setup-profiles/custom_01.json": "346b596632a33bdfb0517bb5d97190b9df627939026a01f118c5d79fc2c45e7b",
     ".local/share/setup-profiles/default.json": "57bd6479b7f6310029cf24f26b2aeb6e781892bddb1d1fa32b3c80100b6b0f70",
@@ -129,8 +130,15 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/hypr/custom/scripts/autostart.sh",
-    ".local/bin/hypr-guard"
+    ".config/quickshell/end4-pC/quick-start.qml",
+    ".config/quickshell/end4-pC/setup-wizard.qml",
+    ".local/bin/boot-loader",
+    ".local/share/quick-start/index.html"
   ],
-  "test": false
+  "test": false,
+  "upgrade": {
+    "title": "Boot menu choice",
+    "summary": "Adds a Startup section to the setup assistant (Drivers and updates) and the boot-loader command: install a fresh GRUB, systemd-boot or rEFInd, or start Arch Linux directly without a boot menu. Changing the boot menu asks for the administrator password; nothing changes until Apply is selected.",
+    "details": []
+  }
 }

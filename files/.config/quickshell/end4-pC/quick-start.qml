@@ -99,6 +99,7 @@ ApplicationWindow {
             { row: "No Wi-Fi", text: "Right sidebar (Super+N) › Wi-Fi" },
             { row: "Black screen after an update", text: "Press Ctrl+Alt+F2, log in, run sudo pacman -Syu, then restart" },
             { row: "The desktop misbehaves after an update", text: "Settings › Update › Run health check, or Undo last for a bug fix" },
+            { row: "Starting Windows or another system", text: "The firmware's one-time boot menu at power-on (often F8, F11 or F12), or add a boot menu: setup assistant › Drivers and updates › Startup" },
             { row: "Installing on another computer", text: "The full guide, including USB preparation and installation, is on the USB drive (clone/QUICK-START.html)" },
             { open: "Open the full guide", cmd: ["xdg-open", Quickshell.env("HOME") + "/.local/share/quick-start/index.html"] },
         ]},
