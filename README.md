@@ -1,5 +1,11 @@
 # Desktop fixes
 
+> **This is a custom version of illogical-impulse.** It is based on the
+> [illogical-impulse](https://github.com/end-4/dots-hyprland) Hyprland configuration by end-4, with changes and
+> additions of its own (Windows-style windows and taskbar, Settings app, setup assistant, setup profiles,
+> Wallpaper Engine support, boot menu choice and more). It is not the official illogical-impulse project and is not
+> affiliated with or supported by its authors; report problems with this version here, not upstream.
+
 Bug fixes for the Hyprland + illogical-impulse desktop image. Installed systems receive them through `custom-update` (Settings › Update) when enabled during the first-time setup. Releases are signed; `files/` contains a readable copy of the latest release.
 
 ## Setup profiles
