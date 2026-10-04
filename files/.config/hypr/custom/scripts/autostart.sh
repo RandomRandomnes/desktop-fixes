@@ -13,10 +13,7 @@ done
 echo "$(date +%T) shell background ready after $i s" >> "$log"
 # Setup profile steps that need a running desktop (wallpaper + colors after an install). No-op otherwise.
 [ -x "$HOME/.local/bin/setup-profile" ] && "$HOME/.local/bin/setup-profile" first-login >> "$log" 2>&1
-# A fresh install has no hypr-guard snapshot yet; without one the update button can't update the shell safely.
-if [ ! -s "$HOME/.hypr-known-good-latest" ] && [ -x "$HOME/.local/bin/hypr-guard" ]; then
-  (sleep 20; "$HOME/.local/bin/hypr-guard" snapshot --force >> "$log" 2>&1) &
-fi
+# (A fresh install's first hypr-guard snapshot is taken by the login check: hypr-guard check --login.)
 # First-time setup wizard after a fresh install (the clone installer leaves this marker; the wizard removes it)
 if [ -f "$HOME/.local/state/setup-wizard/pending" ]; then
   echo "$(date +%T) opening the first-time setup wizard" >> "$log"

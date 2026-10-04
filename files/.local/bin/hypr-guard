@@ -260,6 +260,7 @@ class Run:
         self.log_start = len(qs_log_lines())
         snap = snapshot_dir()
         if not snap:
+            self.no_snapshot = True
             self.problems.append("No snapshot found (~/.hypr-known-good-latest). Run `hypr-guard snapshot` "
                                  "once the desktop is confirmed working.")
             return
@@ -491,11 +492,18 @@ def cmd_check(args):
                 break
             time.sleep(1)
         time.sleep(20)
+    # A fresh install has no snapshot yet: if that is the only finding, the desktop that just started is the
+    # known-good state, so take the first snapshot instead of raising an alarm.
+    if at_login and getattr(r, "no_snapshot", False) and len(r.problems) == 1:
+        if cmd_snapshot([]) == 0:
+            r.problems.clear()
+            r.say("first snapshot taken at login (fresh install)")
     r.report()
     if "--no-notify" not in args:
         if r.problems:
             notify(f"Desktop check: {len(r.problems)} problem(s)",
-                   "Open Claude Code and say: \"check my desktop\". Details: ~/hypr-guard/report.md", "critical")
+                   "The desktop needs attention after a change or update. Details: ~/hypr-guard/report.md",
+                   "critical")
         elif r.actions:
             notify("Desktop check: customizations reapplied",
                    f"{len(r.actions)} file(s) fixed after an update. Nothing to do.")
