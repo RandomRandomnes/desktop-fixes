@@ -406,6 +406,28 @@ def cmd_apply(yes):
     return install(src, o["fix"]["label"], yes, "Custom fixes")
 
 
+def open_in_terminal(args, title):
+    """Run this command again in a terminal window (graphical session only). True when a window was opened."""
+    if not (os.environ.get("WAYLAND_DISPLAY") or os.environ.get("DISPLAY")):
+        return False
+    me = os.path.realpath(sys.argv[0])
+    for term, flags in (("kitty", ["--title", title, "--"]), ("foot", ["--title", title]),
+                        ("konsole", ["-e"]), ("xterm", ["-T", title, "-e"])):
+        if shutil.which(term):
+            subprocess.Popen([term, *flags, me, *args, "--pause"], start_new_session=True,
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return True
+    return False
+
+
+def pause_if(asked):
+    if asked and sys.stdin.isatty():
+        try:
+            input("\nPress Enter to close this window.")
+        except EOFError:
+            pass
+
+
 def cmd_upgrade(label, yes):
     if os.path.isdir(PUBLISHER):
         print("This system publishes the fixes (custom-publish); nothing to install.")
@@ -427,7 +449,10 @@ def cmd_upgrade(label, yes):
     print(u["upgrade"].get("summary", ""))
     print("\n" + RISK + "\n")
     if not yes:
-        if not sys.stdin.isatty():   # no one to ask (script, background process)
+        if not sys.stdin.isatty():   # no one to ask here (script, background process): ask in a terminal window
+            if open_in_terminal(["upgrade", u["label"]], f"Upgrade to version {u['major']}"):
+                print(f"Opened a terminal window to confirm the upgrade to version {u['major']}.")
+                return 0
             print("Not upgraded: confirmation needed. Run this in a terminal, or add --yes.")
             return 1
         try:
@@ -482,7 +507,9 @@ def main():
         sys.exit(cmd_offers("--json" in a))
     elif cmd == "upgrade":
         label = next((x for x in a[1:] if not x.startswith("-")), "")
-        sys.exit(cmd_upgrade(label, "--yes" in a))
+        rc = cmd_upgrade(label, "--yes" in a)
+        pause_if("--pause" in a)       # opened in its own terminal window: keep the result readable
+        sys.exit(rc)
     elif cmd == "undo":
         sys.exit(cmd_undo())
     elif cmd == "consent" and len(a) == 2 and a[1] in ("yes", "no"):

@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.116 (2026-10-04, minor)
+- When a new version is upgraded from a place without a terminal, a terminal window now opens and runs the upgrade there (with the confirmation question).
+
 ## v1.115 (2026-10-04, minor)
 - Upgrading to a new version without a terminal or without confirmation now explains what to do instead of crashing; a failed version check shows a readable error.
 

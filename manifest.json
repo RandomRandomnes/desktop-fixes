@@ -1,15 +1,15 @@
 {
   "format": "custom-fixes",
   "version": 1.99,
-  "label": "1.115",
+  "label": "1.116",
   "kind": "minor",
   "date": "2026-10-04",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Upgrading to a new version without a terminal or without confirmation now explains what to do instead of crashing; a failed version check shows a readable error."
+    "When a new version is upgraded from a place without a terminal, a terminal window now opens and runs the upgrade there (with the confirmation question)."
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "48bfe3dbbedd339487f429d01b445c6faff37f4aa4a6edbdea16c75141c9863c",
+  "payloadSha256": "b358d7c35e3762bba399fa9597faa87d738445011409be32a2500ffd10a2ab95",
   "files": {
     ".config/hypr/custom/env.lua": "9ad5c4f1e29959f9dcdfc96846e5f4526fcbcef61e3ac7bf4bb787cc94a8b1f0",
     ".config/hypr/custom/execs.lua": "e1840046232062e73741e9e82f61864d271fe13ed41449554df01a33d9956d98",
@@ -79,7 +79,7 @@
     ".config/quickshell/end4-pC/services/ai/ClaudeCodeApiStrategy.qml": "71a1f160c1365a9e6fb56b153f11ae5645f10579ebc175715fc142b16b007131",
     ".config/quickshell/end4-pC/setup-wizard.qml": "5d88f9c87f582a44a9fa107501f7c9677a53c43f1be80f64e75eaf2fc939298a",
     ".local/bin/boot-loader": "a421be2168e1d307fa8f29e199b87735cb4bb630f9ee51038f02783a8cf25934",
-    ".local/bin/custom-update": "6d78f58c80272ee54b0b67c88a6bd4ceccc853d1b933f714cb0a2b8a9ab432b2",
+    ".local/bin/custom-update": "459f02ff0fedca14ba3826118052a63e0faa3ce098616cb31e65e136f67ed640",
     ".local/bin/hypr-guard": "e3999dbc31ba6545ca95472ce86e526a73e5597378212a820845bcc441c1cb6a",
     ".local/bin/linux-wallpaper-engine": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/linux-wallpaper-engine-ux": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
