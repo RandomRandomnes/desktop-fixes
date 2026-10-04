@@ -179,7 +179,7 @@ sudo dd if=arch-clone-&lt;date&gt;.iso of=/dev/sdX bs=4M status=progress oflag=s
           <tr><td>Account</td><td>Profile picture and display name.</td></tr>
           <tr><td>Apps</td><td>Pick applications or a pack. Next asks for confirmation, then a terminal installs them
             (administrator password required).</td></tr>
-          <tr><td>Drivers and updates</td><td><strong>Required:</strong> whether to receive custom bug fixes. Also: the
+          <tr><td>Drivers and updates</td><td><strong>Required:</strong> whether to receive custom fixes (system fixes always install). Also: the
             graphics driver (NVIDIA, Intel), installing all updates, and the boot menu.</td></tr>
           <tr><td>Shortcuts</td><td>The most important keyboard shortcuts.</td></tr>
         </tbody>
@@ -248,12 +248,18 @@ flatpak install flathub &lt;app-id&gt;      # Flathub</code>
 
     <section id="updates">
       <h2>Updates</h2>
-      <p>The taskbar's update button shows how many updates are waiting. One click installs system updates and, if
-        enabled, custom bug fixes; the password is asked once. Settings › Update shows the installed version.</p>
+      <p>The taskbar's update button shows how many updates are waiting. One click installs, in this order, system
+        updates, the illogical-impulse shell, system fixes and, if enabled, custom fixes; the password is asked once.
+        Settings › Update shows what is installed.</p>
       <ul>
-        <li><strong>Bug fixes</strong> (1.3, 1.31, …) install with regular updates. Revert the last one:
-          Settings › Update › <span class="q">Undo last</span>.</li>
-        <li><strong>Major versions</strong> (2, 3, …) never install by themselves. Settings › Update explains the
+        <li><strong>System fixes</strong> repair problems caused by Arch, Hyprland or illogical-impulse updates. They are
+          always installed, right after the update they belong to, and only on systems with matching versions. A fix
+          that has to change a custom file uses the variant made for the installed custom version; if none fits, the
+          file is left unchanged and Settings › Update says to install the latest custom fixes.</li>
+        <li><strong>Custom fixes</strong> (1.1, 1.11, …) repair the custom features (hypr-guard, Wallpaper Engine,
+          Settings, the setup assistant). Optional, chosen in the setup assistant. Revert the last one:
+          Settings › Update › <span class="q">Undo last</span>; it is not reinstalled until a newer fix is published.</li>
+        <li><strong>Major custom versions</strong> (2, 3, …) never install by themselves. Settings › Update explains the
           changes and the risk, and upgrades only on confirmation.</li>
         <li>After an update that breaks the desktop: Settings › Update › <span class="q">Run health check</span>.</li>
       </ul>

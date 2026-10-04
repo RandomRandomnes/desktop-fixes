@@ -87,9 +87,10 @@ ApplicationWindow {
             { row: "Productivity pack", text: "LibreOffice, Thunderbird, Obsidian, Code - OSS, KeePassXC" },
         ]},
         { id: "updates", title: "Updates", icon: "system_update_alt", heading: "Updates", blocks: [
-            { p: "The taskbar's update button shows waiting updates. One click installs system updates and, if enabled, custom bug fixes. Settings › Update shows the installed version." },
-            { row: "Bug fixes (1.3, 1.31, …)", text: "Install with regular updates. Revert the last one: Settings › Update › Undo last" },
-            { row: "Major versions (2, 3, …)", text: "Never automatic. Settings › Update explains the changes and the risk; upgrades only on confirmation" },
+            { p: "The taskbar's update button shows waiting updates. One click installs system updates, the illogical-impulse shell, system fixes and, if enabled, custom fixes. Settings › Update shows what is installed." },
+            { row: "System fixes", text: "Fix problems caused by Arch, Hyprland or illogical-impulse updates. Always installed, right after the update they belong to, only on matching versions" },
+            { row: "Custom fixes (1.1, 1.11, …)", text: "Fix the custom features. Optional (setup assistant). Revert the last one: Settings › Update › Undo last" },
+            { row: "Major custom versions (2, 3, …)", text: "Never automatic. Settings › Update explains the changes and the risk; upgrades only on confirmation" },
             { row: "Desktop broken after an update", text: "Settings › Update › Run health check" },
         ]},
         { id: "startup", title: "Boot menu", icon: "restart_alt", heading: "Boot menu and Windows", blocks: [

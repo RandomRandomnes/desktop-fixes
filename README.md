@@ -6,7 +6,18 @@
 > Wallpaper Engine support, boot menu choice and more). It is not the official illogical-impulse project and is not
 > affiliated with or supported by its authors; report problems with this version here, not upstream.
 
-Bug fixes for the Hyprland + illogical-impulse desktop image. Installed systems receive them through `custom-update` (Settings › Update) when enabled during the first-time setup. Releases are signed; `files/` contains a readable copy of the latest release.
+Fixes for the Hyprland + illogical-impulse desktop image, in two release lines. Installed systems receive them
+through `custom-update` (the update button and Settings › Update). Every release is signed.
+
+| Line | Tags | What it fixes | Installed |
+|---|---|---|---|
+| System fixes | `system-1`, `system-1.1`, … | Problems caused by updates to Arch, Hyprland or illogical-impulse | Always, with each update, right after the update it belongs to, and only on systems whose versions match |
+| Custom fixes | `custom-1`, `custom-1.1`, … | Problems in the custom additions (hypr-guard, Wallpaper Engine, Settings, the setup assistant, …) | When enabled in the setup assistant; a new whole number (2, 3, …) is a major version that is only offered |
+
+A system fix that has to change a custom file carries a version of the change for each range of custom versions, and
+is checked against every published custom version before release; a system whose file doesn't fit any variant keeps
+the file unchanged and is told to install the latest custom fixes. `files/` contains a readable copy of the latest
+custom release.
 
 ## Setup profiles
 

@@ -140,6 +140,7 @@ date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
     // Bug fixes (x.1 / x.01) for the installed version install with the normal updates. A new major version is
     // only offered here, explained, with a warning, and installed when the person asks (two clicks).
     property var offers: ({})            // custom-update offers --json
+    readonly property var sysFixes: offers.system || ({})   // system line: pending / waiting / partial / applied
     property var preview: ({})           // the sandbox "friend's PC" (publisher only)
     property bool isPublisher: false
     property string previewMsg: ""
@@ -271,12 +272,41 @@ date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
     }
 
     WSection {
+        // system fixes: needed because of Arch / Hyprland / illogical-impulse updates; always on, installed by the
+        // update button right after the updates they belong to (custom-update system-apply)
+        visible: !page.isPublisher
+        title: "System fixes"
+        WCard {
+            icon: "health_and_safety"
+            title: (page.sysFixes.pending || []).length > 0 ? `${page.sysFixes.pending.length} system fix(es) ready`
+                : "System fixes are installed automatically"
+            description: {
+                const s = page.sysFixes
+                if (s.error) return `Couldn't check: ${s.error}`
+                const parts = []
+                for (const r of (s.pending || [])) parts.push(`Ready: ${r.label}: ${(r.notes || []).join("; ")}`)
+                for (const p of (s.partial || [])) parts.push(`System fix ${p.label} left ${p.skipped.length} file(s) unchanged; installing the latest custom fixes completes it`)
+                for (const w of (s.waiting || [])) parts.push(`Waiting: ${w.label} (${w.reason})`)
+                if (parts.length === 0) parts.push((s.applied || []).length > 0 ? `Up to date. Applied: ${s.applied.join(", ")}` : "Up to date")
+                return parts.join("\n") + "\nThey fix problems caused by Arch, Hyprland or illogical-impulse updates and install with every update, only on systems with matching versions"
+            }
+            WButton { buttonText: offersProc.running ? "Checking…" : "Check now"; enabled: !offersProc.running; onClicked: page.refreshFixes() }
+            WButton {
+                visible: (page.sysFixes.pending || []).length > 0
+                accent: true
+                buttonText: "Install now"
+                onClicked: page.term(`${page.fixBin}/custom-update system-apply`, "System fixes")
+            }
+        }
+    }
+
+    WSection {
         visible: !page.isPublisher
         title: "Custom bug fixes"
         WToggle {
             icon: "build_circle"
             title: "Receive custom bug fixes"
-            description: "Signed fixes for the custom features of this system. Bug fixes are installed with regular updates; new major versions are only offered here"
+            description: "Signed fixes for the custom features of this system (hypr-guard, Wallpaper Engine, Settings, the setup assistant and others). Bug fixes are installed with regular updates; new major versions are only offered here"
             checked: Config.options.extras.customFixes
             onToggled: v => { Config.options.extras.customFixes = v; page.refreshFixes() }
         }
@@ -316,7 +346,7 @@ date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
         WCard {
             icon: "publish"
             title: "This system publishes the fixes"
-            description: "Releases are made with custom-publish (--feature +1, --fix +0.1, --minor +0.01). Other systems receive bug fixes for their version automatically; major versions are offered as shown below"
+            description: "Two release lines: custom fixes (custom-publish publish: --feature +1, --fix +0.1, --minor +0.01) and system fixes for Arch / Hyprland / illogical-impulse updates (custom-publish publish-system, checked against every custom version). Other systems install system fixes always and custom fixes when enabled"
         }
     }
 

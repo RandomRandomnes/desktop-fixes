@@ -2,6 +2,7 @@
 # Run by the update button in the Hyprland top bar (UpdatesCount.qml, inside kitty) and by the KDE panel
 # widget (~/.local/share/plasma/plasmoids/org.kde.plasma.systemupdate, inside Konsole).
 # 1) system packages via yay  2) end4-pC shell via hypr-guard (pull + reapply customizations + verify)
+# 3) system fixes for the new versions (always)  4) custom bug fixes (if enabled)
 # Step 2 is skipped when Quickshell isn't running (e.g. in Plasma): hypr-guard's verify needs the live shell,
 # and would otherwise roll back and relaunch Quickshell inside KDE. It runs next time from Hyprland.
 # Unattended apart from the sudo password at the start. The window closes by itself on success
@@ -28,7 +29,14 @@ else
     guard_rc=-1
 fi
 
-# 3) custom bug fixes (only when enabled; see ~/.local/bin/custom-update)
+# 3) system fixes: always, right after the packages and the shell they belong to (only those matching the installed
+#    versions install; see ~/.local/bin/custom-update)
+echo
+echo -e "\e[1m==> System fixes\e[0m"
+"$HOME/.local/bin/custom-update" system-apply
+sysfix_rc=$?
+
+# 4) custom bug fixes (only when enabled)
 fixes_rc=0
 if grep -q '"customFixes": *true' "$HOME/.config/illogical-impulse/config.json" 2>/dev/null; then
     echo
@@ -43,6 +51,7 @@ if [ $guard_rc -eq -1 ]; then :
 elif [ $guard_rc -eq 0 ]; then msgs+=("Desktop shell: up to date, customizations intact.")
 else msgs+=("Desktop shell: needs attention. Open Settings › Update › Run health check.")
 fi
+[ $sysfix_rc -ne 0 ] && msgs+=("System fixes: installation failed (see the output above).")
 [ $fixes_rc -ne 0 ] && msgs+=("Custom fixes: installation failed (see the output above).")
 [ "$hypr_before" != "$(pacman -Q hyprland 2>/dev/null)" ] && [ $in_hypr -eq 1 ] && msgs+=("Hyprland was updated: log out and log in again to complete the update.")
 [ "$plasma_before" != "$(pacman -Q plasma-workspace 2>/dev/null)" ] && [ $in_hypr -eq 0 ] && msgs+=("Plasma was updated: log out and log in again to complete the update.")
@@ -53,7 +62,7 @@ echo -e "\e[1m==> Summary\e[0m"
 printf '%s\n' "${msgs[@]}"
 echo
 
-if [ $yay_rc -eq 0 ] && [ $guard_rc -le 0 ] && [ $fixes_rc -eq 0 ]; then
+if [ $yay_rc -eq 0 ] && [ $guard_rc -le 0 ] && [ $sysfix_rc -eq 0 ] && [ $fixes_rc -eq 0 ]; then
     notify-send -a "System update" "Update finished" "$(printf '%s\n' "${msgs[@]}")"
     # A timed-out `read -t` returns 142 (SIGALRM). Exit 0 explicitly, or kitty reports it as a failure.
     read -t 10 -n 1 -s -p "Closing in 10s. Press any key to keep this window open." && read -r -p $'\nPress Enter to close.'

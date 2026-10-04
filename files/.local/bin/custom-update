@@ -1,25 +1,32 @@
 #!/usr/bin/env python3
-"""Install the custom bug fixes published for this system (2026-10-03).
+"""Install the published fixes for this system (2026-10-03; two release lines since 2026-10-04).
 
-  custom-update status              on/off, installed version, where fixes come from
-  custom-update check               is a bug fix for the installed version available? (exit 0 = yes, 1 = no, 2 = off/error)
-  custom-update apply [--yes]       install the newest bug fix for the installed version (x.1 / x.01 steps)
-  custom-update offers [--json]     what's available: a bug fix for the installed version and/or a new major version
-  custom-update upgrade <ver> [--yes]  move to a new major version (only when you ask; it can change a lot)
-  custom-update undo                put back the files from before the last install
-  custom-update consent yes|no      turn fixes on/off (the setup wizard and Settings › Update do this)
-  custom-update test-channel on|off also see test releases (for testing new versions)
+Two kinds of fixes, two numbered release lines in one GitHub repo:
+  system fixes   tags system-<label>  fixes needed because of (or to go with) updates to Arch, Hyprland or
+                                      illogical-impulse. Always on: they install with every system update, right
+                                      after the packages/shell they belong to, and only when the installed versions
+                                      match ("requires", e.g. hyprland>=0.57). A system fix can patch a custom file:
+                                      it carries one patch per custom-version range and applies the one that fits the
+                                      installed custom version; if none fits, that file is left unchanged (reported).
+  custom fixes   tags custom-<label>  fixes for the custom additions (hypr-guard, Wallpaper Engine, Settings, the
+                                      setup assistant, …). Optional: extras.customFixes (the setup wizard asks).
+                                      A new whole number (1 -> 2) is a major version: only offered, never automatic.
 
-Versions: a new whole number (1 -> 2) is a major version with new features; it is never installed by itself and is
-offered in Settings › Update with an explanation. Steps of 0.1 / 0.01 are bug fixes for the version you are on and
-install with regular updates.
+  custom-update status              both lines: on/off, installed, source
+  custom-update check [--quiet]     anything to install? (exit 0 = yes: a custom fix or a system fix; 1 = no; 2 = off/error)
+  custom-update apply [--yes]       install the newest custom bug fix for the installed version
+  custom-update system-apply        install every system fix that matches this system (run by system-update)
+  custom-update offers [--json]     what's available: system fixes (ready / waiting), custom fix, major version
+  custom-update upgrade <ver> [--yes]  move to a new major custom version (only when you ask)
+  custom-update undo                put back the files from before the last custom install
+  custom-update consent yes|no      custom fixes on/off (the setup wizard and Settings › Update do this)
+  custom-update test-channel on|off also see test releases
 
-Releases live in the GitHub repo named in ~/.local/share/custom-fixes/source.json: a signed list of releases
-(the "index" release: index.json + .sig), and per release v<ver>: manifest.json (+ .sig) and fixes.tar.gz.
-Signatures are ssh-keygen ones checked against ~/.local/share/custom-fixes/allowed_signers. A release never contains
-settings or personal files. A file you changed yourself is never overwritten: the new version is saved next to it as
-<file>.fixes-new. Consent is the shell setting extras.customFixes (off unless you said yes). On the PC that publishes
-the fixes (~/.local/state/custom-fixes-publisher exists) this does nothing; use custom-publish there.
+Releases live in the repo named in ~/.local/share/custom-fixes/source.json: a signed index (release "index":
+index.json + .sig) listing both lines, and per release manifest.json (+ .sig) and a payload tarball. Signatures are
+ssh-keygen ones checked against ~/.local/share/custom-fixes/allowed_signers. A release never contains settings or
+personal files. A file you changed yourself is never overwritten: the new version is saved next to it as
+<file>.fixes-new. On the PC that publishes (~/.local/state/custom-fixes-publisher exists) this does nothing.
 """
 import datetime
 import hashlib
@@ -40,7 +47,9 @@ SOURCE = os.path.join(SHARE, "source.json")
 SIGNERS = os.path.join(SHARE, "allowed_signers")
 BASE = os.path.join(SHARE, "base.json")          # version the clone was built with (written by custom-publish)
 STATE = os.path.join(HOME, ".local", "state", "custom-fixes")
-INSTALLED = os.path.join(STATE, "installed.json")
+INSTALLED = os.path.join(STATE, "installed.json")      # custom line
+SYSTEM = os.path.join(STATE, "system.json")            # system line: {"applied": {label: {...}}}
+SCHEME = 2                                             # 2 = two release lines (custom-*/system-* tags)
 PUBLISHER = os.path.join(HOME, ".local", "state", "custom-fixes-publisher")
 NAMESPACE = "custom-fixes"
 RISK = ("A major version changes how parts of the desktop work and may break the existing setup "
@@ -139,12 +148,16 @@ def release_index(src):
     return idx["releases"]
 
 
-def release(src, label):
-    base = f"https://github.com/{src['repo']}/releases/download/v{label}"
+def release(src, label, line="custom"):
+    base = f"https://github.com/{src['repo']}/releases/download/{line}-{label}"
     m = verified(src, fetch(f"{base}/manifest.json"), fetch(f"{base}/manifest.json.sig"))
-    if m.get("format") != "custom-fixes":
-        raise RuntimeError("not a fixes release")
+    if m.get("format") != ("system-fix" if line == "system" else "custom-fixes") or m.get("line", "custom") != line:
+        raise RuntimeError("not a release of the expected kind")
     return m, base
+
+
+def line_index(src, line):
+    return [r for r in release_index(src) if r.get("line") == line and (test_channel() or not r.get("test"))]
 
 
 def cents(v):
@@ -191,18 +204,249 @@ def vlabel(m):
 
 
 def installed():
+    """Custom line record. Systems from before the two release lines (installed.json / base.json without "scheme")
+    are on an old numbering: they count as custom 1 minus a step, so custom-1 is offered to them as a normal fix."""
     inst = load(INSTALLED, None)
     if inst is None:   # nothing installed by this tool yet: the files are the ones the clone was built with
         b = load(BASE, {})
-        inst = {"version": b.get("version", 0), "label": b.get("label", ""), "files": {}}
+        inst = {"version": b.get("version", 0), "label": b.get("label", ""), "files": {}, "scheme": b.get("scheme")}
+    inst.setdefault("files", {})
+    if inst.get("scheme") != SCHEME:
+        inst = {"version": 0, "label": "", "files": inst["files"], "legacy": True}
     return inst
+
+
+def cur_key(inst):
+    return (1, -1) if inst.get("legacy") else vkey(inst)
+
+
+# ── system line ──────────────────────────────────────────────────────────────────────────────────────────────────
+SHELL_REPO = os.path.join(HOME, ".config", "quickshell", "end4-pC")
+
+
+def system_usable():
+    return not os.path.isdir(PUBLISHER) and bool(source())
+
+
+def system_state():
+    return load(SYSTEM, {"applied": {}})
+
+
+def applied_system():
+    """System fixes already on this system: applied here, or already part of the files it was installed from."""
+    done = set(system_state()["applied"]) | set(load(BASE, {}).get("system", []))
+    return sorted(done, key=vkey)
+
+
+def partial_system():
+    """Applied system fixes that had to leave a file unchanged (no variant for the custom version installed then)."""
+    cur = installed().get("label") or ""
+    return [{"label": lab, "skipped": e["skipped"]} for lab, e in system_state()["applied"].items()
+            if e.get("skipped") and e.get("customAtApply") == cur]
+
+
+def pkg_version(name):
+    r = subprocess.run(["pacman", "-Q", name], capture_output=True, text=True)
+    return r.stdout.split()[1] if r.returncode == 0 and len(r.stdout.split()) > 1 else None
+
+
+def requirement(req):
+    """One requirement -> (met, reason). "hyprland>=0.57" (also >, <=, <, =) compares the installed package with
+    vercmp; "end4-pC@<commit>" needs the illogical-impulse shell to contain that commit."""
+    if req.startswith("end4-pC@"):
+        commit = req.split("@", 1)[1]
+        r = subprocess.run(["git", "-C", SHELL_REPO, "merge-base", "--is-ancestor", commit, "HEAD"], capture_output=True)
+        return r.returncode == 0, f"needs a newer illogical-impulse shell ({commit[:8]})"
+    for op in (">=", "<=", ">", "<", "="):
+        if op in req:
+            name, want = req.split(op, 1)
+            break
+    else:
+        name, want, op = req, "", ""
+    have = pkg_version(name.strip())
+    if have is None:
+        return False, f"{name.strip()} is not installed"
+    if not op:
+        return True, ""
+    c = int(subprocess.run(["vercmp", have, want.strip()], capture_output=True, text=True).stdout.strip() or 0)
+    met = {">=": c >= 0, "<=": c <= 0, ">": c > 0, "<": c < 0, "=": c == 0}[op]
+    return met, f"for {name.strip()} {op} {want.strip()} (installed: {have})"
+
+
+def system_offers(src):
+    """{"pending": ready to install, "waiting": [{label, reason}] (versions don't match yet)}."""
+    done = set(applied_system())
+    pending, waiting = [], []
+    for r in sorted(line_index(src, "system"), key=vkey):
+        if r["label"] in done:
+            continue
+        unmet = [why for met, why in (requirement(q) for q in r.get("requires", [])) if not met]
+        if unmet:
+            waiting.append({"label": r["label"], "reason": "; ".join(unmet), "notes": r.get("notes", [])})
+        else:
+            pending.append(r)
+    return {"pending": pending, "waiting": waiting}
+
+
+def in_range(key, variant):
+    lo = vkey(variant["min"]) if variant.get("min") else (0, -1)
+    hi = vkey(variant["max"]) if variant.get("max") else (10 ** 6, 0)
+    return lo <= key <= hi
+
+
+def install_system(src, entry):
+    lab = entry["label"]
+    try:
+        m, base = release(src, lab, "system")
+        payload = fetch(f"{base}/{m['payload']}")
+    except Exception as e:
+        print(f"System fix {lab}: download failed ({e})")
+        return 1
+    if hashlib.sha256(payload).hexdigest() != m["payloadSha256"]:
+        print(f"System fix {lab}: the download is corrupted; nothing was installed.")
+        return 1
+    unmet = [why for met, why in (requirement(q) for q in m.get("requires", [])) if not met]
+    if unmet:                                    # the signed manifest is authoritative, not just the index
+        print(f"System fix {lab}: not for this system ({'; '.join(unmet)}).")
+        return 0
+    # everything checked before anything changes: whole files and every patch variant present with their checksums
+    blobs, problems = {}, []
+    try:
+        with tarfile.open(fileobj=io.BytesIO(payload), mode="r:gz") as tar:
+            wanted = dict(m.get("files", {}))
+            for pt in m.get("patches", []):
+                for v in pt["variants"]:
+                    wanted[v["patch"]] = v["sha256"]
+            for rel, digest in wanted.items():
+                if rel.startswith("/") or ".." in rel.split("/"):
+                    problems.append(f"{rel}: unsafe path")
+                    continue
+                try:
+                    member = tar.getmember(rel)
+                    data = tar.extractfile(member).read()
+                except (KeyError, AttributeError):
+                    problems.append(f"{rel}: missing from the download")
+                    continue
+                if hashlib.sha256(data).hexdigest() != digest:
+                    problems.append(f"{rel}: checksum mismatch")
+                    continue
+                blobs[rel] = (data, member.mode & 0o777)
+    except (tarfile.TarError, OSError, EOFError) as e:
+        problems.append(f"the download can't be read ({e})")
+    if problems:
+        print(f"System fix {lab} is incomplete or damaged; nothing was installed:")
+        for pr in problems[:10]:
+            print(f"  {pr}")
+        return 1
+
+    inst = installed()
+    custom_key = cur_key(inst)
+    backup = os.path.join(STATE, "backups", f"system-{lab}")
+    shutil.rmtree(backup, ignore_errors=True)
+    changed, kept, skipped = [], [], []
+
+    def back_up(rel):
+        dst = os.path.join(HOME, rel)
+        if os.path.exists(dst):
+            os.makedirs(os.path.dirname(os.path.join(backup, rel)), exist_ok=True)
+            shutil.copy2(dst, os.path.join(backup, rel))
+
+    for rel, digest in m.get("files", {}).items():          # files that belong to the system line
+        data, mode = blobs[rel]
+        dst = os.path.join(HOME, rel)
+        if os.path.exists(dst):
+            cur = sha256(dst)
+            if cur == digest:
+                continue
+            if rel in inst["files"] and cur != inst["files"][rel]:   # edited by the user
+                with open(dst + ".fixes-new", "wb") as f:
+                    f.write(data)
+                kept.append(rel)
+                continue
+            back_up(rel)
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        tmp = dst + ".fixes-tmp"
+        with open(tmp, "wb") as f:
+            f.write(data)
+        os.chmod(tmp, mode)
+        os.replace(tmp, dst)
+        changed.append(rel)
+    for pt in m.get("patches", []):                          # changes to custom files: the variant for this version
+        rel = pt["file"]
+        variant = next((v for v in pt["variants"] if in_range(custom_key, v)), None)
+        if not variant:
+            skipped.append({"file": rel, "reason": "no variant for the installed custom version"})
+            continue
+        with tempfile.NamedTemporaryFile("wb", suffix=".patch", delete=False) as tf:
+            tf.write(blobs[variant["patch"]][0])
+        try:
+            done = subprocess.run(["patch", "-p1", "-R", "-s", "-f", "--dry-run", "-d", HOME, "-i", tf.name], capture_output=True)
+            if done.returncode == 0:     # this custom version already contains the change
+                continue
+            dry = subprocess.run(["patch", "-p1", "-N", "-s", "-f", "--dry-run", "-d", HOME, "-i", tf.name], capture_output=True)
+            if dry.returncode != 0:
+                skipped.append({"file": rel, "reason": "the change does not fit this file (edited, or another version)"})
+                continue
+            back_up(rel)
+            subprocess.run(["patch", "-p1", "-N", "-s", "-f", "--no-backup-if-mismatch", "-d", HOME, "-i", tf.name],
+                           check=True, capture_output=True)
+            changed.append(rel)
+        finally:
+            os.unlink(tf.name)
+
+    # files a system fix changed are not the user's edits: remember their new content, so a later custom update
+    # recognizes them as unedited and replaces them (its version contains the same change)
+    st = system_state()
+    st.setdefault("changed", {})
+    for rel in changed:
+        p = os.path.join(HOME, rel)
+        if os.path.exists(p):
+            st["changed"][rel] = sha256(p)
+    st["applied"][lab] = {"date": datetime.datetime.now().isoformat(timespec="seconds"), "changed": changed,
+                          "kept": kept, "skipped": skipped, "customAtApply": inst.get("label") or ""}
+    save(SYSTEM, st)
+    print(f"System fix {lab}: {len(changed)} file(s) updated." + "".join(f"\n  - {n}" for n in m.get("notes", [])))
+    for rel in kept:
+        print(f"  kept the locally modified ~/{rel} (the new version is saved as ~/{rel}.fixes-new)")
+    for sk in skipped:
+        print(f"  left ~/{sk['file']} unchanged: {sk['reason']}. Updating the custom fixes completes this fix.")
+    return 0
+
+
+def cmd_system_apply():
+    if os.path.isdir(PUBLISHER):
+        print("This system publishes the fixes (custom-publish); nothing to install.")
+        return 0
+    src = source()
+    if not src:
+        print("No fixes source is configured.")
+        return 0
+    try:
+        o = system_offers(src)
+    except Exception as e:
+        print(f"Checking for system fixes failed: {e}")
+        return 1
+    if not o["pending"]:
+        print("System fixes: nothing to install." + (f" Waiting: {', '.join(w['label'] for w in o['waiting'])}." if o["waiting"] else ""))
+        return 0
+    rc, any_changed = 0, False
+    for r in o["pending"]:
+        rc |= install_system(src, r)
+        any_changed = True
+    if any_changed:
+        if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+            subprocess.run(["hyprctl", "reload"], capture_output=True)
+        guard = os.path.join(HOME, ".local", "bin", "hypr-guard")
+        if os.access(guard, os.X_OK):
+            subprocess.run([guard, "snapshot", "--force"], capture_output=True)
+    return rc
 
 
 def offers(src):
     """{'fix': entry|None, 'upgrade': entry|None} for this PC."""
-    cur = vkey(installed())
+    cur = cur_key(installed())
     major = cur[0]
-    rel = [r for r in release_index(src) if test_channel() or not r.get("test")]
+    rel = line_index(src, "custom")
     skip = installed().get("skip")          # a fix the user undid: it and older ones are not offered again
     fixes = [r for r in rel if vkey(r) > cur and vkey(r)[0] == major and not (skip and vkey(r) <= vkey(skip))]
     higher = [r for r in rel if vkey(r)[0] > major]
@@ -220,10 +464,11 @@ def offers(src):
 def cmd_status():
     src = source()
     inst = installed()
-    print(f"fixes:     {'on' if consent() else 'off'}" + ("  (this system publishes them)" if os.path.isdir(PUBLISHER) else "")
-          + ("  (test releases on)" if test_channel() else ""))
-    print(f"source:    {src['repo'] if src else 'not configured'}")
-    print(f"installed: {'v' + str(inst.get('label') or inst['version']) if inst['version'] else 'none'}")
+    pub = "  (this system publishes them)" if os.path.isdir(PUBLISHER) else ""
+    print(f"source:         {src['repo'] if src else 'not configured'}")
+    print(f"system fixes:   always on{pub}; applied: {', '.join(applied_system()) or 'none'}")
+    print(f"custom fixes:   {'on' if consent() else 'off'}{pub}" + ("  (test releases on)" if test_channel() else ""))
+    print(f"custom version: {('v' + inst['label']) if inst.get('label') else ('from before the release reset' if inst.get('legacy') else 'none')}")
 
 
 def usable():
@@ -231,14 +476,20 @@ def usable():
 
 
 def cmd_check(quiet=False):
-    if not usable():
+    if not system_usable():
         return 2
     try:
-        fix = offers(source())["fix"]
+        pending = system_offers(source())["pending"]
+        fix = offers(source())["fix"] if usable() else None
     except Exception as e:
         if not quiet:
             print(f"Checking for fixes failed: {e}")
         return 2
+    if pending and not quiet:
+        for r in pending:
+            print(f"system fix {r['label']}: {'; '.join(r.get('notes', []))}")
+    if pending and not fix:
+        return 0
     if fix:
         if not quiet:
             print(f"v{fix['label']} ({fix.get('date', '')}):")
@@ -252,8 +503,15 @@ def cmd_check(quiet=False):
 
 
 def cmd_offers(as_json):
-    out = {"installed": installed().get("label") or str(installed()["version"]), "fix": None, "upgrade": None,
-           "risk": RISK, "enabled": bool(usable()), "error": ""}
+    out = {"installed": installed().get("label") or "", "fix": None, "upgrade": None,
+           "risk": RISK, "enabled": bool(usable()), "error": "",
+           "system": {"enabled": bool(system_usable()), "applied": applied_system(), "pending": [], "waiting": [],
+                      "partial": partial_system(), "error": ""}}
+    if system_usable():
+        try:
+            out["system"].update(system_offers(source()))
+        except Exception as e:
+            out["system"]["error"] = str(e)
     if usable():
         try:
             out.update(offers(source()))
@@ -262,7 +520,11 @@ def cmd_offers(as_json):
     if as_json:
         print(json.dumps(out))
     else:
-        print(f"installed: v{out['installed']}")
+        sy = out["system"]
+        print(f"system:    ready {', '.join(r['label'] for r in sy['pending']) or 'none'}; "
+              f"waiting {', '.join(w['label'] + ' (' + w['reason'] + ')' for w in sy['waiting']) or 'none'}"
+              + "".join(f"; {p['label']} partly applied ({len(p['skipped'])} file(s) need newer custom fixes)" for p in sy['partial']))
+        print(f"installed: {('v' + out['installed']) if out['installed'] else 'none'}")
         print(f"bug fix:   {'v' + out['fix']['label'] if out['fix'] else 'none'}")
         u = out["upgrade"]
         print(f"upgrade:   {('version ' + str(u['major']) + ' (v' + u['label'] + '): ' + u['upgrade'].get('title', '')) if u else 'none'}")
@@ -350,6 +612,8 @@ def install(src, label, yes, what):
                 continue
             edited = (cur != inst["files"][rel]) if rel in inst["files"] else \
                 (base_files is not None and cur != base_files.get(rel))   # vs. how it came with the install
+            if edited and system_state().get("changed", {}).get(rel) == cur:
+                edited = False                                   # changed by a system fix, not by the user
             if edited:
                 # changed by the user (since the last fix, or since installation): keep theirs, put ours next to it
                 with open(dst + ".fixes-new", "wb") as f:
@@ -366,7 +630,8 @@ def install(src, label, yes, what):
         os.replace(tmp, dst)
         record[rel] = digest
         changed.append(rel)
-    save(INSTALLED, {"version": m["version"], "label": vlabel(m), "previous": inst["version"],
+    save(INSTALLED, {"scheme": SCHEME, "version": m["version"], "label": vlabel(m), "previous": inst["version"],
+                     "previousLegacy": bool(inst.get("legacy")),
                      "previousLabel": inst.get("label") or str(inst["version"]), "date": m.get("date", ""),
                      "files": record, "changed": changed, "installedAt": datetime.datetime.now().isoformat(timespec="seconds")})
 
@@ -482,8 +747,11 @@ def cmd_undo():
     # files that were new in that release are left in place; versions before it are restored. The undone version is
     # remembered so updates don't reinstall it; a newer release is offered as usual (and contains its changes too).
     undone = inst.get("label") or str(inst["version"])
-    save(INSTALLED, {"version": inst.get("previous", 0), "label": inst.get("previousLabel", ""), "files": inst["files"],
-                     "skip": undone})
+    rec = {"scheme": SCHEME, "version": inst.get("previous", 0), "label": inst.get("previousLabel", ""),
+           "files": inst["files"], "skip": undone}
+    if inst.get("previousLegacy"):
+        rec.update(label="", legacy=True)        # back to "from before the release reset" (counts as custom 1 minus a step)
+    save(INSTALLED, rec)
     guard = os.path.join(HOME, ".local", "bin", "hypr-guard")
     if restored and os.access(guard, os.X_OK):     # the restored files are the known-good state now; otherwise the
         subprocess.run([guard, "snapshot", "--force"], capture_output=True)   # login check would put the fix back
@@ -503,6 +771,8 @@ def main():
         sys.exit(cmd_check("--quiet" in a))
     elif cmd == "apply":
         sys.exit(cmd_apply("--yes" in a))
+    elif cmd == "system-apply":
+        sys.exit(cmd_system_apply())
     elif cmd == "offers":
         sys.exit(cmd_offers("--json" in a))
     elif cmd == "upgrade":
