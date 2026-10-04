@@ -78,6 +78,33 @@ def drop_path(d, dotted):
     d.pop(last, None)
 
 
+def get_path(d, dotted):
+    for k in dotted.split("."):
+        if not isinstance(d, dict) or k not in d:
+            return None, False
+        d = d[k]
+    return d, True
+
+
+def set_path(d, dotted, value):
+    *parents, last = dotted.split(".")
+    for k in parents:
+        if not isinstance(d.get(k), dict):
+            d[k] = {}
+        d = d[k]
+    d[last] = value
+
+
+def keep_personal(base, cur):
+    """Apply: personal settings stay as they are now (a profile is applied on top of stock settings, which would
+    otherwise reset them); missing ones fall back to the shell's defaults."""
+    for dotted in PERSONAL:
+        drop_path(base, dotted)
+        value, found = get_path(cur, dotted)
+        if found:
+            set_path(base, dotted, copy.deepcopy(value))
+
+
 def drop_personal(settings):
     for dotted in PERSONAL:
         drop_path(settings, dotted)
@@ -248,6 +275,7 @@ def cmd_apply(name, yes):
     for k in USER_ONLY_FEATURES:   # keeps the user's own choice; off unless switched on before
         sect, key = FEATURES[k]
         base.setdefault(sect, {})[key] = (cur.get(sect) or {}).get(key) is True
+    keep_personal(base, cur)       # name, location, language, AI, folders, update consent: unchanged
     for sect, key in PROTECTED:    # the current dock and app grid, or the shell's defaults
         if key in (cur.get(sect) or {}):
             base.setdefault(sect, {})[key] = copy.deepcopy(cur[sect][key])

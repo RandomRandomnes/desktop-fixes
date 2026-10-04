@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.74 (2026-10-04, fix)
+- Applying a setup profile keeps the bug-fix update choice, display name, location, language, AI settings, folders and autostart programs.
+
 ## v1.64 (2026-10-04, fix)
 - Share my setup no longer writes personal settings (name, picture, location, AI settings, folders, language, autostart programs, the update choice) or the login name into the profile file, and applying a profile ignores such settings.
 

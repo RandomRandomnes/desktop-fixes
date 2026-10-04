@@ -1,15 +1,15 @@
 {
   "format": "custom-fixes",
-  "version": 1.64,
-  "label": "1.64",
+  "version": 1.74,
+  "label": "1.74",
   "kind": "fix",
   "date": "2026-10-04",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Share my setup no longer writes personal settings (name, picture, location, AI settings, folders, language, autostart programs, the update choice) or the login name into the profile file, and applying a profile ignores such settings."
+    "Applying a setup profile keeps the bug-fix update choice, display name, location, language, AI settings, folders and autostart programs."
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "6a2084a954ad11d603c1381bae8cb1e34aac77310c2a99e13da3150a6b0b5aa2",
+  "payloadSha256": "06adf7950871ab1af213cded42c73aab3efee83142bd6534be1d54e05cf4a591",
   "files": {
     ".config/hypr/custom/env.lua": "9ad5c4f1e29959f9dcdfc96846e5f4526fcbcef61e3ac7bf4bb787cc94a8b1f0",
     ".config/hypr/custom/execs.lua": "e1840046232062e73741e9e82f61864d271fe13ed41449554df01a33d9956d98",
@@ -85,7 +85,7 @@
     ".local/bin/linux-wallpaper-engine-ux": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/setup-apps": "7dacdaaa8bd9d2b6abb30c36769a396a8e7f50b32b562c91d8ac55994e445216",
     ".local/bin/setup-features": "7088a7e0d7952b5b71907cd10bc5afe4f2d186539312cab7b7c10feab93dc418",
-    ".local/bin/setup-profile": "b6eca1770666c5faf1e676b4d143be26585f5b8b06472385d02dd086176e2b13",
+    ".local/bin/setup-profile": "c74f932514eea6aeddf96864149d162804339f5614fd1ea2ca7f64ec2b3b65f6",
     ".local/bin/switch-desktop": "2d1e83bdd546f919736fd2cadcfef4ce078dfc06b8f5fb6a9fb563f04db5b302",
     ".local/bin/system-update": "5f93a1ec2f4bae2e601d98a7dfc2a738f5ce0e3a1c4b454c9b629961815ed30b",
     ".local/bin/wallpaper-engine-ctl": "95e50df6c91a32b8ab58dccc3146cb3321e4dee2966b427141c7dba91dff2d58",
