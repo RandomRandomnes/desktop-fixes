@@ -1,15 +1,15 @@
 {
   "format": "custom-fixes",
-  "version": 1.42,
-  "label": "1.42",
-  "kind": "fix",
+  "version": 1.43,
+  "label": "1.43",
+  "kind": "minor",
   "date": "2026-10-04",
   "publisher": "RandomRandomnes",
   "notes": [
-    "The original illogical-impulse welcome window is replaced by the setup assistant: a first start no longer opens it (or resets the wallpaper), and Shift+Super+Alt+/ opens the setup assistant."
+    "The GPU widget shows the correct name after the graphics card is replaced."
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "263988c4367e25276eb92c830236092bf1931aa3adbf67ff26a0935dd245e2ac",
+  "payloadSha256": "5502ad4645ed926197117e5cc749cb5c0147cf43c9f4ee05596a7515e1a85541",
   "files": {
     ".config/hypr/custom/env.lua": "9ad5c4f1e29959f9dcdfc96846e5f4526fcbcef61e3ac7bf4bb787cc94a8b1f0",
     ".config/hypr/custom/execs.lua": "e1840046232062e73741e9e82f61864d271fe13ed41449554df01a33d9956d98",
@@ -66,7 +66,7 @@
     ".config/quickshell/end4-pC/quick-start.qml": "1dee6020eb8bd1e1a5c8891c55cc6ebb00c4d5e7c15b7ed49418bd177a974881",
     ".config/quickshell/end4-pC/scripts/gpu/get_gpuinfo.sh": "75fea6231f83a7bdeb890fddc33bb9939567fd3c9cce480900d01b3bf6147a8f",
     ".config/quickshell/end4-pC/scripts/power/get_power.sh": "5b23e93764e90fb8769bfc69041fb66ac32974c385798aab8974683aff6adafa",
-    ".config/quickshell/end4-pC/scripts/sysstats/sysstats.py": "efa732d1a99d270b62047b39b09d338ad94c1b37ba3b176a9f41fcec97a2756e",
+    ".config/quickshell/end4-pC/scripts/sysstats/sysstats.py": "9db7246b27c25c493527f147c2b34da7fbb4f4e9774bdb3709971ad389e0da75",
     ".config/quickshell/end4-pC/services/Ai.qml": "51c829d81665e598a139e00560bdf9c28834dee8f9057ccb026f0d4f8e29459d",
     ".config/quickshell/end4-pC/services/Extras.qml": "83422cac4e75a03453008118890648e7630e9da9b8e631858bbdd5cc2e1fbc85",
     ".config/quickshell/end4-pC/services/FirstRunExperience.qml": "517e071a485ba89a4c50dce972b8b0095983e5e79213a2744c58e715946e5ed7",
@@ -130,9 +130,7 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/hypr/custom/keybinds.lua",
-    ".config/quickshell/end4-pC/services/FirstRunExperience.qml",
-    ".local/bin/hypr-guard"
+    ".config/quickshell/end4-pC/scripts/sysstats/sysstats.py"
   ],
   "test": false
 }

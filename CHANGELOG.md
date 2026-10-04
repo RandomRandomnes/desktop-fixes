@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.43 (2026-10-04, minor)
+- The GPU widget shows the correct name after the graphics card is replaced.
+
 ## v1.42 (2026-10-04, fix)
 - The original illogical-impulse welcome window is replaced by the setup assistant: a first start no longer opens it (or resets the wallpaper), and Shift+Super+Alt+/ opens the setup assistant.
 

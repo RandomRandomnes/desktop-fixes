@@ -75,19 +75,27 @@ for card in sorted(glob.glob("/sys/class/drm/card[0-9]")):
 gpu_hwmon = next(iter(glob.glob(os.path.join(gpu_dev, "hwmon/hwmon*"))), None) if gpu_dev else None
 gpu_name = ""
 if gpu_dev:
+    # The name comes from vulkaninfo (slow, so cached). The cache is tied to the card's PCI id, so another GPU gets
+    # its own name; with several GPUs the entry matching the measured card is used.
     os.makedirs(CACHE_DIR, exist_ok=True)
     name_cache = os.path.join(CACHE_DIR, "gpu-name")
-    gpu_name = read(name_cache, "")
+    pci_id = f"{read(os.path.join(gpu_dev, 'vendor'), '').strip()}:{read(os.path.join(gpu_dev, 'device'), '').strip()}"
+    cached_id, _, cached_name = read(name_cache, "").partition("\t")
+    gpu_name = cached_name if cached_id == pci_id else ""
     if not gpu_name:
         try:
             out = subprocess.run(["vulkaninfo", "--summary"], capture_output=True, text=True, timeout=8).stdout
-            m = re.search(r"deviceName\s*=\s*(.+)", out)
-            gpu_name = re.sub(r"\s*\(.*\)$", "", m.group(1)).replace("AMD ", "").strip() if m else ""
+            for block in re.split(r"\nGPU\d+:", out):
+                ids = dict(re.findall(r"(vendorID|deviceID)\s*=\s*(0x[0-9a-fA-F]+)", block))
+                m = re.search(r"deviceName\s*=\s*(.+)", block)
+                if m and f"{ids.get('vendorID', '').lower()}:{ids.get('deviceID', '').lower()}" == pci_id.lower():
+                    gpu_name = re.sub(r"\s*\(.*\)$", "", m.group(1)).replace("AMD ", "").strip()
+                    break
         except (OSError, subprocess.SubprocessError):
             gpu_name = ""
         if gpu_name:
             with open(name_cache, "w") as f:
-                f.write(gpu_name)
+                f.write(f"{pci_id}\t{gpu_name}")
 
 nvmes = []
 for h in hwmon_by_name("nvme"):
