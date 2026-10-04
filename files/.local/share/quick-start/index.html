@@ -1,4 +1,4 @@
-<title>Arch Clone Quick Start</title>
+<title>Phoenix Quick Start</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600&family=Rubik:wght@400;500&family=JetBrains+Mono:wght@500&display=swap">
 <style>
@@ -85,9 +85,9 @@ td:first-child { white-space: nowrap }
 
   <main>
     <header>
-      <div class="eyebrow">Arch Linux · Hyprland · custom illogical-impulse</div>
-      <h1>Quick start</h1>
-      <p class="lede">Installing and using this desktop. It is a custom version of
+      <div class="eyebrow">Phoenix · Arch Linux · Hyprland</div>
+      <h1>Phoenix quick start</h1>
+      <p class="lede">Installing and using Phoenix, a Windows-style desktop for Arch Linux. It is a custom version of
         <a href="https://github.com/end-4/dots-hyprland">illogical-impulse</a>, not the official project. Installation
         takes about 15 minutes; the setup assistant follows at the first start.</p>
     </header>
@@ -116,7 +116,7 @@ td:first-child { white-space: nowrap }
         </tbody>
       </table></div>
       <code class="cmd">lsblk                                   # find the stick, e.g. sdc
-sudo dd if=arch-clone-&lt;date&gt;.iso of=/dev/sdX bs=4M status=progress oflag=sync</code>
+sudo dd if=phoenix-&lt;date&gt;.iso of=/dev/sdX bs=4M status=progress oflag=sync</code>
     </section>
 
     <section id="boot">
@@ -142,7 +142,7 @@ sudo dd if=arch-clone-&lt;date&gt;.iso of=/dev/sdX bs=4M status=progress oflag=s
     <section id="install">
       <h2>Install</h2>
       <p>The stick starts to a text prompt. Run:</p>
-      <code class="cmd">install-clone</code>
+      <code class="cmd">install-phoenix</code>
       <p>Nothing is written to disk until <code>YES</code> is entered.</p>
       <ol class="steps">
         <li><div><span class="q">Disk</span>: the USB stick itself is never listed. Disks are tagged
@@ -224,7 +224,7 @@ sudo dd if=arch-clone-&lt;date&gt;.iso of=/dev/sdX bs=4M status=progress oflag=s
       <h3>Setup profiles</h3>
       <p>A profile is one file with an appearance and a set of feature switches. Built in: <strong>Default</strong>
         (Windows-style, monochrome). More, such as <strong>Custom_01</strong>, are on the
-        <a href="https://github.com/RandomRandomnes/desktop-fixes#setup-profiles">project page</a>.</p>
+        <a href="https://github.com/RandomRandomnes/phoenix#setup-profiles">project page</a>.</p>
       <ul>
         <li>Apply: Settings › Extras › <span class="q">Use a profile file</span>. Current settings are backed up first.</li>
         <li>Save your own: Settings › Extras › <span class="q">Share my setup</span>.</li>
@@ -287,7 +287,7 @@ boot-loader use direct         # back to no menu</code>
       <p>Installed alongside. Turn on the KDE switch in Settings › Extras, then switch from the right sidebar or the
         power menu.</p>
       <h3>Unlock an encrypted disk with the TPM</h3>
-      <p><code>~/WELCOME-clone.txt</code> lists the two commands. Afterwards the passphrase is only needed if the
+      <p><code>~/WELCOME-phoenix.txt</code> lists the two commands. Afterwards the passphrase is only needed if the
         firmware or Secure Boot state changes.</p>
     </section>
 

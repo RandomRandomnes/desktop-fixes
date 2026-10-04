@@ -1,8 +1,8 @@
 [Desktop Entry]
 Type=Application
-Name=Quick Start
-Comment=A short guide to this desktop: shortcuts, windows, updates and help
+Name=Phoenix Quick Start
+Comment=A short guide to Phoenix: shortcuts, windows, updates and help
 Exec=sh -c "qs -p \\$HOME/.config/quickshell/end4-pC/quick-start.qml"
 Icon=help-browser
 Categories=Utility;Documentation;
-Keywords=help;guide;shortcuts;tutorial;welcome;
+Keywords=phoenix;help;guide;shortcuts;tutorial;welcome;quick start;

@@ -20,7 +20,7 @@ import qs.modules.ii.settingsW11
 ApplicationWindow {
     id: root
     visible: true
-    title: "Quick Start"
+    title: "Phoenix Quick Start"
     width: 980
     height: 700
     minimumWidth: 720
@@ -37,11 +37,11 @@ ApplicationWindow {
 
     // Pages: blocks are {p}, {h}, {keys: [..], what}, {row: title, text} (a card) and {open: label, cmd}.
     readonly property var pages: [
-        { id: "welcome", title: "Welcome", icon: "waving_hand", heading: "Welcome", blocks: [
-            { p: "Arch Linux with Hyprland and a custom version of illogical-impulse (not the official project), set up to work like Windows." },
+        { id: "welcome", title: "Welcome", icon: "waving_hand", heading: "Welcome to Phoenix", blocks: [
+            { p: "Phoenix is a Windows-style desktop for Arch Linux: Hyprland with a customized illogical-impulse shell (not the official project)." },
             { row: "Super key", text: "The Windows key. Most shortcuts use it; Super+/ lists all of them" },
             { row: "Settings", text: "Super+I" },
-            { row: "This guide", text: "Super, then type \"Quick Start\"; or Settings › Extras" },
+            { row: "This guide", text: "Super, then type \"Phoenix\" or \"Quick Start\"; or Settings › Extras" },
         ]},
         { id: "keys", title: "Shortcuts", icon: "keyboard_command_key", heading: "Keyboard shortcuts", blocks: [
             { h: "Windows and workspaces" },
@@ -78,7 +78,7 @@ ApplicationWindow {
             { row: "Wallpaper Engine background", text: "Off by default; see Extras" },
             { row: "Use a profile file", text: "Apply a setup profile (appearance + feature switches). Current settings are backed up first" },
             { row: "Share my setup", text: "Save the current setup as a profile file" },
-            { p: "Profiles never change the dock or the app grid and never turn on Wallpaper Engine. More profiles: github.com/RandomRandomnes/desktop-fixes" },
+            { p: "Profiles never change the dock or the app grid and never turn on Wallpaper Engine. More profiles: github.com/RandomRandomnes/phoenix" },
             { open: "Open Settings", cmd: ["qs", "-c", "end4-pC", "ipc", "call", "settings", "open"] },
         ]},
         { id: "apps", title: "Applications", icon: "apps", heading: "Applications", blocks: [

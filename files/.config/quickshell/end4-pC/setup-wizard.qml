@@ -38,7 +38,7 @@ ApplicationWindow {
     // page/sub: a settingsW11 page embedded as the step body (WState.sub picks its sub-page)
     readonly property var steps: [
         { id: "welcome",   title: "Welcome",           icon: "waving_hand",
-          heading: "Welcome",
+          heading: "Welcome to Phoenix",
           text: "This assistant configures the system in a few steps. Each step can be skipped and changed later in Settings (Super+I)." },
         { id: "wifi",      title: "Wi-Fi",             icon: "wifi", sub: "wifi",
           heading: "Network connection",
@@ -870,7 +870,7 @@ ApplicationWindow {
             WSection {
                 WCard {
                     icon: "menu_book"
-                    title: "Quick Start"
+                    title: "Phoenix Quick Start"
                     description: "A short guide to keyboard shortcuts, window management, updates and additional features. It opens after Finish and remains available in the application menu"
                 }
                 WCard { icon: "settings"; title: "Settings"; description: "Super+I. Extra features, profile files and this setup are under Extras" }

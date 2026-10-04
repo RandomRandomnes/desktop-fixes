@@ -107,8 +107,8 @@ SIGN_SH='if [ -d /var/lib/sbctl/keys ] || [ -d /usr/share/secureboot/keys ]; the
 
 use_direct() {
     [ -f "$ESP/EFI/Linux/arch-linux.efi" ] || { echo "The kernel image $ESP/EFI/Linux/arch-linux.efi is missing."; exit 1; }
-    ensure_entry "$UKI_FB" "Arch Linux (fallback)" >/dev/null || exit 1
-    first_in_order "$(ensure_entry "$UKI" "Arch Linux")" || exit 1
+    ensure_entry "$UKI_FB" "Phoenix (fallback)" >/dev/null || exit 1
+    first_in_order "$(ensure_entry "$UKI" "Phoenix")" || exit 1
 }
 
 use_grub() {

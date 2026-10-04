@@ -1,4 +1,4 @@
-# Desktop fixes
+# Phoenix
 
 > **This is a custom version of illogical-impulse.** It is based on the
 > [illogical-impulse](https://github.com/end-4/dots-hyprland) Hyprland configuration by end-4, with changes and
@@ -26,7 +26,7 @@ change the apps in the dock or the app grid, and they never switch on Wallpaper 
 
 | Profile | Download |
 |---|---|
-| Custom_01: live system graphs, the KDE switch, Claude Code, a customized taskbar and desktop widgets | [custom_01.json](https://github.com/RandomRandomnes/desktop-fixes/raw/main/profiles/custom_01.json) |
+| Custom_01: live system graphs, the KDE switch, Claude Code, a customized taskbar and desktop widgets | [custom_01.json](https://github.com/RandomRandomnes/phoenix/raw/main/profiles/custom_01.json) |
 
 To use a profile: download it, then in the first-time setup choose **Your setup › Use a profile file…**, or run
 `setup-profile apply ~/Downloads/custom_01.json` in a terminal (the current settings are backed up first).

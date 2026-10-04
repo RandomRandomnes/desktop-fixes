@@ -653,6 +653,15 @@ Item {
         WPage {
             id: ap
             Component.onCompleted: { if (SystemInfo.cpu === "") SystemInfo.refresh(); }
+            // Phoenix version: the installed custom release (or the one the system was installed with), local files only
+            property string phoenixVersion: ""
+            Process {
+                running: true
+                command: ["bash", "-c", "cat ~/.local/state/custom-fixes/installed.json 2>/dev/null || cat ~/.local/share/custom-fixes/base.json 2>/dev/null"]
+                stdout: StdioCollector {
+                    onStreamFinished: { try { const j = JSON.parse(text); ap.phoenixVersion = j.label || "" } catch (e) { ap.phoenixVersion = "" } }
+                }
+            }
             readonly property var specs: [
                 ["Device name", SystemInfo.hostname],
                 ["Processor", SystemInfo.cpu],
@@ -660,7 +669,7 @@ Item {
                 ["Installed RAM", (SystemInfo.memory.split("/").pop() || "").trim().replace(/Gi$/, " GB")],
                 ["Operating system", SystemInfo.distroName],
                 ["Kernel", SystemInfo.kernelVersion],
-                ["Desktop", `Hyprland + illogical-impulse (${SystemInfo.windowingSystem || "Wayland"})`],
+                ["Desktop", `Phoenix${ap.phoenixVersion ? " " + ap.phoenixVersion : ""} · Hyprland + illogical-impulse (${SystemInfo.windowingSystem || "Wayland"})`],
                 ["Packages", SystemInfo.packages],
                 ["Shell", SystemInfo.shell],
                 ["Installed", SystemInfo.installAge],
@@ -674,7 +683,7 @@ Item {
                 ColumnLayout {
                     spacing: 0
                     StyledText { text: SystemInfo.hostname; font.pixelSize: Appearance.font.pixelSize.huge; font.weight: Font.DemiBold; color: Appearance.colors.colOnLayer0 }
-                    StyledText { text: SystemInfo.distroName; color: Appearance.colors.colSubtext; font.pixelSize: Appearance.font.pixelSize.small }
+                    StyledText { text: `Phoenix · ${SystemInfo.distroName}`; color: Appearance.colors.colSubtext; font.pixelSize: Appearance.font.pixelSize.small }
                 }
                 Item { Layout.fillWidth: true }
                 WButton { buttonText: "Rename this PC"; onClicked: renameRow.visible = !renameRow.visible }
@@ -769,6 +778,7 @@ Item {
             WSection {
                 title: "Related"
                 WLink { icon: "monitoring"; title: "Task manager"; chevronIcon: "open_in_new"; action: () => Quickshell.execDetached(["bash", "-c", Config.options.apps.taskManager]) }
+                WLink { icon: "local_fire_department"; title: "About Phoenix"; description: "Project page, updates, setup profiles"; chevronIcon: "open_in_new"; action: () => Quickshell.execDetached(["xdg-open", "https://github.com/RandomRandomnes/phoenix"]) }
                 WLink { icon: "info"; title: "About illogical-impulse"; description: "Shell version, credits, links"; action: () => { WState.go("advanced"); GlobalStates.openSettingsAt("about"); } }
             }
         }
