@@ -6,8 +6,6 @@ if feature("minimizeToDock") then
 -- Restore: when the dock (or anything else) activates a minimized window, Hyprland opens that special
 -- workspace. The handler below closes it again before the next frame with animations off (no slide/dim
 -- flash), moves the window back to the workspace on screen, and fades it in.
--- Previous version (50 ms timer on window.active + a visible workspace bounce in hb.sh):
--- backups/execs.lua.bak-20261001-minrestore, backups/hb.sh.bak-20261001-minrestore
 local MIN = "special:minimized"
 -- When a window closes or leaves a workspace, Hyprland refocuses the previously focused window, even a
 -- minimized one, which opens special:minimized as well. For a short time after those events an opened
@@ -129,7 +127,7 @@ local MIN = "special:minimized"
 -- Maximizing a window (fullscreen mode 1) clears Hyprland's "allowed over fullscreen" flag on every other
 -- window on that workspace. Floating windows that were already open are still drawn on top, but clicks and
 -- hover go to the maximized window behind them. Raising them sets the flag again; the stacking among them
--- is kept. True fullscreen (mode 2) is left alone. Backup: backups/execs.lua.bak-20261002-floatclick
+-- is kept. True fullscreen (mode 2) is left alone.
 local function raise_floats_over_max(ws, except)
     if not (ws and ws.has_fullscreen and ws.fullscreen_mode == 1) then return end
     for _, w in ipairs(hl.get_workspace_windows(ws.id) or {}) do

@@ -94,7 +94,7 @@ MANIFEST = {
         "PAccounts.qml", "PTime.qml", "PGaming.qml", "PAccessibility.qml", "PPrivacy.qml", "PUpdate.qml", "PExtras.qml"]},
 }
 
-# Shell log lines that are known, pre-existing and harmless (see HANDOFF.md §11).
+# Shell log lines that are known, pre-existing and harmless.
 HARMLESS = [
     r'read-only property "mirrored"', r"translations/en_US\.json", r"wallpaper_order\.json",
     r"Cannot open: file://.*/\.face", r"qt\.qml\.propertyCache", r"sni\.item",
@@ -449,7 +449,7 @@ class Run:
         status = "OK" if not self.problems else f"{len(self.problems)} PROBLEM(S)"
         L += [f"# Desktop check: {status}", "",
               f"Run: `{self.mode}` at {time.strftime('%Y-%m-%d %H:%M:%S')}. Snapshot: `{snap}`.", "",
-              "> For Claude Code: this is the first thing to read when the desktop misbehaves after an update.",
+              "> Read this first when the desktop misbehaves after an update.",
               "> Merge leftovers are in ~/hypr-guard/conflicts/ (`.ours` = customized copy, `.base` = old upstream,",
               "> `.theirs` = new upstream, `.merge` = merge with conflict markers). Pre-change copies of every",
               "> file this tool wrote are in ~/hypr-guard/backups/<timestamp>/. Full history: ~/hypr-guard/guard.log.",

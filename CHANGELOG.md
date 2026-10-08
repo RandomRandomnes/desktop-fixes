@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 1.131 (2026-10-08, minor)
+- Tidying: comments no longer point to files that don't ship; the hypr-guard report addresses the reader; an unused import removed (F27)
+
 ## custom 1.130 (2026-10-08, fix)
 - CPU power without opening the energy counter to every program: the optional CPU power meter (a sandboxed root service publishing a 1-second reading rounded to 0.5 W), offered by the installer; phoenix power-meter install|remove|status; the system stats use it (F21)
 

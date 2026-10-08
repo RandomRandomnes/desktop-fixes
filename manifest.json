@@ -2,18 +2,18 @@
   "format": "custom-fixes",
   "line": "custom",
   "version": 1.99,
-  "label": "1.130",
-  "kind": "fix",
+  "label": "1.131",
+  "kind": "minor",
   "date": "2026-10-08",
   "publisher": "RandomRandomnes",
   "notes": [
-    "CPU power without opening the energy counter to every program: the optional CPU power meter (a sandboxed root service publishing a 1-second reading rounded to 0.5 W), offered by the installer; phoenix power-meter install|remove|status; the system stats use it (F21)"
+    "Tidying: comments no longer point to files that don't ship; the hypr-guard report addresses the reader; an unused import removed (F27)"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "a827aa44345adcefdb86eb63de915365bbdd0d845b35a4e8ef7d09f74b53613d",
+  "payloadSha256": "bf2312cfc9243f42929346d539d54a3d1a32bc7211ad7c3f76dc05f36c921666",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
-    ".config/hypr/custom/execs.lua": "e1840046232062e73741e9e82f61864d271fe13ed41449554df01a33d9956d98",
+    ".config/hypr/custom/execs.lua": "3313893ef27e9cb0ee4ce06baed0d5cb4f2ddd7f049ae585781199be18842a96",
     ".config/hypr/custom/general.lua": "06d1fb865ea7a689006d0e6074778f97539fe87e52e1ad05c5d1083549e1a980",
     ".config/hypr/custom/keybinds.lua": "8ee638e94053968d19b77a80a8fdb663a107063a0d0e42cf6b24ea142bca1baf",
     ".config/hypr/custom/rules.lua": "4dc313316f92d5fc3417a3978f75db4bd60fd4cb4b63adcddbd40792c3925b66",
@@ -70,7 +70,7 @@
     ".config/quickshell/end4-pC/scripts/gpu/get_gpuinfo.sh": "944f4cb3f67492f12809ba9c5ccf054144ab163df7b47f7715a998e6d79fc6c4",
     ".config/quickshell/end4-pC/scripts/gpu/gpustats.py": "5e92fe6858853a76bf6d1f7685cdcced820315a46b4ccff22cdf88e99b98958a",
     ".config/quickshell/end4-pC/scripts/power/get_power.sh": "5aa325746cc22212bde05a66450b266cd987e825e937d4de6f336881dff6f86f",
-    ".config/quickshell/end4-pC/scripts/sysstats/sysstats.py": "07a9136b62457f3a0a63c78103007739d3ee77520e8cebfb7203784c26d8cdd3",
+    ".config/quickshell/end4-pC/scripts/sysstats/sysstats.py": "6a6b80bee04f08d46a5d16b6d34c288086b46e89ce41b4c42ee6553dbe0b1cee",
     ".config/quickshell/end4-pC/services/Ai.qml": "49b05dc4ae48304a57814f1efa0b450775b5b12393899baa70d5c20f792fde5d",
     ".config/quickshell/end4-pC/services/Extras.qml": "83422cac4e75a03453008118890648e7630e9da9b8e631858bbdd5cc2e1fbc85",
     ".config/quickshell/end4-pC/services/FirstRunExperience.qml": "517e071a485ba89a4c50dce972b8b0095983e5e79213a2744c58e715946e5ed7",
@@ -82,7 +82,7 @@
     ".config/quickshell/end4-pC/setup-wizard.qml": "eea25aab376713e6f47d60e22a8a3b21ed2cbe43278192acb6b14e50b40e3f45",
     ".local/bin/boot-loader": "c84ab89d50ceef75f81c0ef7bb41d0377041779b2987a6a8c66a690965bafc62",
     ".local/bin/custom-update": "6496e076353054a2258ba88cf87da131138a83f39410077bb3fdf4c8295e6c85",
-    ".local/bin/hypr-guard": "9c523acc4499c1870f895509c46ae552e390ceb1e0a4f9d96bc24a1f46df9cde",
+    ".local/bin/hypr-guard": "df9788d1d5e33637b0930b31e0542c48239f6bec1f17e51b74a0944c37b11516",
     ".local/bin/linux-wallpaper-engine": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/linux-wallpaper-engine-ux": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/phoenix": "a8eaf38f8423443bed8bd7552fc9876038fd51129f02a20da802cfef338c95ec",
@@ -171,10 +171,9 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
+    ".config/hypr/custom/execs.lua",
     ".config/quickshell/end4-pC/scripts/sysstats/sysstats.py",
-    ".local/bin/phoenix",
-    ".local/share/phoenix/system/phoenix-power-meter",
-    ".local/share/phoenix/system/phoenix-power-meter.service"
+    ".local/bin/hypr-guard"
   ],
   "test": false,
   "shell": "f22e2676c7daf69776f6d1eb423ff63118776710"
