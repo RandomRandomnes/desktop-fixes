@@ -1,5 +1,9 @@
 # Changelog
 
+## custom 1.9 (2026-10-08, fix)
+- Setup profiles: names with capitals apply; clear messages instead of Python errors for damaged settings or profiles, a missing helper (checked before anything is written) or an unwritable export path; exports no longer always contain apps.volumeMixer, and ~/ paths stay ~/ (F13, F14, F28)
+- Custom_01 profile: invalid and unused values removed (F16)
+
 ## custom 1.8 (2026-10-08, fix)
 - Graphics drivers: only the graphics card counts (NVIDIA HDMI audio, Intel Wi-Fi or CPU parts no longer install drivers); older NVIDIA cards get the 580xx driver instead of nvidia-open, which doesn't support them (F12)
 

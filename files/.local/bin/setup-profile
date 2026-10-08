@@ -129,6 +129,55 @@ def load_json(path):
         return json.load(f)
 
 
+def die(msg):
+    sys.exit(f"setup-profile: {msg}")
+
+
+def load_config(required):
+    """The shell settings. Missing: {} (or an error when required). Damaged (empty, not JSON, not an object): an error
+    when required (export); when applying, the damaged file is backed up and replaced by the profile's settings."""
+    if not os.path.isfile(CONFIG):
+        if required:
+            die(f"no shell settings yet ({CONFIG})")
+        return {}
+    try:
+        cur = load_json(CONFIG)
+        if not isinstance(cur, dict):
+            raise ValueError("not a JSON object")
+        return cur
+    except (OSError, ValueError) as e:
+        if required:
+            die(f"the shell settings file is damaged ({CONFIG}: {e})")
+        bak = os.path.join(STATE, "backups", "config-damaged-" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + ".json")
+        os.makedirs(os.path.dirname(bak), exist_ok=True)
+        shutil.copy2(CONFIG, bak)
+        print(f"The shell settings file was damaged ({e}); a copy is in {bak}. It is replaced by the profile's settings.")
+        return {}
+
+
+def load_stock():
+    # used as stored: its ~/ paths are the shell's own defaults (the shell expands them), not this PC's paths (F28)
+    try:
+        return load_json(STOCK)
+    except (OSError, ValueError) as e:
+        die(f"the stock settings are missing or damaged ({STOCK}: {e}); reinstall the Phoenix files (custom-update)")
+
+
+def fit_types(over, stock, prefix=""):
+    """Drop profile settings whose shape doesn't fit the shell's (e.g. "dock": 5 where a section is expected)."""
+    for k in list(over):
+        v, ref = over[k], stock.get(k) if isinstance(stock, dict) else None
+        if isinstance(ref, dict) and not isinstance(v, dict):
+            print(f"Skipped setting {prefix}{k}: expected a section, got {type(v).__name__}")
+            del over[k]
+        elif isinstance(v, dict) and ref is not None and not isinstance(ref, dict):
+            print(f"Skipped setting {prefix}{k}: expected a value, got a section")
+            del over[k]
+        elif isinstance(v, dict):
+            fit_types(v, ref or {}, f"{prefix}{k}.")
+    return over
+
+
 def write_json(path, data):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     tmp = path + ".tmp"
@@ -184,9 +233,10 @@ def diff(cur, stock):
 def resolve(name):
     if os.path.isfile(name):
         return name
-    builtin = os.path.join(SHARE, name.lower() + ".json")
-    if os.path.isfile(builtin):
-        return builtin
+    want = name[:-5] if name.endswith(".json") else name
+    for f in sorted(os.listdir(SHARE)) if os.path.isdir(SHARE) else []:   # list shows file names; any case works
+        if f.endswith(".json") and f[:-5].lower() == want.lower():
+            return os.path.join(SHARE, f)
     sys.exit(f"setup-profile: no profile '{name}' (try: setup-profile list)")
 
 
@@ -195,8 +245,11 @@ def read_profile(path):
         p = load_json(path)
     except (OSError, ValueError) as e:
         sys.exit(f"setup-profile: can't read {path}: {e}")
-    if p.get("format") != "end4-setup-profile":
+    if not isinstance(p, dict) or p.get("format") != "end4-setup-profile":
         sys.exit(f"setup-profile: {path} is not a setup profile")
+    for k in ("features", "settings"):
+        if not isinstance(p.get(k) or {}, dict):
+            sys.exit(f"setup-profile: {path}: \"{k}\" must be an object")
     return p
 
 
@@ -261,23 +314,29 @@ def cmd_apply(name, yes):
         cmd_show(path)
         if input("Apply this profile? Your current settings are backed up first. [y/N] ").strip().lower() != "y":
             return
-    cur = load_json(CONFIG) if os.path.isfile(CONFIG) else {}
+    features_tool = os.path.join(HOME, ".local", "bin", "setup-features")
+    if not os.access(features_tool, os.X_OK):   # checked first: without it the apply would stop half done (F14)
+        die(f"{features_tool} is missing; reinstall the Phoenix files (custom-update)")
+    cur = load_config(required=False)
     if cur:
         stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         write_json(os.path.join(STATE, "backups", f"config-{stamp}.json"), cur)
     # stock-config.json stores home paths as ~/... (it ships to other PCs)
-    base = from_home(load_json(STOCK)) if p.get("look", "stock") == "stock" else copy.deepcopy(cur)
-    merge(base, from_home(drop_personal(copy.deepcopy(p.get("settings") or {}))))
+    stock = load_stock()
+    base = copy.deepcopy(stock) if p.get("look", "stock") == "stock" else copy.deepcopy(cur)
+    merge(base, fit_types(drop_personal(copy.deepcopy(p.get("settings") or {})), stock))
     for k, v in (p.get("features") or {}).items():
         if k in FEATURES and k not in USER_ONLY_FEATURES:
             sect, key = FEATURES[k]
             base.setdefault(sect, {})[key] = bool(v)
     for k in USER_ONLY_FEATURES:   # keeps the user's own choice; off unless switched on before
         sect, key = FEATURES[k]
-        base.setdefault(sect, {})[key] = (cur.get(sect) or {}).get(key) is True
+        base.setdefault(sect, {})[key] = isinstance(cur.get(sect), dict) and cur[sect].get(key) is True
     keep_personal(base, cur)       # name, location, language, AI, folders, update consent: unchanged
     for sect, key in PROTECTED:    # the current dock and app grid, or the shell's defaults
-        if key in (cur.get(sect) or {}):
+        if not isinstance(base.get(sect, {}), dict):
+            base[sect] = {}
+        if isinstance(cur.get(sect), dict) and key in cur[sect]:
             base.setdefault(sect, {})[key] = copy.deepcopy(cur[sect][key])
         else:
             (base.get(sect) or {}).pop(key, None)
@@ -286,19 +345,19 @@ def cmd_apply(name, yes):
         wp = DEFAULT_WALLPAPER if wallpaper == "@default" else from_home(wallpaper)
         base.setdefault("background", {})["wallpaperPath"] = wp if os.path.isfile(wp) else DEFAULT_WALLPAPER
     write_json(CONFIG, base)
-    subprocess.run([os.path.join(HOME, ".local", "bin", "setup-features"), "apply"])
+    subprocess.run([features_tool, "apply"])
     if wallpaper:
         set_wallpaper(base["background"]["wallpaperPath"])
     print(f"Applied profile: {p.get('name')}")
 
 
 def cmd_export(out, name, description, author):
-    cur = load_json(CONFIG)
-    stock = from_home(load_json(STOCK))
+    cur = load_config(required=True)
+    stock = load_stock()
     features = {}
     for k, (sect, key) in FEATURES.items():
         features[k] = (cur.get(sect) or {}).get(key, True) is not False
-    settings = diff(cur, stock)
+    settings = diff(from_home(cur), from_home(stock))   # "~/x" and "/home/me/x" are the same value (F28)
     for k, (sect, key) in FEATURES.items():   # switches go in "features", not "settings"
         (settings.get(sect) or {}).pop(key, None)
     for sect, key in PROTECTED:               # the dock and app grid are personal and never part of a profile
@@ -320,7 +379,10 @@ def cmd_export(out, name, description, author):
         "wallpaper": to_home(wallpaper) if wallpaper and wallpaper != DEFAULT_WALLPAPER else "@default",
         "apps": installed_apps(),
     }
-    write_json(os.path.abspath(out), profile)
+    try:
+        write_json(os.path.abspath(out), profile)
+    except OSError as e:
+        die(f"can't write {out}: {e.strerror}")
     print(f"Exported '{name}' to {out}")
 
 

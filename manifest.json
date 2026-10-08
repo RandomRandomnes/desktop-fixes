@@ -1,16 +1,17 @@
 {
   "format": "custom-fixes",
   "line": "custom",
-  "version": 1.8,
-  "label": "1.8",
+  "version": 1.9,
+  "label": "1.9",
   "kind": "fix",
   "date": "2026-10-08",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Graphics drivers: only the graphics card counts (NVIDIA HDMI audio, Intel Wi-Fi or CPU parts no longer install drivers); older NVIDIA cards get the 580xx driver instead of nvidia-open, which doesn't support them (F12)"
+    "Setup profiles: names with capitals apply; clear messages instead of Python errors for damaged settings or profiles, a missing helper (checked before anything is written) or an unwritable export path; exports no longer always contain apps.volumeMixer, and ~/ paths stay ~/ (F13, F14, F28)",
+    "Custom_01 profile: invalid and unused values removed (F16)"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "c6ede2fd5cbdf37cb62735a675ec45d4d5b3ba7c0137bdcf226645b8bbcdca8a",
+  "payloadSha256": "5e37585d5f6d25ba3c087acbd996d462308f42471c872ad29b042300e723903b",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
     ".config/hypr/custom/execs.lua": "e1840046232062e73741e9e82f61864d271fe13ed41449554df01a33d9956d98",
@@ -88,7 +89,7 @@
     ".local/bin/phoenix": "d23323522612783f410e773141fd9fb4b5dcb7f54fcba815c4338169e31ddf41",
     ".local/bin/setup-apps": "a39fd228bf06ae8caade9432078a2795bae797901d62987e54a83b32e41b1ddc",
     ".local/bin/setup-features": "7088a7e0d7952b5b71907cd10bc5afe4f2d186539312cab7b7c10feab93dc418",
-    ".local/bin/setup-profile": "c74f932514eea6aeddf96864149d162804339f5614fd1ea2ca7f64ec2b3b65f6",
+    ".local/bin/setup-profile": "428d6e82660d52d1d484dba4f8529c93cc60e835d5fff1237b96d67a77b0e138",
     ".local/bin/switch-desktop": "2d1e83bdd546f919736fd2cadcfef4ce078dfc06b8f5fb6a9fb563f04db5b302",
     ".local/bin/system-update": "5a946b6a60a9bb1ee6cc89bcd8daced6306a4c185bf0cf0577615a53ca93fda3",
     ".local/bin/wallpaper-engine-ctl": "95e50df6c91a32b8ab58dccc3146cb3321e4dee2966b427141c7dba91dff2d58",
@@ -169,7 +170,7 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".local/bin/setup-apps"
+    ".local/bin/setup-profile"
   ],
   "test": false,
   "shell": "f22e2676c7daf69776f6d1eb423ff63118776710"

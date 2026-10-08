@@ -35,9 +35,7 @@
         },
         "background": {
             "parallax": {
-                "enableSidebar": false,
-                "enableWorkspace": false,
-                "workspaceZoom": 1.07
+                "enableWorkspace": false
             },
             "wallpaperAnimation": "stripes",
             "widgets": {
@@ -98,7 +96,6 @@
             }
         },
         "bar": {
-            "borderless": "false",
             "cornerStyle": 3,
             "frameThickness": 5,
             "groupColor": "layer0",
