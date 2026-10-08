@@ -9,6 +9,8 @@ import qs.modules.common
 import qs.modules.common.widgets
 
 WPage {
+    // the setup assistant passes its terminal(args, title) so jobs wait for its open terminal window (one at a time)
+    property var terminalRunner: null
     id: page
 
     Process {
@@ -118,14 +120,22 @@ WPage {
                 id: lsChange
                 onExited: loginScreen.refresh()
             }
+            Timer {   // through the assistant's terminal: look again every few seconds for a while
+                id: lsRecheck
+                interval: 3000; repeat: true
+                property int left: 0
+                onRunningChanged: if (running) left = 60
+                onTriggered: { loginScreen.refresh(); if (--left <= 0) stop() }
+            }
             WButton {
                 accent: loginScreen.lsState === "off"
                 enabled: loginScreen.lsState !== "" && !lsChange.running
                 buttonText: lsChange.running ? "Waiting…" : loginScreen.lsState === "on" ? "Turn off" : "Turn on"
                 onClicked: {
                     const action = loginScreen.lsState === "on" ? "remove" : "install"
-                    lsChange.command = ["kitty", "--class", "phoenix-setup", "--title", "Login screen", "--", "bash", "-c",
-                        `~/.local/bin/phoenix login-screen ${action}; echo; read -r -p 'Press Enter to close.'`]
+                    const args = ["bash", "-c", `~/.local/bin/phoenix login-screen ${action}; echo; read -r -p 'Press Enter to close.'`]
+                    if (terminalRunner) { terminalRunner(args, "Login screen"); lsRecheck.restart(); return }
+                    lsChange.command = ["kitty", "--class", "phoenix-setup", "--title", "Login screen", "--"].concat(args)
                     lsChange.running = true
                 }
             }

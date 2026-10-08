@@ -66,7 +66,7 @@ ApplicationWindow {
           text: "Select a desktop wallpaper." },
         { id: "account",   title: "Account",           icon: "account_circle",
           heading: "User account",
-          text: "Set the profile picture and the display name. Your password is the one chosen during installation; to change it, use Change your password below." },
+          text: "Set the profile picture and the display name. Your password is the one chosen during installation; to change it, use Change your password below. Login screen at startup chooses whether the PC asks for your password when it starts or signs you in automatically (the default)." },
         { id: "apps",      title: "Apps",              icon: "apps",
           heading: "Applications",
           text: "Firefox is installed by default. Select additional applications to install. Installation runs in a terminal window and requires the administrator password." },
@@ -591,7 +591,7 @@ ApplicationWindow {
     Component { id: devicesPage; PDevices {} }
     Component { id: systemPage; PSystem {} }
     Component { id: personalizationPage; PPersonalization {} }
-    Component { id: accountPage; PAccounts {} }
+    Component { id: accountPage; PAccounts { terminalRunner: root.terminal } }   // its terminal jobs join the queue (F18)
     Component {
         id: regionPage
         ColumnLayout {

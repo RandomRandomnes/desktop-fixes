@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 2.3 (2026-10-08, fix)
+- Setup assistant: the Account step now offers the login screen (Login screen at startup); turning it on there waits for any other terminal window of the assistant
+
 ## custom 2.2 (2026-10-08, fix)
 - Login screen (Settings › Accounts › Login screen at startup): a Phoenix-style login screen instead of signing in automatically, with several users, Hyprland or KDE Plasma, and a clear message after too many wrong passwords
 - Restore points (Settings › Update): one is saved before every update; 'Go back to this' undoes it
