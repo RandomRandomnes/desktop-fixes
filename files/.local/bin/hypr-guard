@@ -64,6 +64,8 @@ MANIFEST = {
     # 10 min via pam_faillock); a lockout is shown as "Too many attempts. Try again in N minutes"
     "LockContext.qml": f"{QS}/modules/common/panels/lock/LockContext.qml",
     "LockSurface.qml": f"{QS}/modules/ii/lock/LockSurface.qml",
+    # Shell: logout exits Hyprland cleanly (2026-10-08; was `pkill -i Hyprland`, which also hit start-hyprland and helpers)
+    "Session.qml": f"{QS}/modules/common/functions/Session.qml",
     # Shell: Claude Code as a model in the AI sidebar (strategy file is ours, Ai.qml registers it)
     "Ai.qml": f"{QS}/services/Ai.qml",
     "ClaudeCodeApiStrategy.qml": f"{QS}/services/ai/ClaudeCodeApiStrategy.qml",

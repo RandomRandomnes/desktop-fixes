@@ -1,16 +1,16 @@
 {
   "format": "custom-fixes",
   "line": "custom",
-  "version": 2.5,
-  "label": "2.5",
+  "version": 2.6,
+  "label": "2.6",
   "kind": "fix",
   "date": "2026-10-08",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Maximize works like Windows: a maximized window is now a normal window filling the screen, so the window you see on top always gets your clicks (before, a window over a maximized one could stop responding after you clicked the maximized one); a window brought up from the dock, Alt+Tab or the Overview comes to the front"
+    "Log out (power menu) exits Hyprland cleanly; it used to also kill the session launcher and helpers, and could leave a crash report from Wallpaper Engine"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "01589b1bcbd7a836c1d538cfe7071673b991a1551dd61250db9be67732c617c5",
+  "payloadSha256": "f6c10be9e063f47ab61fa7f4e2a77d6c029381387658b2ad5148148f17d931e4",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
     ".config/hypr/custom/execs.lua": "ec5dfe52e454e15501721146d1524a0f3ce47c3048db48f7331305a712ce3b5c",
@@ -23,6 +23,7 @@
     ".config/hypr/custom/variables.lua": "3859ea1ee32e82cdc61364c2d24248acf1d5a8063244f3dc96be9c39fb803337",
     ".config/quickshell/end4-pC/GlobalStates.qml": "2be2725222911daa0068b41ee7434c29519f6ce5219a162bac52b8b6eed69250",
     ".config/quickshell/end4-pC/modules/common/Config.qml": "505f9c93043a59776274e2faa75f40669402f5ec3c5a8f8b13931e505c327f5a",
+    ".config/quickshell/end4-pC/modules/common/functions/Session.qml": "6a0193101733f96cbc7a7e6bb85a56c89f13122db1bf17e090b3477d76a1a3ce",
     ".config/quickshell/end4-pC/modules/common/panels/lock/LockContext.qml": "36e835ce65c3b4a6929c2438f7ec9dce12cc7a4a1523b374ae67950b2f96e1ba",
     ".config/quickshell/end4-pC/modules/ii/background/Background.qml": "ce5f82ed8f0470f15566cc8f59d2e1f3da7c89cd75e4ee8ac0bbbfe350ea0f6b",
     ".config/quickshell/end4-pC/modules/ii/background/WallpaperEngineLayer.qml": "8b1fe88143cf82d69a727324700cc906c5be4e0a27562f02ec0d382e222aae53",
@@ -93,7 +94,7 @@
     ".local/bin/boot-loader": "c42781f896313567bbdc18c78699594d7be283acb91546859eb96772709294ee",
     ".local/bin/custom-update": "05cb28cfd5bdc82ded6191310e0d28eba7b7da5884001934822591812ea6ad18",
     ".local/bin/display-profiles": "e03de448e2c13dc43886ddf3e735cf1bb17e97ee5cc51c34fb33cfbf31ce53e6",
-    ".local/bin/hypr-guard": "b0fd6a6cd7f857df9c3d1625f3e849552368d71cac064c165e73f6936cabfc65",
+    ".local/bin/hypr-guard": "294032d3043d24a7a05861d6fdde1d030f3a1ed9e955c176fbd5b8b022734aee",
     ".local/bin/linux-wallpaper-engine": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/linux-wallpaper-engine-ux": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/phoenix": "69faa34d9056697936737b6b4aabce39a048dd93e7a72dd5b6b2f01b0d33b3cc",
@@ -190,7 +191,8 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/hypr/custom/execs.lua"
+    ".config/quickshell/end4-pC/modules/common/functions/Session.qml",
+    ".local/bin/hypr-guard"
   ],
   "test": false,
   "shell": "4517f78cf9e504ec351f8a0ff1f747f5d12e7683"

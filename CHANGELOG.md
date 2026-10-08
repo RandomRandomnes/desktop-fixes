@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 2.6 (2026-10-08, fix)
+- Log out (power menu) exits Hyprland cleanly; it used to also kill the session launcher and helpers, and could leave a crash report from Wallpaper Engine
+
 ## custom 2.5 (2026-10-08, fix)
 - Maximize works like Windows: a maximized window is now a normal window filling the screen, so the window you see on top always gets your clicks (before, a window over a maximized one could stop responding after you clicked the maximized one); a window brought up from the dock, Alt+Tab or the Overview comes to the front
 
