@@ -7,6 +7,7 @@
   wallpaper-engine-ctl random             apply a random scene/video/web wallpaper
   wallpaper-engine-ctl mute [on|off|toggle]  mute or unmute the wallpaper's sound (remembered)
   wallpaper-engine-ctl muted              prints 1 if muted, else 0
+  wallpaper-engine-ctl workshop           the Steam workshop folder of Wallpaper Engine in use
   wallpaper-engine-ctl stop|start        stop or start the Wallpaper Engine background (Hyprland; used by setup-features)
 
 Hyprland: writes the choice into the Linux Wallpaper Engine app's own state
@@ -292,6 +293,8 @@ def main():
         if not is_kde() and subprocess.run(["pgrep", "-f", "[/]usr/lib/linux-wallpaper-engine-ux/app.asar"],
                                            capture_output=True).returncode != 0:
             start_hyprland()
+    elif cmd == "workshop":   # the workshop folder in use (the shell resolves bare wallpaper ids with it)
+        print(WORKSHOP)
     elif cmd == "muted":
         print("1" if is_muted() else "0")
     elif cmd == "random":

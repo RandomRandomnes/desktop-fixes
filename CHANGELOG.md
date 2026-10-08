@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 2.7 (2026-10-08, fix)
+- Wallpaper Engine backgrounds drawn by the shell are found in any Steam library (Flatpak Steam, a library on another drive), not only in ~/.local/share/Steam
+
 ## custom 2.6 (2026-10-08, fix)
 - Log out (power menu) exits Hyprland cleanly; it used to also kill the session launcher and helpers, and could leave a crash report from Wallpaper Engine
 

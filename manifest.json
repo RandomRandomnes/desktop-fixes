@@ -1,16 +1,16 @@
 {
   "format": "custom-fixes",
   "line": "custom",
-  "version": 2.6,
-  "label": "2.6",
+  "version": 2.7,
+  "label": "2.7",
   "kind": "fix",
   "date": "2026-10-08",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Log out (power menu) exits Hyprland cleanly; it used to also kill the session launcher and helpers, and could leave a crash report from Wallpaper Engine"
+    "Wallpaper Engine backgrounds drawn by the shell are found in any Steam library (Flatpak Steam, a library on another drive), not only in ~/.local/share/Steam"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "f6c10be9e063f47ab61fa7f4e2a77d6c029381387658b2ad5148148f17d931e4",
+  "payloadSha256": "8a2a69fc265676513eb833506147e50974bec04bb99d6cdbd47324956f839088",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
     ".config/hypr/custom/execs.lua": "ec5dfe52e454e15501721146d1524a0f3ce47c3048db48f7331305a712ce3b5c",
@@ -21,7 +21,7 @@
     ".config/hypr/custom/scripts/hb.sh": "e0f841a85cceed0425333d8946884b684edc76a13c35a152ef8ef41fb0206675",
     ".config/hypr/custom/scripts/reapply-shell-patches.py": "3aa5700fd1f55adc1cd8f22df5a09957eeb1401a51cbb1dea6594e4db403ede2",
     ".config/hypr/custom/variables.lua": "3859ea1ee32e82cdc61364c2d24248acf1d5a8063244f3dc96be9c39fb803337",
-    ".config/quickshell/end4-pC/GlobalStates.qml": "2be2725222911daa0068b41ee7434c29519f6ce5219a162bac52b8b6eed69250",
+    ".config/quickshell/end4-pC/GlobalStates.qml": "b5e70fc7c0ba64a4ba1e223a362c0c7b7ef13484829cc7d41958525dc4c52e97",
     ".config/quickshell/end4-pC/modules/common/Config.qml": "505f9c93043a59776274e2faa75f40669402f5ec3c5a8f8b13931e505c327f5a",
     ".config/quickshell/end4-pC/modules/common/functions/Session.qml": "6a0193101733f96cbc7a7e6bb85a56c89f13122db1bf17e090b3477d76a1a3ce",
     ".config/quickshell/end4-pC/modules/common/panels/lock/LockContext.qml": "36e835ce65c3b4a6929c2438f7ec9dce12cc7a4a1523b374ae67950b2f96e1ba",
@@ -107,7 +107,7 @@
     ".local/bin/sun-times": "0edd36790e82ed524a02e08642655315c993ee8980f85458e53fe44c397927a6",
     ".local/bin/switch-desktop": "ffd0f514bfec732dc007cfc44c67588cb58b816f3879734b81627de28df77c7d",
     ".local/bin/system-update": "e8ed206ead435aeebe6f871f70bb7bc06b601a82392e5767dcbc28062b280854",
-    ".local/bin/wallpaper-engine-ctl": "5aaacc74d1cfa4143d47c2f5314d895a6c47ab97f26017926d594c87a31c8b40",
+    ".local/bin/wallpaper-engine-ctl": "a4f7731314f83716556b35b58995acb1ee46047233dba6c7eb3d45d1b4fc3417",
     ".local/bin/wallpaper-engine-kde": "295324c02b7559b88fd4a0c5e30119ddd473f4f46a16b883b3f7b9cb49f744a2",
     ".local/bin/window-rules": "2fd1399080d4c00e41f0fe5272aaef9d565d89960152cdf421f05ac63ff4dcea",
     ".local/lib/wallpaper-engine-shell/linux-wallpaperengine": "24e44b3c9f9bf6eed12062cbaf8da76d40a11de1de77ac5164e72fe46fa2e3f3",
@@ -191,8 +191,8 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/quickshell/end4-pC/modules/common/functions/Session.qml",
-    ".local/bin/hypr-guard"
+    ".config/quickshell/end4-pC/GlobalStates.qml",
+    ".local/bin/wallpaper-engine-ctl"
   ],
   "test": false,
   "shell": "4517f78cf9e504ec351f8a0ff1f747f5d12e7683"

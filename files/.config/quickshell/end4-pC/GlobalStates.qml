@@ -93,6 +93,22 @@ Singleton {
     // wallpaper sound muted via wallpaper-engine-ctl mute (flag file ~/.local/state/wallpaper-engine-muted)
     property bool wallpaperEngineMuted: false
     property string _wallpaperEngineInShellKey: "{}"
+    // Wallpaper Engine's workshop folder (2026-10-08): any Steam library, also Flatpak Steam or another drive, from
+    // wallpaper-engine-ctl; bare wallpaper ids from the app are resolved in it (was always ~/.local/share/Steam)
+    property string wallpaperEngineWorkshop: `${Quickshell.env("HOME")}/.local/share/Steam/steamapps/workshop/content/431960`
+    Process {
+        running: true
+        command: [`${Quickshell.env("HOME")}/.local/bin/wallpaper-engine-ctl`, "workshop"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const dir = text.trim();
+                if (dir.startsWith("/") && dir !== root.wallpaperEngineWorkshop) {
+                    root.wallpaperEngineWorkshop = dir;
+                    root._wallpaperEngineInShellKey = "";   // parse the running wallpapers again with it
+                }
+            }
+        }
+    }
     function _parseWallpaperEngineInShell(procs) {
         const result = {};
         for (const args of procs) {
@@ -104,7 +120,7 @@ Singleton {
                 const a = args[i], v = args[i + 1];
                 if (a === "--screen-root") { pending.push(v); i++; }
                 else if (a === "--bg") {
-                    const dir = v.startsWith("/") ? v : `${Quickshell.env("HOME")}/.local/share/Steam/steamapps/workshop/content/431960/${v}`;
+                    const dir = v.startsWith("/") ? v : `${root.wallpaperEngineWorkshop}/${v}`;
                     for (const s of pending) dirs[s] = dir;
                     pending = []; i++;
                 }
