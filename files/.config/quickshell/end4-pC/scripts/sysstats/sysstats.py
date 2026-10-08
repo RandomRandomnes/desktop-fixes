@@ -71,8 +71,7 @@ rapl_max = read_int(os.path.join(rapl, "max_energy_range_uj"), 0)
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "gpu"))
 try:
     import gpustats
-    gpu_devs = gpustats.detect_all()
-    gpu_dev = gpu_devs[0] if gpu_devs else None
+    gpu_dev = gpustats.detect()
 except Exception:        # never let GPU detection stop the CPU/RAM/disk stats
     gpu_dev = None
 
@@ -157,7 +156,7 @@ while True:
     gpu = None
     if gpu_dev:
         try:
-            gpu = gpustats.sample_best(gpu_devs)
+            gpu = gpu_dev.sample()
         except Exception:
             gpu = None
 

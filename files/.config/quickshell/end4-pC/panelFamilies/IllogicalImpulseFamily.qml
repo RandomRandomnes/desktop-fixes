@@ -2,7 +2,6 @@ import qs
 import QtQuick
 import Quickshell
 
-import qs
 import qs.modules.common
 import qs.modules.ii.background
 import qs.modules.ii.bar
@@ -53,7 +52,7 @@ Scope {
     PanelLoader { component: WallpaperSelector {} }
     PanelLoader { component: W11Settings {} } // Windows 11 style settings (original: Settings {}, embedded as "Advanced")
     PanelLoader { component: DesktopMenu {} }
-    PanelLoader { extraCondition: GlobalStates.dropShelfOpen; component: DropShelfPanel {} }
+    PanelLoader { component: DropShelfPanel {} }
     PanelLoader { component: NiriBackdrop {} }
     PanelLoader { component: ScreenFrame {} }
 }
