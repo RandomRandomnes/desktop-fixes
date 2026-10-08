@@ -63,10 +63,11 @@ Scope {
         passwordClearTimer.restart();
     }
 
-    function tryUnlock(alsoInhibitIdle = false) {
+    function tryUnlock(alsoInhibitIdle = false, allowEmpty = false) {
         // Phoenix (2026-10-08): Enter on an empty field (e.g. to wake the screen) isn't a login attempt. Each one used
         // to count as a wrong password, and three lock the account for 10 minutes (pam_faillock), even for the right one.
-        if (root.currentText.length === 0) return;
+        // The arrow button still tries an empty password, for accounts that have none.
+        if (root.currentText.length === 0 && !allowEmpty) return;
         root.alsoInhibitIdle = alsoInhibitIdle;
         root.lastPamInfo = "";
         root.unlockInProgress = true;

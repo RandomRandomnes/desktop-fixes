@@ -21,7 +21,9 @@ The file system isn't snapshotted: only these files and packages go back. The la
 import datetime
 import glob
 import json
+import hashlib
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -71,6 +73,27 @@ def custom_label():
     return ""
 
 
+def settings_hash():
+    """A fingerprint of the saved settings (the same files the archive holds), to tell whether they changed since."""
+    h = hashlib.sha256()
+    for s in SETTINGS:
+        top = os.path.join(CONFIG, s)
+        for root, dirs, files in os.walk(top):
+            rel_root = os.path.relpath(root, CONFIG)
+            dirs[:] = sorted(d for d in dirs if not (s == QS_REL and rel_root == QS_REL and d == ".git")
+                             and not (rel_root == "hypr/custom" and d == "backups"))
+            for f in sorted(files):
+                if ".bak" in f or ".reapply-bak" in f:
+                    continue
+                path = os.path.join(root, f)
+                try:
+                    with open(path, "rb") as fh:
+                        h.update(os.path.join(rel_root, f).encode() + b"\0" + hashlib.sha256(fh.read()).digest())
+                except OSError:
+                    pass
+    return h.hexdigest()
+
+
 def points():
     out = []
     if not os.path.isdir(ROOT):
@@ -90,11 +113,12 @@ def create(reason, keep=None):
     """Save a restore point; then delete the oldest beyond KEEP, never `keep` (the one being restored)."""
     os.makedirs(ROOT, exist_ok=True)
     now = datetime.datetime.now()
-    pid = now.strftime("%Y%m%d-%H%M%S")
-    n = 2
-    while os.path.exists(os.path.join(ROOT, pid)):   # two in the same second
-        pid = now.strftime("%Y%m%d-%H%M%S") + f"-{n}"
-        n += 1
+    # "<date>-<time>-NN", NN = one more than any point of the same second: ids sort in creation order (QA 2026-10-08:
+    # "-10" sorted before "-2", and a bare id made after "-2" sorted first, so retention removed the newest)
+    stamp = now.strftime("%Y%m%d-%H%M%S")
+    taken = [int(n.rsplit("-", 1)[1]) for n in os.listdir(ROOT) if n.startswith(stamp + "-") and n.rsplit("-", 1)[1].isdigit()]
+    taken += [1] if os.path.exists(os.path.join(ROOT, stamp)) else []
+    pid = f"{stamp}-{max(taken, default=0) + 1:02d}"
     d = os.path.join(ROOT, pid)
     tmp = d + ".tmp"
     shutil.rmtree(tmp, ignore_errors=True)
@@ -105,11 +129,13 @@ def create(reason, keep=None):
     args += [f"--exclude={e}" for e in EXCLUDE]
     args += [s for s in SETTINGS if os.path.exists(os.path.join(CONFIG, s))]
     r = run(args)
-    if r.returncode not in (0, 1):   # 1 = a file changed while reading (logs), still usable
+    if r.returncode not in (0, 1) or "Cowardly refusing" in r.stderr:   # 1 = a file changed while reading, still usable
         shutil.rmtree(tmp, ignore_errors=True)
-        sys.exit(f"restore-point: saving the settings failed: {r.stderr.strip()}")
+        if not any(os.path.exists(os.path.join(CONFIG, x)) for x in SETTINGS):
+            sys.exit("restore-point: there are no desktop settings to save")
+        sys.exit(f"restore-point: saving the settings failed: {r.stderr.strip().splitlines()[0] if r.stderr.strip() else r.returncode}")
     meta = {"id": pid, "date": now.isoformat(timespec="seconds"), "reason": reason or "Restore point",
-            "shell": shell_head(), "custom": custom_label(), "kernel": os.uname().release}
+            "shell": shell_head(), "custom": custom_label(), "kernel": os.uname().release, "settings": settings_hash()}
     with open(os.path.join(tmp, "meta.json"), "w") as f:
         json.dump(meta, f)
     os.replace(tmp, d)
@@ -145,7 +171,8 @@ def changes(pid):
             item = {"name": name, "from": now.get(name, ""), "to": ver}
             (changed if cached_file(name, ver) else missing).append(item)
     added = sorted(n for n in now if n not in then)
-    return {"packages": changed, "missing": missing, "added": added,
+    settings_changed = bool(meta.get("settings")) and meta.get("settings") != settings_hash()
+    return {"packages": changed, "missing": missing, "added": added, "settings": settings_changed,
             "shell": bool(meta.get("shell")) and meta.get("shell") != shell_head(),
             "custom": meta.get("custom", "") != custom_label(), "customThen": meta.get("custom", "")}
 
@@ -158,7 +185,8 @@ def cmd_list():
         except (OSError, ValueError):
             continue
         m.update({"changedPackages": len(c["packages"]) + len(c["missing"]), "missingPackages": [p["name"] for p in c["missing"]],
-                  "reinstallPackages": len(c["packages"]), "packages": c["packages"][:50], "shellChanged": c["shell"], "customChanged": c["custom"]})
+                  "reinstallPackages": len(c["packages"]), "packages": c["packages"][:50], "shellChanged": c["shell"], "customChanged": c["custom"],
+                  "settingsChanged": c["settings"]})
         out.append(m)
     print(json.dumps(out))
 
@@ -175,7 +203,8 @@ def restore_settings(pid, meta):
             if not os.path.isdir(src):
                 continue
             # --delete: files added since go away too; excluded ones (backups, the shell's git history) are left alone
-            args = ["rsync", "-a", "--delete"] + [f"--exclude={e}" for e in RSYNC_EXCLUDE.get(s, [])]
+            # --checksum: by content (a file changed within the same second, with the same size, used to be skipped)
+            args = ["rsync", "-a", "--checksum", "--delete"] + [f"--exclude={e}" for e in RSYNC_EXCLUDE.get(s, [])]
             r = run(args + [src + "/", os.path.join(CONFIG, s) + "/"])
             if r.returncode != 0:
                 sys.exit(f"restore-point: putting back {s} failed: {r.stderr.strip()}")
@@ -187,14 +216,19 @@ def restore_settings(pid, meta):
 
 
 def cmd_restore(pid, yes):
+    if not re.fullmatch(r"\d{8}-\d{6}(-\d+)?", pid):   # an id, not a path (QA 2026-10-08)
+        sys.exit(f"restore-point: no restore point {pid}")
     d = os.path.join(ROOT, pid)
     try:
         with open(os.path.join(d, "meta.json")) as f:
             meta = json.load(f)
-    except (OSError, ValueError):
-        sys.exit(f"restore-point: no restore point {pid}")
-    c = changes(pid)
-    when = meta["date"].replace("T", " ")[:16]
+        c = changes(pid)
+        when = str(meta["date"]).replace("T", " ")[:16]
+        meta["reason"] = meta.get("reason", "Restore point")
+        if not os.path.isfile(os.path.join(d, "settings.tar.zst")):
+            raise OSError("settings.tar.zst is missing")
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        sys.exit(f"restore-point: restore point {pid} is damaged and can't be used ({e})")
     print(f"Going back to the restore point of {when} ({meta['reason']}):")
     print(f"  - desktop settings and shell as they were then")
     if c["custom"] and c["customThen"]:
@@ -204,7 +238,11 @@ def cmd_restore(pid, yes):
     if c["missing"]:
         print(f"  - not possible (no longer in the package cache): " + ", ".join(p["name"] for p in c["missing"]))
     if not yes:
-        if input("Continue? [y/N] ").strip().lower() not in ("y", "yes"):
+        try:
+            answer = input("Continue? [y/N] ")
+        except EOFError:
+            answer = ""
+        if answer.strip().lower() not in ("y", "yes"):
             print("Nothing changed.")
             return 1
     before = create("Before undo", keep=pid)

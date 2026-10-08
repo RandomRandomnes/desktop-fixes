@@ -99,22 +99,34 @@ WPage {
         // its own centered terminal in front (class phoenix-setup, custom/rules.lua); the stock "kitty -1" could reuse
         // an open kitty window, and from the setup assistant it could open behind it
         WLink { icon: "password"; title: "Change your password"; description: "Opens a window that asks for the current password, then the new one twice"; chevronIcon: "open_in_new"
-                action: () => Quickshell.execDetached(["kitty", "--class", "phoenix-setup", "--title", "Change password", "--hold", "passwd"]) }
+                // through the setup assistant's queue when it runs there (one terminal at a time; QA 2026-10-08)
+                action: () => terminalRunner ? terminalRunner(["bash", "-c", "passwd; echo; read -r -p 'Press Enter to close.'"], "Change password")
+                    : Quickshell.execDetached(["kitty", "--class", "phoenix-setup", "--title", "Change password", "--hold", "passwd"]) }
         // Phoenix login screen (P5, 2026-10-08): `phoenix login-screen install|remove` in a terminal (asks for the password)
         WCard {
             id: loginScreen
             property string lsState: ""   // "on" | "off" | ""
             icon: "login"
             title: "Login screen at startup"
-            description: lsState === "on" ? "On: the PC starts at the Phoenix login screen and asks for your password"
-                : lsState === "off" ? "Off: the PC signs you in automatically when it starts" : "Checking…"
+            property string otherDm: ""   // another login manager (sddm, gdm…) instead of automatic sign-in
+            property bool updateReady: false   // a newer login screen came with a Phoenix update (root's copy is older)
+            description: lsState === "on" ? (updateReady ? "On. An update for the login screen is ready (asks for your password)"
+                    : "On: the PC starts at the Phoenix login screen and asks for your password")
+                : lsState === "off" ? (otherDm ? `Off: the PC uses another login screen (${otherDm})` : "Off: the PC signs you in automatically when it starts")
+                : "Checking…"
             function refresh() { lsStatus.running = true }
             Component.onCompleted: refresh()
             Connections { target: GlobalStates; function onSettingsOpenChanged() { if (GlobalStates.settingsOpen) loginScreen.refresh() } }
             Process {
                 id: lsStatus
                 command: ["bash", "-c", "~/.local/bin/phoenix login-screen status"]
-                stdout: StdioCollector { onStreamFinished: loginScreen.lsState = /: on/.test(text) ? "on" : /: off/.test(text) ? "off" : "" }
+                stdout: StdioCollector {
+                    onStreamFinished: {
+                        loginScreen.lsState = /: on/.test(text) ? "on" : /: off/.test(text) ? "off" : ""
+                        loginScreen.otherDm = (text.match(/login manager: ([\w.-]+)/) || [])[1] ?? ""
+                        loginScreen.updateReady = /update is ready/.test(text)
+                    }
+                }
             }
             Process {
                 id: lsChange
@@ -124,13 +136,28 @@ WPage {
                 id: lsRecheck
                 interval: 3000; repeat: true
                 property int left: 0
-                onRunningChanged: if (running) left = 60
-                onTriggered: { loginScreen.refresh(); if (--left <= 0) stop() }
+                property string startState: ""
+                onRunningChanged: if (running) { left = 60; startState = loginScreen.lsState }
+                onTriggered: { loginScreen.refresh(); if (--left <= 0 || loginScreen.lsState !== startState) stop() }
+            }
+            WButton {   // an update for the installed login screen: install again
+                visible: loginScreen.lsState === "on" && loginScreen.updateReady
+                accent: true
+                enabled: !lsChange.running && !lsRecheck.running
+                buttonText: "Update"
+                onClicked: {
+                    const args = ["bash", "-c", "~/.local/bin/phoenix login-screen install; echo; read -r -p 'Press Enter to close.'"]
+                    if (terminalRunner) { terminalRunner(args, "Login screen"); lsRecheck.restart(); return }
+                    lsChange.command = ["kitty", "--class", "phoenix-setup", "--title", "Login screen", "--"].concat(args)
+                    lsChange.running = true
+                }
             }
             WButton {
                 accent: loginScreen.lsState === "off"
-                enabled: loginScreen.lsState !== "" && !lsChange.running
-                buttonText: lsChange.running ? "Waiting…" : loginScreen.lsState === "on" ? "Turn off" : "Turn on"
+                // busy also while the assistant's terminal runs it (lsRecheck), so it can't be queued twice
+                readonly property bool busy: lsChange.running || lsRecheck.running
+                enabled: loginScreen.lsState !== "" && !busy
+                buttonText: busy ? "Waiting…" : loginScreen.lsState === "on" ? "Turn off" : "Turn on"
                 onClicked: {
                     const action = loginScreen.lsState === "on" ? "remove" : "install"
                     const args = ["bash", "-c", `~/.local/bin/phoenix login-screen ${action}; echo; read -r -p 'Press Enter to close.'`]

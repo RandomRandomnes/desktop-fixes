@@ -1,5 +1,15 @@
 # Changelog
 
+## custom 2.100 (2026-10-08, fix)
+- Security: a window title or display-profile name can no longer put code into the Hyprland config (window rules, display profiles)
+- Maximize: windows can be restored after Settings changes; a newly maximized window comes to the front; minimized windows moved out another way come back visible
+- Several screens: a lone screen always uses workspaces 1-10; windows of an unplugged screen move to the remaining one; identical monitors no longer share settings; the vertical taskbar honours per-screen items
+- Login screen: uses your keyboard layout; KDE choice from 'Switch to KDE' is kept; each user's own picture; your 12/24-hour clock; safer install/remove (keeps another login manager, no second-install mixups); an Update button when a newer version is ready; removed with Phoenix
+- Restore points: settings-only changes can be undone; same-second changes are restored; damaged points give a clear message
+- Updates: a second Undo no longer resets to version 0; fixes keep coming after undoing a major version; restored files aren't treated as your edits; files are never installed world-writable
+- Game Mode no longer mistakes Accessibility's 'animations off' for itself; Do Not Disturb no longer flickers from screenshots or ends early with two screen shares
+- Smaller fixes: window-rule on/off switch works, unread badge counts banner-less apps, problem reports hide more personal data, Settings window size on rotated screens, services no longer run twice while the setup assistant is open
+
 ## custom 2.9 (2026-10-08, fix)
 - No more false "Desktop check: 1 problem" alert at startup: half-read window lists are simply asked for again
 

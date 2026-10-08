@@ -216,6 +216,7 @@ Item {
                     id: dpCurrentProc
                     command: [DisplayProfiles.tool, "current"]
                     stdout: StdioCollector { onStreamFinished: { try { dpSection.current = JSON.parse(text) } catch (e) { dpSection.current = [] } } }
+                    onExited: code => { if (code !== 0) dpSection.status = "Display profiles aren't available: ~/.local/bin/display-profiles is missing or failed (update Phoenix)." }
                 }
                 Process {
                     id: dpActionProc
@@ -232,7 +233,9 @@ Item {
                 function summary(mons) {
                     return mons.map(m => {
                         const s = m.settings || {}
-                        const name = (m.description || m.name || "").replace(/\s+\S*\d\S*$/, "")   // without the serial number
+                        // without a serial number at the end: a long run of digits/letters (8+ characters, at least 4 digits)
+                        // or 0x…; model names like "Odyssey G9" or "27GL850" stay (QA 2026-10-08)
+                        const name = (m.description || m.name || "").replace(/\s+(0x[0-9A-Fa-f]+|(?=(?:\S*\d){4})[A-Za-z0-9]{8,})(\s+#\d+)?$/, "$2")
                         return s.disabled ? `${name} (off)` : `${name} ${(s.mode || "").replace(/@.*/, "")}${s.scale && s.scale !== 1 ? ` at ${Math.round(s.scale * 100)}%` : ""}`
                     }).join(" + ")
                 }
@@ -272,7 +275,7 @@ Item {
                             enabled: modelData.connected && !dpActionProc.running
                             onClicked: dpSection.run(["apply", modelData.name])
                         }
-                        WButton { buttonText: "Delete"; onClicked: dpSection.run(["delete", modelData.name]) }
+                        WButton { buttonText: "Delete"; enabled: !dpActionProc.running; onClicked: dpSection.run(["delete", modelData.name]) }
                     }
                 }
                 StyledText {
@@ -474,9 +477,11 @@ Item {
                 id: appsSection
                 title: "Notifications from apps"
                 property string expanded: ""
+                property real now: Date.now()   // ticks once a minute so "last 5 min ago" stays right while the page is open
+                Timer { interval: 60000; running: true; repeat: true; onTriggered: appsSection.now = Date.now() }
                 function when(ms) {
                     if (!ms) return ""
-                    const mins = Math.round((Date.now() - ms) / 60000)
+                    const mins = Math.round((appsSection.now - ms) / 60000)
                     return mins < 1 ? "just now" : mins < 60 ? `${mins} min ago` : mins < 1440 ? `${Math.round(mins / 60)} h ago`
                         : new Date(ms).toLocaleDateString(Qt.locale(), "MMM d")
                 }

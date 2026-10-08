@@ -3,6 +3,7 @@
 # installed root-owned at /usr/local/bin/phoenix-session by `phoenix login-screen install`.
 # The argument (the login screen's session choice) is remembered in ~/.config/desktop-session, the same file
 # ~/.local/bin/switch-desktop and the tty1 autologin in ~/.bash_profile use.
+rm -f /var/lib/phoenix-greeter/theme/next-session 2>/dev/null   # switch-desktop's note for the login screen is used
 case "${1:-}" in
     hyprland|plasma) mkdir -p "$HOME/.config" && echo "$1" > "$HOME/.config/desktop-session" ;;
 esac

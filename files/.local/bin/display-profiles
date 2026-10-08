@@ -55,9 +55,13 @@ def lua_blocks():
         return {}
     r = run(["python3", CONFIGURATOR, "--file", MONITORS_LUA, "--dump-all"])
     try:
-        return json.loads(r.stdout) if r and r.returncode == 0 else {}
+        blocks = json.loads(r.stdout) if r and r.returncode == 0 else {}
     except ValueError:
         return {}
+    # illogical-impulse's parser hands back strings still Lua-escaped; unescape so lua_value escapes them once
+    # (they used to gain a layer of backslashes on every apply; QA 2026-10-08)
+    return {o: {k: (re.sub(r"\\(.)", r"\1", v) if isinstance(v, str) else v) for k, v in (b or {}).items()}
+            for o, b in blocks.items() if isinstance(b, dict)}
 
 
 def settings_of(m, block):
@@ -73,6 +77,22 @@ def settings_of(m, block):
     return s
 
 
+def identities(mons):
+    """[(id, monitor)]: the description; identical displays get " #2", " #3" (in port order); no description → port."""
+    out, count = [], {}
+    for m in sorted(mons, key=lambda m: m.get("name", "")):
+        d = (m.get("description") or "").strip() or m.get("name", "")
+        count[d] = count.get(d, 0) + 1
+        out.append((d if count[d] == 1 else f"{d} #{count[d]}", m))
+    return out
+
+
+def one_line(s):
+    """No line breaks or control characters (a newline in a profile name used to end the comment in monitors.lua and
+    run the rest as Lua; QA 2026-10-08)."""
+    return re.sub(r"[\x00-\x1f\x7f]", " ", str(s))
+
+
 def key_of(descriptions):
     return "\n".join(sorted(descriptions))
 
@@ -81,9 +101,14 @@ def load():
     try:
         with open(STORE) as f:
             d = json.load(f)
-        return d if isinstance(d, list) else []
     except (OSError, ValueError):
         return []
+    if not isinstance(d, list):
+        return []
+    # only well-formed profiles (a damaged file used to crash list/save)
+    return [p for p in d if isinstance(p, dict) and isinstance(p.get("name"), str) and isinstance(p.get("monitors"), list)
+            and all(isinstance(m, dict) and isinstance(m.get("description"), str) and isinstance(m.get("settings"), dict)
+                    for m in p["monitors"])]
 
 
 def store(profiles):
@@ -98,7 +123,7 @@ def lua_value(k, v):
     if isinstance(v, bool):
         return "true" if v else "false"
     if k in STRING_KEYS or isinstance(v, str):
-        return '"' + str(v).replace("\\", "\\\\").replace('"', '\\"') + '"'
+        return '"' + one_line(v).replace("\\", "\\\\").replace('"', '\\"') + '"'
     return str(v)
 
 
@@ -106,7 +131,7 @@ def render(profile, names, others):
     """monitors.lua text for a profile; names: description → current port name; others: the existing blocks of
     outputs the profile doesn't set (kept as they are, e.g. a TV that isn't plugged in now)."""
     out = ["-- Written by Settings › System › Display › Display profiles (~/.local/bin/display-profiles):",
-           f"-- profile \"{profile['name']}\". Changes made in Display settings are kept until a profile is applied again.", ""]
+           f"-- profile \"{one_line(profile['name'])}\". Changes made in Display settings are kept until a profile is applied again.", ""]
     for mon in profile["monitors"]:
         fields = {"output": names[mon["description"]]}
         fields.update(mon["settings"])
@@ -121,13 +146,13 @@ def render(profile, names, others):
 
 
 def connected_names():
-    return {m["description"]: m["name"] for m in live() if m.get("description")}
+    return {i: m["name"] for i, m in identities(live())}
 
 
 def cmd_current():
     blocks = lua_blocks()
-    print(json.dumps([{"name": m["name"], "description": m.get("description", ""), "settings": settings_of(m, blocks.get(m["name"]))}
-                      for m in live()]))
+    print(json.dumps([{"name": m["name"], "description": i, "settings": settings_of(m, blocks.get(m["name"]))}
+                      for i, m in identities(live())]))
 
 
 def cmd_list():
@@ -148,8 +173,8 @@ def cmd_save(name):
     if not mons:
         sys.exit("display-profiles: can't read the displays (is Hyprland running?)")
     blocks = lua_blocks()
-    profile = {"name": name, "monitors": [{"description": m.get("description") or m["name"], "settings": settings_of(m, blocks.get(m["name"]))}
-                                          for m in mons]}
+    profile = {"name": name, "monitors": [{"description": i, "settings": settings_of(m, blocks.get(m["name"]))}
+                                          for i, m in identities(mons)]}
     profiles = [p for p in load() if p["name"] != name] + [profile]
     store(profiles)
     print(json.dumps({"ok": True, "name": name}))
@@ -204,8 +229,10 @@ def cmd_auto():
 
 
 def cmd_delete(name):
-    store([p for p in load() if p["name"] != name])
-    print(json.dumps({"ok": True}))
+    profiles = load()
+    left = [p for p in profiles if p["name"] != name]
+    store(left)
+    print(json.dumps({"ok": len(left) < len(profiles)} if len(left) < len(profiles) else {"ok": False, "error": f"no profile called {name}"}))
 
 
 def main():
@@ -218,11 +245,11 @@ def main():
     elif cmd == "save" and len(a) >= 2:
         cmd_save(" ".join(a[1:]))
     elif cmd == "apply" and len(a) >= 2:
-        return cmd_apply(" ".join(a[1:]))
+        return cmd_apply(" ".join(a[1:]).strip()[:60])
     elif cmd == "auto":
         return cmd_auto()
     elif cmd == "delete" and len(a) >= 2:
-        cmd_delete(" ".join(a[1:]))
+        cmd_delete(" ".join(a[1:]).strip()[:60])
     else:
         sys.exit(__doc__)
     return 0

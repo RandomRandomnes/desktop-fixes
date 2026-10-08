@@ -96,14 +96,21 @@ def local_hhmm(utc_dt, date):
 
 
 def main():
-    a = sys.argv[1:]
-    zone = local_zone()
+    import argparse
+    ap = argparse.ArgumentParser(description="Today's sunset and sunrise (JSON).", add_help=True)
+    ap.add_argument("--lat", type=float)
+    ap.add_argument("--lon", type=float)
+    a = ap.parse_args()
+    # the time zone in use: $TZ when it names one (the times follow it), else /etc/localtime (QA 2026-10-08)
+    tz = os.environ.get("TZ", "").lstrip(":")
+    zone = tz if "/" in tz and os.path.exists(os.path.join("/usr/share/zoneinfo", tz)) else local_zone()
     coords = None
-    if "--lat" in a and "--lon" in a:
-        try:
-            coords = (float(a[a.index("--lat") + 1]), float(a[a.index("--lon") + 1]))
-        except (ValueError, IndexError):
-            sys.exit(__doc__)
+    if a.lat is not None or a.lon is not None:
+        if a.lat is None or a.lon is None:
+            sys.exit("sun-times: give both --lat and --lon")
+        if not (math.isfinite(a.lat) and math.isfinite(a.lon) and -90 <= a.lat <= 90 and -180 <= a.lon <= 180):
+            sys.exit("sun-times: --lat must be -90…90 and --lon -180…180")
+        coords = (a.lat, a.lon)
     coords = coords or zone_coords(zone)
     real = canonical(zone)
     out = {"zone": zone, "place": real.split("/")[-1].replace("_", " ") if real else "", "ok": False}

@@ -53,7 +53,7 @@ Singleton {
             lastSeen: Date.now()
         })
         root.apps = a
-        saveTimer.restart()
+        if (!saveTimer.running) saveTimer.start()   // not restart: a steady stream of notifications never saved (QA 2026-10-08)
         const show = prev.enabled !== false
         const popup = show && popupAllowed && prev.banners !== false
         const hints = notification?.hints || {}

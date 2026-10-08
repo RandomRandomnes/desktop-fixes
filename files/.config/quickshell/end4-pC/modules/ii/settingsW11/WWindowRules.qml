@@ -36,8 +36,10 @@ WPage {
         { displayName: "Bottom left", value: "bottom-left" }, { displayName: "Bottom right", value: "bottom-right" }]
     readonly property var stateOptions: [
         { displayName: "Normal", value: "" }, { displayName: "Maximized", value: "maximize" }, { displayName: "Fullscreen", value: "fullscreen" }]
+    // 10 per screen: with "Own workspaces for each screen" the second screen uses 11-20, the third 21-30
     readonly property var workspaceOptions: [{ displayName: "Don't change", value: "" }].concat(
-        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => ({ displayName: `Workspace ${n}`, value: `${n}` })))
+        Array.from({ length: 10 * Math.max(1, Hyprland.monitors.values.length) }, (_, i) => i + 1)
+            .map(n => ({ displayName: `Workspace ${n}`, value: `${n}` })))
     readonly property var monitorOptions: [{ displayName: "Don't change", value: "" }].concat(
         Hyprland.monitors.values.map(m => ({ displayName: m.name, value: m.name })))
 
@@ -159,9 +161,12 @@ WPage {
                 StyledSwitch {
                     checked: ruleCard.modelData.enabled !== false
                     onClicked: {
+                        // inside onClicked the switch has already flipped: `checked` is the new state (QA 2026-10-08:
+                        // `!checked` saved the old one, so the switch never changed the rule)
                         const l = JSON.parse(JSON.stringify(page.rules))
-                        l[ruleCard.index].enabled = !checked
+                        l[ruleCard.index].enabled = checked
                         page.save(l)
+                        checked = Qt.binding(() => ruleCard.modelData.enabled !== false)
                     }
                 }
                 WButton { buttonText: "Edit"; onClicked: page.edit(ruleCard.index) }

@@ -37,7 +37,7 @@ def run(cmd, timeout=30):
 def private_words():
     """Exact strings to hide, longest first, with what replaces them."""
     user = os.environ.get("USER") or os.path.basename(HOME)
-    words = {HOME: "~", user: "<user>"}
+    words = {HOME: "~"}
     try:
         host = socket.gethostname()
         if host and host not in ("localhost", "archlinux"):
@@ -62,14 +62,27 @@ def private_words():
 
 
 def scrub(text, words):
+    user = os.environ.get("USER") or os.path.basename(HOME)
+    host = ""
+    try:
+        host = socket.gethostname()
+    except OSError:
+        pass
+    # first what contains other private words (e-mails, drive paths), then the words themselves
+    text = re.sub(r"[\w.+-]+@[\w-]+(\.[\w-]+)+", "<email>", text)
+    text = re.sub(r"/run/media/[^/\n]+/[^/\n]+", "/run/media/<drive>", text)
+    # the user name and computer name also inside longer words (name_backup, name2; QA 2026-10-08)
+    for word, repl in ((HOME, "~"), (user, "<user>"), (host if host not in ("", "localhost", "archlinux") else None, "<pc>")):
+        if word and len(word) >= 3:
+            text = re.sub(re.escape(word), repl, text, flags=re.I)
     for word, repl in words:
         text = re.sub(r"(?<![\w-])" + re.escape(word) + r"(?![\w-])", repl, text, flags=re.I)
-    text = re.sub(r"/run/media/[^/\s]+/[^\s/]+", "/run/media/<drive>", text)
-    text = re.sub(r"[\w.+-]+@[\w-]+\.[\w.-]+", "<email>", text)
     text = re.sub(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", "<uuid>", text, flags=re.I)
-    text = re.sub(r"\b(?:[0-9a-f]{2}:){5}[0-9a-f]{2}\b", "<mac>", text, flags=re.I)
+    text = re.sub(r"\b(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}\b", "<mac>", text, flags=re.I)
+    text = re.sub(r"\b[0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4}\b", "<mac>", text, flags=re.I)
     text = re.sub(r"\b(?:\d{1,3}\.){3}\d{1,3}\b", "<ip>", text)
     text = re.sub(r"\b(?:[0-9a-f]{1,4}:){3,7}[0-9a-f]{1,4}\b", "<ip>", text, flags=re.I)
+    text = re.sub(r"(?<![\w:])(?:[0-9a-f]{1,4}:){1,7}:(?:[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){0,6})?(?![\w:])", "<ip>", text, flags=re.I)
     return text
 
 
@@ -112,6 +125,7 @@ def guard():
             mode = "files" if line.startswith("## Tracked files") else "skip" if "git status" in line else ""
             if mode == "files":
                 keep.append("## Tracked files that differ")
+                files_heading = len(keep) - 1
             if mode:
                 continue
         if mode == "files":
@@ -130,6 +144,9 @@ def guard():
             code.append(line)
         else:
             keep.append(line)
+    if "files_heading" in locals() and files_heading == len(keep) - 1 or (
+            "files_heading" in locals() and not str(keep[files_heading + 1] if files_heading + 1 < len(keep) else "").startswith("- ")):
+        keep.pop(files_heading)   # nothing differs: no empty heading
     out = "\n".join(keep).strip()
     return re.sub(r"^## ", "#### ", re.sub(r"^# ", "", out, flags=re.M), flags=re.M)
 
@@ -149,6 +166,10 @@ def make(note):
     body = scrub(body, words)
     os.makedirs(OUT, exist_ok=True)
     path = os.path.join(OUT, datetime.datetime.now().strftime("report-%Y%m%d-%H%M%S.md"))
+    n = 2
+    while os.path.exists(path):   # two reports in the same second (QA 2026-10-08: one overwrote the other)
+        path = os.path.join(OUT, datetime.datetime.now().strftime("report-%Y%m%d-%H%M%S") + f"-{n}.md")
+        n += 1
     with open(path, "w") as f:
         f.write(f"# {title}\n\n{body}\n")
     for old in sorted(os.listdir(OUT))[:-10]:

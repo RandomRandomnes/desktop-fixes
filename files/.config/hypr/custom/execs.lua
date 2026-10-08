@@ -11,6 +11,7 @@ local MIN = "special:minimized"
 -- minimized one, which opens special:minimized as well. For a short time after those events an opened
 -- special:minimized is treated as that fallback, not as a restore.
 local fallback_gen, fallback_live = 0, false
+local faded = {}   -- address → true while minimize has it at opacity 0
 local function expect_fallback()
     fallback_gen = fallback_gen + 1
     local gen = fallback_gen
@@ -26,8 +27,9 @@ end
 local function without_animations(fn)
     local anims = hl.get_config("animations.enabled")
     hl.config({ animations = { enabled = false } })
-    fn()
-    hl.config({ animations = { enabled = anims } })
+    local ok, err = pcall(fn)   -- animations come back even if fn fails (QA 2026-10-08)
+    hl.config({ animations = { enabled = anims ~= false } })
+    if not ok then print("minimize: " .. tostring(err)) end
 end
 
 -- Move focus to the most recently used window on workspace ws_id. If it has none, Hyprland would keep
@@ -36,7 +38,8 @@ end
 local function refocus_on(ws_id)
     local best
     for _, w in ipairs(hl.get_workspace_windows(ws_id) or {}) do
-        if not best or w.focus_history_id < best.focus_history_id then best = w end
+        -- -1 = never focused: not "the last one used" (QA 2026-10-08)
+        if w.focus_history_id >= 0 and (not best or w.focus_history_id < best.focus_history_id) then best = w end
     end
     if best then
         hl.dispatch(hl.dsp.focus({ window = "address:" .. best.address }))
@@ -52,6 +55,7 @@ end
 function hb_minimize(addr)
     local sel = "address:" .. addr
     set_opacity(sel, 0, 0)
+    faded[addr] = true
     hl.timer(function()
         local win = hl.get_window(sel)
         local ws_id = win and win.workspace and win.workspace.id
@@ -62,10 +66,23 @@ function hb_minimize(addr)
     return hl.dsp.no_op()
 end
 
-hl.on("window.close", expect_fallback)
-hl.on("window.destroy", expect_fallback)
+-- Hyprland's refocus only follows the FOCUSED window closing or leaving; any other window doing so used to block a dock
+-- restore for 400 ms (QA 2026-10-08)
+local last_active = nil
+hl.on("window.active", function(win) last_active = win and win.address or nil end)
+local function fallback_if_focused(win) if win and win.address == last_active then expect_fallback() end end
+hl.on("window.close", fallback_if_focused)
+hl.on("window.destroy", fallback_if_focused)
 hl.on("window.move_to_workspace", function(win, ws)
-    if not (ws and ws.name == MIN) then expect_fallback() end
+    if not (ws and ws.name == MIN) then
+        fallback_if_focused(win)
+        -- out of the minimized place some other way (Overview drag, "move to workspace"): fade it back in, it was
+        -- left invisible (QA 2026-10-08)
+        if win and faded[win.address] then
+            faded[win.address] = nil
+            set_opacity("address:" .. win.address, hl.get_config("decoration.active_opacity"), hl.get_config("decoration.inactive_opacity"))
+        end
+    end
 end)
 
 local function close_minimized_special()
@@ -89,6 +106,7 @@ local function restore_active()
     without_animations(function() hl.dispatch(hl.dsp.window.move({ workspace = target.id, window = sel })) end)
     hl.dispatch(hl.dsp.focus({ window = sel }))
     set_opacity(sel, hl.get_config("decoration.active_opacity"), hl.get_config("decoration.inactive_opacity"))
+    faded[win.address] = nil
 end
 
 -- Opening special:minimized first focuses whatever was used last in there, and only then the window
@@ -160,7 +178,8 @@ hl.on("window.active", function(win)
 end)
 
 hl.on("window.fullscreen", function(win)
-    if win and win.fullscreen == 1 and win.workspace then raise_floats_over_max(win.workspace, win) end
+    -- floating windows aren't kept maximized: windows-maximize turns them into normal full-size windows (2026-10-08)
+    if win and win.fullscreen == 1 and win.workspace and not win.floating then raise_floats_over_max(win.workspace, win) end
 end)
 
 hl.on("window.move_to_workspace", function(win, ws)
@@ -211,11 +230,23 @@ local function assign_groups()
         if not index_of(order, key) then table.insert(order, key); changed = true end
     end
     if changed then write_order(order) end
-    local owner = {}   -- group number → the connected screen it belongs to
+    -- groups go to the connected screens in first-seen order: a lone screen always has 1-10, the next 11-20, …
+    -- (it used to be the position among every screen ever seen, so a new desk monitor could get 21-30; QA 2026-10-08).
+    -- A mirrored screen shows another one and gets no group.
+    local ranked = {}
     for _, m in ipairs(mons) do
-        local key = (m.description and m.description ~= "") and m.description or m.name
-        local group = index_of(order, key) - 1
-        owner[group] = m
+        if not m.is_mirror then
+            local key = (m.description and m.description ~= "") and m.description or m.name
+            table.insert(ranked, { m = m, i = index_of(order, key) })
+        end
+    end
+    table.sort(ranked, function(a, b) return a.i < b.i end)
+    local owner, group_of = {}, {}   -- group number → screen; screen name → group number
+    for g, r in ipairs(ranked) do owner[g - 1] = r.m; group_of[r.m.name] = g - 1 end
+    for ws, rule in pairs(rules) do   -- groups that no screen has now: their rules go
+        if not owner[math.floor((ws - 1) / workspaceGroupSize)] then pcall(function() rule:set_enabled(false) end); rules[ws] = nil end
+    end
+    for group, m in pairs(owner) do
         local first = group * workspaceGroupSize + 1
         for ws = first, first + workspaceGroupSize - 1 do
             if rules[ws] then pcall(function() rules[ws]:set_enabled(false) end) end
@@ -223,12 +254,20 @@ local function assign_groups()
             rules[ws] = ok and rule or nil
         end
     end
-    -- workspaces on the wrong screen (Hyprland parks a screen's workspaces elsewhere when it is unplugged) go home
+    -- workspaces on the wrong screen (Hyprland parks a screen's workspaces elsewhere when it is unplugged) go home;
+    -- workspaces of a group no screen has now (its screen was unplugged): their windows move to the same place in the
+    -- group of the screen they ended up on (12 → 2), so the bar and Super+1…0 reach them (QA 2026-10-08)
     for _, w in ipairs(hl.get_workspaces() or {}) do
         if w.id and w.id > 0 and w.monitor then
-            local home = owner[math.floor((w.id - 1) / workspaceGroupSize)]
+            local g = math.floor((w.id - 1) / workspaceGroupSize)
+            local home = owner[g]
             if home and home.name ~= w.monitor.name then
                 pcall(hl.dispatch, hl.dsp.workspace.move({ workspace = w.id, monitor = home.name }))
+            elseif not home and group_of[w.monitor.name] then
+                local target = group_of[w.monitor.name] * workspaceGroupSize + (w.id - 1) % workspaceGroupSize + 1
+                for _, win in ipairs(hl.get_workspace_windows(w.id) or {}) do
+                    pcall(hl.dispatch, hl.dsp.window.move({ workspace = target, follow = false, window = "address:" .. win.address }))
+                end
             end
         end
     end
@@ -254,9 +293,9 @@ end
 local function assign_soon()
     hl.timer(assign_groups, { timeout = 500, type = "oneshot" })
 end
-hl.on("hyprland.start", assign_soon)
 hl.on("monitor.added", assign_soon)
-assign_soon()   -- also after a config reload
+hl.on("monitor.removed", assign_soon)
+assign_soon()   -- at start and after every config reload
 end
 -- workspace-groups-end
 
@@ -268,7 +307,32 @@ end
 -- a maximized one; the window you see on top then always gets the clicks. Maximizing it again restores the size and
 -- place it had before; if it was moved or resized meanwhile, it is maximized again instead.
 if feature("windowsStyle") then
-local maxed = {}   -- address → { max = box, prev = box }
+-- address → { max = box, prev = box }; kept in a runtime file because a config reload (Settings changes, display
+-- profiles, setup-features) starts this script afresh and used to forget them (QA 2026-10-08: no restore after a reload)
+local MAXED_FILE = (os.getenv("XDG_RUNTIME_DIR") or "/tmp") .. "/phoenix-maximized"
+local maxed = {}
+do
+    local f = io.open(MAXED_FILE, "r")
+    if f then
+        for line in f:lines() do
+            local a, n = line:match("^(%S+)%s+(.*)$")
+            local v = {}
+            for x in (n or ""):gmatch("%-?%d+") do table.insert(v, tonumber(x)) end
+            if a and #v == 8 then
+                maxed[a] = { max = { x = v[1], y = v[2], w = v[3], h = v[4] }, prev = { x = v[5], y = v[6], w = v[7], h = v[8] } }
+            end
+        end
+        f:close()
+    end
+end
+local function save_maxed()
+    local f = io.open(MAXED_FILE, "w")
+    if not f then return end
+    for a, s in pairs(maxed) do
+        f:write(string.format("%s %d %d %d %d %d %d %d %d\n", a, s.max.x, s.max.y, s.max.w, s.max.h, s.prev.x, s.prev.y, s.prev.w, s.prev.h))
+    end
+    f:close()
+end
 
 local function box_of(w) return { x = w.at.x or w.at[1], y = w.at.y or w.at[2], w = w.size.x or w.size[1], h = w.size.y or w.size[2] } end
 local function same(a, b) return a and b and math.abs(a.x - b.x) <= 2 and math.abs(a.y - b.y) <= 2 and math.abs(a.w - b.w) <= 2 and math.abs(a.h - b.h) <= 2 end
@@ -305,6 +369,9 @@ local function convert(win)
                 maxed[addr] = { max = max_box, prev = now }
                 place(sel, max_box)
             end
+            save_maxed()
+            -- the window you just maximized or restored belongs in front (the float-over-max raise could put others above it)
+            hl.dispatch(hl.dsp.window.alter_zorder({ mode = "top", window = sel }))
         end, { timeout = 30, type = "oneshot" })
     end
     hl.timer(step, { timeout = 30, type = "oneshot" })
@@ -315,7 +382,7 @@ hl.timer(function()
     for _, w in ipairs(hl.get_windows() or {}) do convert(w) end
 end, { timeout = 1000, type = "oneshot" })
 
-hl.on("window.close", function(win) if win then maxed[win.address] = nil end end)
+hl.on("window.close", function(win) if win and maxed[win.address] then maxed[win.address] = nil; save_maxed() end end)
 
 -- A window that gets the focus while the mouse isn't over it (dock, Alt+Tab, Overview, keyboard) comes to the front,
 -- like on Windows. Focus from just hovering it (follow_mouse) doesn't raise, so moving the mouse doesn't shuffle windows.

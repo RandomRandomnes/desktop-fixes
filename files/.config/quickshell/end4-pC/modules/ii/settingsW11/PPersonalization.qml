@@ -342,7 +342,13 @@ Item {
             // Phoenix (2026-10-08): "" = every screen; otherwise a screen's model: the toggles then show/hide items on that
             // screen only (bar.hiddenOnScreen, read by BarContent.qml)
             property string screenKey: ""
-            readonly property var screenKeys: Quickshell.screens.map(sc => sc.model || sc.name)
+            // the same key as BarContent.qml: the model, plus the port when two screens are the same model
+            function keyFor(sc) {
+                const m = sc.model || ""
+                if (!m) return sc.name
+                return Quickshell.screens.filter(o => o.model === m).length > 1 ? `${m} (${sc.name})` : m
+            }
+            readonly property var screenKeys: Quickshell.screens.map(sc => tp.keyFor(sc))
             readonly property var hiddenList: Config.options.bar.hiddenOnScreen ?? []
             function inLayout(id) {
                 return tp.layouts.leftLayout.includes(id) || tp.layouts.middleLayout.includes(id) || tp.layouts.rightLayout.includes(id);
@@ -393,7 +399,7 @@ Item {
                     description: tp.screenKey === "" ? "Changes apply to the taskbar on every screen"
                         : "Changes apply to this screen only; items stay in the same order on every screen"
                     model: [{ displayName: "All screens", value: "" }].concat(Quickshell.screens.map(sc => ({
-                        displayName: `${sc.model || sc.name} (${sc.name}, ${sc.width}×${sc.height})`, value: sc.model || sc.name })))
+                        displayName: `${sc.model || sc.name} (${sc.name}, ${sc.width}×${sc.height})`, value: tp.keyFor(sc) })))
                     currentValue: tp.screenKey
                     onSelected: v => tp.screenKey = v
                 }

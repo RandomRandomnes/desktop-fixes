@@ -150,7 +150,7 @@ date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
                 icon: modelData.line === "system" ? "build" : "new_releases"
                 title: (modelData.line === "system" ? "System fix " : "Phoenix ") + modelData.label
                     + (modelData.date ? ` · ${modelData.date}` : "")
-                description: modelData.notes.map(n => "• " + n).join("\n")
+                description: (modelData.notes ?? []).map(n => "• " + n).join("\n")
             }
         }
         RowLayout {
@@ -194,6 +194,7 @@ date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
         if (p.changedPackages) s.push(`${p.changedPackages} package${p.changedPackages === 1 ? "" : "s"} changed`)
         if (p.shellChanged) s.push("the shell was updated")
         if (p.customChanged) s.push(`Phoenix changed (was ${p.custom || "none"})`)
+        if (p.settingsChanged) s.push("desktop settings changed")
         return s.length ? "Since then: " + s.join(", ") : "Nothing has changed since then"
     }
     Process {
@@ -233,7 +234,7 @@ date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
                 description: page.rpSummary(modelData)
                 WButton {
                     buttonText: "Go back to this"
-                    enabled: modelData.changedPackages > 0 || modelData.shellChanged || modelData.customChanged
+                    enabled: modelData.changedPackages > 0 || modelData.shellChanged || modelData.customChanged || modelData.settingsChanged
                     onClicked: page.undoPoint = modelData
                 }
             }

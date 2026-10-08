@@ -27,10 +27,21 @@ Scope {
         visible: GlobalStates.settingsOpen
         title: "Settings"
         color: Appearance.colors.colLayer0
-        // fits smaller screens (2026-10-08): on a 1280×800 screen the 820 px window hid its header (back arrow) under the bar
-        readonly property var mon: Hyprland.focusedMonitor
-        readonly property real monW: mon ? mon.width / (mon.scale || 1) : 1920
-        readonly property real monH: mon ? mon.height / (mon.scale || 1) : 1080
+        // fits smaller screens (2026-10-08): on a 1280×800 screen the 820 px window hid its header (back arrow) under the bar.
+        // Worked out when Settings opens (not live: it resized when focus moved to another screen), with width and height
+        // swapped on a rotated (portrait) screen.
+        property real monW: 1920
+        property real monH: 1080
+        function measure() {
+            const mon = Hyprland.focusedMonitor
+            const o = mon?.lastIpcObject ?? {}
+            if (!mon) return
+            const portrait = [1, 3, 5, 7].includes(o.transform ?? 0)
+            const scale = o.scale || mon.scale || 1
+            const w = (o.width ?? mon.width) / scale, h = (o.height ?? mon.height) / scale
+            panelWindow.monW = portrait ? h : w
+            panelWindow.monH = portrait ? w : h
+        }
         implicitWidth: Math.min(1240, monW - 40)
         implicitHeight: Math.min(820, monH - 120)
 
@@ -40,6 +51,7 @@ Scope {
 
         onVisibleChanged: {
             if (visible) {
+                panelWindow.measure();
                 win.forceActiveFocus();
             } else {
                 GlobalStates.settingsOpen = false;   // closed by the window manager (title bar ✕, Super+Q)

@@ -32,7 +32,12 @@ Item {
     readonly property bool trayHasItems: SystemTray.items.values.length > 0
 
     // Phoenix (2026-10-08): widgets hidden on this screen only (bar.hiddenOnScreen, "<screen model>\t<widget id>")
-    readonly property string screenKey: screen?.model || screen?.name || ""
+    readonly property string screenKey: {
+        // the model, plus the port when two screens are the same model (QA 2026-10-08: they shared one setting)
+        const m = screen?.model || ""
+        if (!m) return screen?.name || ""
+        return Quickshell.screens.filter(sc => sc.model === m).length > 1 ? `${m} (${screen.name})` : m
+    }
     readonly property var hiddenHere: (Config.options.bar.hiddenOnScreen ?? [])
         .filter(e => e.startsWith(root.screenKey + "\t")).map(e => e.split("\t")[1])
 

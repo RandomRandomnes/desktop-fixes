@@ -71,14 +71,8 @@ Singleton {
     property bool diSessionOpen: false
     property bool startupLockPending: true
     property bool backgroundVisible: true
-    // Starts the custom-feature switch service (services/Extras.qml, ours) with the shell.
-    readonly property bool extrasStarted: Extras.extras !== undefined
-    // Starts automatic Game Mode / Do Not Disturb for games (services/GameAssist.qml, ours).
-    readonly property bool gameAssistStarted: GameAssist.extras !== undefined
-    // Starts the "Sunset to sunrise" night light schedule (services/NightSchedule.qml, ours).
-    readonly property bool nightScheduleStarted: NightSchedule.place !== undefined
-    // Starts automatic display profile switching (services/DisplayProfiles.qml, ours).
-    readonly property bool displayProfilesStarted: DisplayProfiles.tool !== undefined
+    // Phoenix's background services are started from shell.qml (2026-10-08): GlobalStates is also loaded by the setup
+    // assistant and quick-start (separate qs -p processes), which then ran a second copy of each service.
 
     // Wallpaper Engine check lives here (not in Background.qml) so it survives reloadBackground():
     // a freshly created background surface starts with the known value instead of false, which used to
@@ -120,6 +114,7 @@ Singleton {
                 const a = args[i], v = args[i + 1];
                 if (a === "--screen-root") { pending.push(v); i++; }
                 else if (a === "--bg") {
+                    if (!v) break;   // --bg as the last argument (QA 2026-10-08: threw and stopped the whole check)
                     const dir = v.startsWith("/") ? v : `${root.wallpaperEngineWorkshop}/${v}`;
                     for (const s of pending) dirs[s] = dir;
                     pending = []; i++;

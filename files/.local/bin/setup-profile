@@ -415,7 +415,10 @@ def main():
     elif cmd == "show" and len(a) >= 2:
         cmd_show(a[1])
     elif cmd == "apply" and len(a) >= 2:
-        cmd_apply(a[1], "--yes" in a)
+        names = [x for x in a[1:] if x != "--yes"]   # "--yes" may come first (QA 2026-10-08)
+        if not names:
+            sys.exit(__doc__)
+        cmd_apply(names[0], "--yes" in a)
     elif cmd == "export" and len(a) >= 2:
         cmd_export(a[1], opt("--name", "My setup"), opt("--description"), opt("--author", ""))
     elif cmd == "apps" and len(a) >= 2:

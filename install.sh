@@ -192,7 +192,7 @@ with tarfile.open(fileobj=io.BytesIO(payload), mode="r:gz") as tar:
         member = tar.getmember(rel); data = tar.extractfile(member).read()
         if hashlib.sha256(data).hexdigest() != digest:
             sys.exit(f"    {rel}: checksum mismatch; nothing was installed.")
-        contents[rel] = (data, member.mode & 0o777)
+        contents[rel] = (data, (0o755 if (member.issym() or member.islnk()) else member.mode & 0o777) & ~0o022)
 added, backed = [], 0
 for rel, (data, mode) in contents.items():
     dst = os.path.join(HOME, rel)

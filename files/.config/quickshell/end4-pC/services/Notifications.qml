@@ -185,6 +185,8 @@ Singleton {
                     });
                 }
                 root.unread++;
+            } else if (!root.popupInhibited) {
+                root.unread++;   // Phoenix: an app without banners still counts on the taskbar badge (QA 2026-10-08)
             }
             root.notify(newNotifObject);
             // console.log(notifToString(newNotifObject));

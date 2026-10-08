@@ -42,8 +42,14 @@ def hyprctl(*args):
         return ""
 
 
+def one_line(s):
+    """Text for a Lua comment or string: no line breaks or control characters (a newline in a window title used to
+    end the comment and run the rest as Lua when Hyprland loaded the file; QA 2026-10-08)."""
+    return re.sub(r"[\x00-\x1f\x7f]", " ", str(s))
+
+
 def lua_str(s):
-    s = str(s).replace("\\", "\\\\").replace('"', '\\"').replace("\n", " ").replace("\r", " ")
+    s = one_line(s).replace("\\", "\\\\").replace('"', '\\"')
     return '"' + s + '"'
 
 
@@ -62,8 +68,8 @@ def clean(r):
         return None
     rid = str(r.get("id") or "")
     out = {"id": rid if re.fullmatch(r"[a-z0-9]{6,32}", rid) else uuid.uuid4().hex[:10],
-           "enabled": r.get("enabled", True) is not False,
-           "app": str(r.get("app") or r["match"]).strip()[:80],
+           "enabled": r.get("enabled", True) not in (False, "false", "False", 0, "0"),
+           "app": one_line(r.get("app") or r["match"]).strip()[:80],
            "matchBy": "title" if r.get("matchBy") == "title" else "class",
            "match": str(r["match"]).strip()[:200]}
     for k in ("float", "center", "silent", "pin", "fullscreen", "maximize", "noTitleBar"):
@@ -144,7 +150,7 @@ def write_lua(rules):
             "local function rule(t) local ok, err = pcall(hl.window_rule, t) if not ok then print(\"user window rule: \" .. tostring(err)) end end"]
     for r in rules:
         if r.get("enabled", True):
-            body.append(f"-- {r['app']}")
+            body.append(f"-- {one_line(r['app'])}")
             body.extend(lua_rule(r))
     os.makedirs(HC, exist_ok=True)
     tmp = OUT + ".tmp"
@@ -166,6 +172,11 @@ def apply(rules):
 
 def save(rules):
     rules = [c for c in (clean(r) for r in rules) if c]
+    seen = set()
+    for r in rules:   # two rules with one id would get one Hyprland rule name
+        while r["id"] in seen:
+            r["id"] = uuid.uuid4().hex[:10]
+        seen.add(r["id"])
     os.makedirs(HC, exist_ok=True)
     tmp = DATA + ".tmp"
     with open(tmp, "w") as f:
@@ -201,7 +212,10 @@ def main():
         except ValueError as e:
             print(json.dumps({"ok": False, "errors": [f"not a rule list: {e}"]}))
             return 1
-        print(json.dumps(save(rules if isinstance(rules, list) else [])))
+        if not isinstance(rules, list):   # anything else used to save an empty list (all rules gone)
+            print(json.dumps({"ok": False, "errors": ["expected a list of rules"]}))
+            return 1
+        print(json.dumps(save(rules)))
     elif cmd == "apply":
         print(json.dumps(apply(load())))
     else:

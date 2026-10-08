@@ -66,6 +66,18 @@ ShellRoot {
             root.pickLast()
         }
     }
+    FileView {   // switch-desktop's choice for the next sign-in (Settings › "Switch to KDE"), else the last one used
+        path: root.themeDir + "/next-session"
+        printErrors: false
+        onLoaded: { root.nextSession = text().trim(); root.pickLast() }
+    }
+    property string nextSession: ""
+    property string clockFormat: "hh:mm"
+    FileView {
+        path: root.themeDir + "/clock.json"
+        printErrors: false
+        onLoaded: { try { root.clockFormat = JSON.parse(text()).format || "hh:mm" } catch (e) {} }
+    }
     FileView {
         id: stateView
         path: root.stateFile
@@ -83,14 +95,16 @@ ShellRoot {
     function pickLast() {
         const ui = root.users.findIndex(u => u.name === root.last.user)
         if (ui >= 0) root.userIndex = ui
-        const si = root.sessions.findIndex(s => s.id === root.last.session)
+        const si = root.sessions.findIndex(s => s.id === (root.nextSession || root.last.session))
         if (si >= 0) root.sessionIndex = si
     }
 
     // ── signing in ──
-    function signIn() {
+    function signIn(fromButton = false) {
         if (!root.user || root.busy) return
-        if (passwordField.text.length === 0) { passwordField.forceActiveFocus(); return }   // an empty Enter is no attempt
+        // an empty Enter is no attempt (each counts towards the lockout); the arrow button still signs in with an empty
+        // password, for accounts that have none (QA 2026-10-08)
+        if (passwordField.text.length === 0 && !fromButton) { passwordField.forceActiveFocus(); return }
         root.busy = true
         root.message = ""
         root.pendingPassword = passwordField.text
@@ -183,7 +197,7 @@ ShellRoot {
                 interval: 1000; running: true; repeat: true; triggeredOnStart: true
                 onTriggered: {
                     const now = new Date()
-                    clock.text = now.toLocaleTimeString(Qt.locale(), "hh:mm")
+                    clock.text = now.toLocaleTimeString(Qt.locale(), root.clockFormat)
                     date.text = now.toLocaleDateString(Qt.locale(), "dddd, MMMM d")
                 }
             }
@@ -207,7 +221,8 @@ ShellRoot {
                 Image {   // the account picture, when there is one
                     id: face
                     anchors.fill: parent
-                    source: "file://" + root.themeDir + "/face"
+                    // each user's own picture; the plain "face" (the last user's) only for that user (QA 2026-10-08)
+                    source: root.user ? "file://" + root.themeDir + "/face-" + root.user.name : ""
                     fillMode: Image.PreserveAspectCrop
                     visible: false
                 }
@@ -266,7 +281,7 @@ ShellRoot {
                             font { family: root.fontIcons; pixelSize: 24 }
                             color: root.cOnPrimary
                         }
-                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.signIn() }
+                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.signIn(true) }
                     }
                 }
             }

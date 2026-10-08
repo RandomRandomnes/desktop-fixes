@@ -36,8 +36,14 @@ Singleton {
 
     // Game Mode's state, read from Hyprland (the quick toggle and Settings › Gaming write it)
     HyprlandConfigOption { id: animations; key: "animations:enabled" }
+    HyprlandConfigOption { id: blur; key: "decoration:blur:enabled" }
+    HyprlandConfigOption { id: gapsIn; key: "general:gaps_in" }
     readonly property bool gameModeKnown: animations.value !== undefined && animations.value !== null
-    readonly property bool gameModeOn: gameModeKnown && !animations.value
+        && blur.value !== undefined && blur.value !== null
+    // Game Mode switches animations, blur and gaps off together; animations off alone is Accessibility's "reduce
+    // motion", not Game Mode (QA 2026-10-08: that used to stop Wallpaper Engine and force the performance power mode)
+    readonly property bool gameModeOn: gameModeKnown && !animations.value && !blur.value
+        && (gapsIn.value === 0 || gapsIn.value === "0" || String(gapsIn.value).trim().startsWith("0"))
 
     // what this service switched itself, so it only undoes its own changes; kept in a file so a shell restart in the
     // middle of a game still undoes them afterwards (Do Not Disturb itself isn't kept across restarts)
@@ -83,10 +89,17 @@ Singleton {
         function onRawEvent(event) {
             if (["activewindowv2", "fullscreen", "closewindow", "openwindow", "workspacev2", "focusedmonv2"].includes(event.name))
                 checkTimer.restart()
-            else if (event.name === "screencast")
-                root.screenShared = String(event.data).split(",")[0] === "1"
+            else if (event.name === "screencast") {
+                // several shares can run at once (OBS + Discord): count them, the first one ending must not end DND
+                const on = String(event.data).split(",")[0] === "1"
+                root.shareCount = Math.max(0, root.shareCount + (on ? 1 : -1))
+                if (root.shareCount > 0) shareTimer.restart(); else { shareTimer.stop(); root.screenShared = false }
+            }
         }
     }
+    property int shareCount: 0
+    // a screenshot or a window preview also reports a short "screencast": only a share that lasts counts
+    Timer { id: shareTimer; interval: 3000; onTriggered: root.screenShared = root.shareCount > 0 }
     Timer { id: checkTimer; interval: 300; onTriggered: if (!checkProc.running) checkProc.running = true }
     Process {
         id: checkProc

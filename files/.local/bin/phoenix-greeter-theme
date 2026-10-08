@@ -13,7 +13,18 @@ copy() {   # only when it changed; through a temporary file so the login screen 
     cp -f "$1" "$T/$2.tmp" && mv -f "$T/$2.tmp" "$T/$2"
 }
 copy "$colors" colors.json
-case "$wall" in *.jpg|*.jpeg|*.png|*.webp|*.JPG|*.PNG) copy "$wall" wallpaper ;; esac
-if [ -f "$face" ]; then copy "$face" face; else rm -f "$T/face"; fi
+# a picture (any letter case, checked by content) is copied; of a video the first second is used, when ffmpeg is there
+# (QA 2026-10-08: .JPEG/.WEBP and videos left the login screen on an old wallpaper)
+if [ -f "$wall" ] && file -b --mime-type "$wall" | grep -q '^image/'; then
+    copy "$wall" wallpaper
+elif [ -f "$wall" ] && file -b --mime-type "$wall" | grep -q '^video/' && command -v ffmpeg >/dev/null; then
+    ffmpeg -loglevel error -y -ss 1 -i "$wall" -frames:v 1 -f image2 -c:v png "$T/wallpaper.tmp" && mv -f "$T/wallpaper.tmp" "$T/wallpaper"
+fi
+# the account picture per user (the login screen shows each user's own; "face" stays for older login screens)
+me="${USER:-$(id -un)}"
+if [ -f "$face" ]; then copy "$face" face; copy "$face" "face-$me"; else rm -f "$T/face" "$T/face-$me"; fi
+# 12- or 24-hour clock like the desktop's (Settings › Time & language)
+python3 -c 'import json,os; f=json.load(open(os.path.expanduser("~/.config/illogical-impulse/config.json"))).get("time",{}).get("format","hh:mm"); print(json.dumps({"format": f}))' > "$T/clock.json.tmp" 2>/dev/null \
+    && mv -f "$T/clock.json.tmp" "$T/clock.json"
 chmod 644 "$T"/* 2>/dev/null
 exit 0

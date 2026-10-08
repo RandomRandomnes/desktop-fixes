@@ -142,11 +142,19 @@ def fetch_index_files(src):
         return fetch(f"{base}/index.json"), fetch(f"{base}/index.json.sig")
 
 
+_INDEX_CACHE = {}
+
+
 def release_index(src):
-    """Signed list of every release: [{label, version, kind, test, date, notes, upgrade?}]."""
+    """Signed list of every release: [{label, version, kind, test, date, notes, upgrade?}]. Fetched once per run
+    (QA 2026-10-08: two or three downloads per run counted against GitHub's hourly limit)."""
+    key = json.dumps(src, sort_keys=True)
+    if key in _INDEX_CACHE:
+        return _INDEX_CACHE[key]
     idx = verified(src, *fetch_index_files(src))
     if idx.get("format") != "custom-fixes-index":
         raise RuntimeError("not a release index")
+    _INDEX_CACHE[key] = idx["releases"]
     return idx["releases"]
 
 
@@ -155,6 +163,8 @@ def release(src, label, line="custom"):
     m = verified(src, fetch(f"{base}/manifest.json"), fetch(f"{base}/manifest.json.sig"))
     if m.get("format") != ("system-fix" if line == "system" else "custom-fixes") or m.get("line", "custom") != line:
         raise RuntimeError("not a release of the expected kind")
+    if str(m.get("label") or vfmt(vkey(m))) != str(label):   # a signed manifest of another version under this tag (QA 2026-10-08)
+        raise RuntimeError(f"the release {label} carries the manifest of {m.get('label')}")
     return m, base
 
 
@@ -461,13 +471,14 @@ def offers(src):
     cur = cur_key(installed())
     major = cur[0]
     rel = line_index(src, "custom")
-    skip = installed().get("skip")          # a fix the user undid: it and older ones are not offered again
-    fixes = [r for r in rel if vkey(r) > cur and vkey(r)[0] == major and not (skip and vkey(r) <= vkey(skip))
-             and shell_ready(r)]
-    higher = [r for r in rel if vkey(r)[0] > major]
+    skip = installed().get("skip")          # a fix the user undid: it and older ones OF ITS SERIES are not offered again
+    # (QA 2026-10-08: undoing a major version blocked every later fix of the series below it)
+    skipped = lambda r: bool(skip) and vkey(r)[0] == vkey(skip)[0] and vkey(r) <= vkey(skip)
+    fixes = [r for r in rel if vkey(r) > cur and vkey(r)[0] == major and not skipped(r) and shell_ready(r)]
+    # an upgrade only once this PC's shell is ready for it (it was offered and then did nothing; QA 2026-10-08)
+    higher = [r for r in rel if vkey(r)[0] > major and not skipped(r) and shell_ready(r)]
     fix = max(fixes, key=vkey, default=None)
-    held = [r for r in rel if vkey(r) > cur and vkey(r)[0] == major and not (skip and vkey(r) <= vkey(skip))
-            and not shell_ready(r)]
+    held = [r for r in rel if vkey(r) > cur and vkey(r)[0] == major and not skipped(r) and not shell_ready(r)]
     waiting = max(held, key=vkey) if held and (not fix or vkey(max(held, key=vkey)) > vkey(fix)) else None
     upgrade = None
     if higher:
@@ -578,7 +589,8 @@ def install(src, label, yes, what):
         print(f"Downloading version {label} failed: {e}")
         return 1
     if not shell_ready(m):          # the signed manifest is authoritative
-        print(f"{what} v{vlabel(m)} needs a newer illogical-impulse shell; it installs after the next update.")
+        print(f"{what} v{vlabel(m)} needs a newer illogical-impulse shell; update the system first (Settings › Update), "
+              "then it can be installed.")
         return 0
     inst = installed()
     print(f"{what} v{vlabel(m)}:")
@@ -611,7 +623,9 @@ def install(src, label, yes, what):
                 if hashlib.sha256(data).hexdigest() != digest:
                     problems.append(f"{rel}: checksum mismatch")
                     continue
-                contents[rel] = (data, member.mode & 0o777)
+                # a link stored in the archive has mode 0777: install it as a normal executable (QA 2026-10-08)
+                mode = 0o755 if (member.issym() or member.islnk()) else member.mode & 0o777
+                contents[rel] = (data, mode & ~0o022)   # never writable by others
     except (tarfile.TarError, OSError, EOFError) as e:
         problems.append(f"the download can't be read ({e})")
     if problems:
@@ -622,6 +636,7 @@ def install(src, label, yes, what):
 
     backup = os.path.join(STATE, "backups", f"v{vlabel(m)}")
     shutil.rmtree(backup, ignore_errors=True)
+    os.makedirs(backup, exist_ok=True)   # even when nothing is replaced, so Undo can still step back (QA 2026-10-08)
     changed, kept, record = [], [], dict(inst["files"])
     base_files = None if all(r in inst["files"] for r in m["files"]) else baseline(src)
     for rel, (data, mode) in contents.items():
@@ -653,8 +668,11 @@ def install(src, label, yes, what):
         record[rel] = digest
         changed.append(rel)
     prev_key = cur_key(inst)
+    # every version this PC went through, so a second Undo steps back again (QA 2026-10-08: it reset to version 0)
+    history = (inst.get("history") or [])[-19:] + [{"version": inst["version"], "label": inst.get("label") or "",
+                                                     "legacy": bool(inst.get("legacy"))}]
     save(INSTALLED, {"scheme": SCHEME, "version": m["version"], "label": vlabel(m), "previous": inst["version"],
-                     "previousLegacy": bool(inst.get("legacy")),
+                     "previousLegacy": bool(inst.get("legacy")), "history": history,
                      "previousLabel": inst.get("label") or str(inst["version"]), "date": m.get("date", ""),
                      "files": record, "changed": changed, "installedAt": datetime.datetime.now().isoformat(timespec="seconds")})
 
@@ -803,14 +821,21 @@ def cmd_undo():
             src = os.path.join(root, f)
             rel = os.path.relpath(src, backup)
             shutil.copy2(src, os.path.join(HOME, rel))
-            inst["files"].pop(rel, None)
+            # the restored file is now this PC's version of it, not a user edit (QA 2026-10-08: the next fix kept it)
+            inst["files"][rel] = sha256(src)
             restored += 1
     # files that were new in that release are left in place; versions before it are restored. The undone version is
     # remembered so updates don't reinstall it; a newer release is offered as usual (and contains its changes too).
     undone = inst.get("label") or str(inst["version"])
-    rec = {"scheme": SCHEME, "version": inst.get("previous", 0), "label": inst.get("previousLabel", ""),
-           "files": inst["files"], "skip": undone}
-    if inst.get("previousLegacy"):
+    history = list(inst.get("history") or [])
+    prev = history.pop() if history else {"version": inst.get("previous", 0), "label": inst.get("previousLabel", ""),
+                                            "legacy": bool(inst.get("previousLegacy"))}
+    rec = {"scheme": SCHEME, "version": prev.get("version", 0), "label": prev.get("label", ""),
+           "files": inst["files"], "skip": undone, "history": history}
+    if history:   # a further Undo steps back once more
+        rec.update(previous=history[-1].get("version", 0), previousLabel=history[-1].get("label", ""),
+                   previousLegacy=bool(history[-1].get("legacy")))
+    if prev.get("legacy"):
         rec.update(label="", legacy=True)        # back to "from before the release reset" (counts as custom 1 minus a step)
     save(INSTALLED, rec)
     guard = os.path.join(HOME, ".local", "bin", "hypr-guard")

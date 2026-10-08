@@ -19,6 +19,8 @@ case "$target" in
 esac
 
 echo "$target" > "$state"
+# the login screen (phoenix login-screen) would otherwise preselect the last session it started (QA 2026-10-08)
+[ -d /var/lib/phoenix-greeter/theme ] && [ -w /var/lib/phoenix-greeter/theme ] && echo "$target" > /var/lib/phoenix-greeter/theme/next-session
 
 if [ "$XDG_CURRENT_DESKTOP" = "KDE" ]; then
     qdbus6 org.kde.Shutdown /Shutdown logout

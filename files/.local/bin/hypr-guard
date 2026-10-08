@@ -68,6 +68,10 @@ MANIFEST = {
     "Session.qml": f"{QS}/modules/common/functions/Session.qml",
     # Shell: half-read hyprctl answers are asked again instead of logged as errors (2026-10-08)
     "HyprlandData.qml": f"{QS}/services/HyprlandData.qml",
+    # Shell: Phoenix services started once, from the main shell (2026-10-08)
+    "shell.qml": f"{QS}/shell.qml",
+    # Shell: vertical taskbar honours per-screen items + the battery filter (2026-10-08)
+    "VerticalBarContent.qml": f"{QS}/modules/ii/verticalBar/VerticalBarContent.qml",
     # Shell: Claude Code as a model in the AI sidebar (strategy file is ours, Ai.qml registers it)
     "Ai.qml": f"{QS}/services/Ai.qml",
     "ClaudeCodeApiStrategy.qml": f"{QS}/services/ai/ClaudeCodeApiStrategy.qml",

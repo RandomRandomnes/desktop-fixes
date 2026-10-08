@@ -276,7 +276,7 @@ MouseArea {
             enabled: !root.context.unlockInProgress
             colBackgroundToggled: Appearance.colors.colPrimary
 
-            onClicked: root.context.tryUnlock()
+            onClicked: root.context.tryUnlock(false, true)   // Phoenix: an empty password only on purpose (the button)
 
             contentItem: MaterialSymbol {
                 anchors.centerIn: parent
