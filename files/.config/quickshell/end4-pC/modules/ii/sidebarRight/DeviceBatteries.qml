@@ -16,6 +16,7 @@ Rectangle {
     FileView {
         path: `${Quickshell.env("HOME")}/.local/state/phoenix/battery-demo`
         watchChanges: true
+        printErrors: false             // a missing demo file is the normal case
         onLoaded: root.demo = true
         onLoadFailed: root.demo = false
         onFileChanged: reload()

@@ -216,6 +216,17 @@ def installed():
     return inst
 
 
+def shell_ready(r):
+    """A custom release made on a newer illogical-impulse shell than this system has waits until the shell is
+    updated (the update button updates it first). Releases without the field fit any shell."""
+    commit = r.get("shell")
+    if not commit:
+        return True
+    repo = os.path.join(HOME, ".config", "quickshell", "end4-pC")
+    return subprocess.run(["git", "-C", repo, "merge-base", "--is-ancestor", commit, "HEAD"],
+                          capture_output=True).returncode == 0
+
+
 def cur_key(inst):
     return (1, -1) if inst.get("legacy") else vkey(inst)
 
@@ -448,9 +459,13 @@ def offers(src):
     major = cur[0]
     rel = line_index(src, "custom")
     skip = installed().get("skip")          # a fix the user undid: it and older ones are not offered again
-    fixes = [r for r in rel if vkey(r) > cur and vkey(r)[0] == major and not (skip and vkey(r) <= vkey(skip))]
+    fixes = [r for r in rel if vkey(r) > cur and vkey(r)[0] == major and not (skip and vkey(r) <= vkey(skip))
+             and shell_ready(r)]
     higher = [r for r in rel if vkey(r)[0] > major]
     fix = max(fixes, key=vkey, default=None)
+    held = [r for r in rel if vkey(r) > cur and vkey(r)[0] == major and not (skip and vkey(r) <= vkey(skip))
+            and not shell_ready(r)]
+    waiting = max(held, key=vkey) if held and (not fix or vkey(max(held, key=vkey)) > vkey(fix)) else None
     upgrade = None
     if higher:
         top_major = max(vkey(r)[0] for r in higher)
@@ -458,7 +473,7 @@ def offers(src):
         newest = max(line, key=vkey)                                    # install the newest of that line
         intro = next((r for r in line if r.get("upgrade")), newest)    # the release that introduced it explains it
         upgrade = dict(newest, upgrade=intro.get("upgrade") or {}, major=top_major)
-    return {"fix": fix, "upgrade": upgrade}
+    return {"fix": fix, "upgrade": upgrade, "waiting": waiting}
 
 
 def cmd_status():
@@ -525,7 +540,8 @@ def cmd_offers(as_json):
               f"waiting {', '.join(w['label'] + ' (' + w['reason'] + ')' for w in sy['waiting']) or 'none'}"
               + "".join(f"; {p['label']} partly applied ({len(p['skipped'])} file(s) need newer custom fixes)" for p in sy['partial']))
         print(f"installed: {('v' + out['installed']) if out['installed'] else 'none'}")
-        print(f"bug fix:   {'v' + out['fix']['label'] if out['fix'] else 'none'}")
+        print(f"bug fix:   {'v' + out['fix']['label'] if out['fix'] else 'none'}"
+              + (f"  (v{out['waiting']['label']} waits for an illogical-impulse update)" if out.get("waiting") else ""))
         u = out["upgrade"]
         print(f"upgrade:   {('version ' + str(u['major']) + ' (v' + u['label'] + '): ' + u['upgrade'].get('title', '')) if u else 'none'}")
         if out["error"]:
@@ -558,6 +574,9 @@ def install(src, label, yes, what):
     except Exception as e:
         print(f"Downloading version {label} failed: {e}")
         return 1
+    if not shell_ready(m):          # the signed manifest is authoritative
+        print(f"{what} v{vlabel(m)} needs a newer illogical-impulse shell; it installs after the next update.")
+        return 0
     inst = installed()
     print(f"{what} v{vlabel(m)}:")
     for n in m.get("notes", []):

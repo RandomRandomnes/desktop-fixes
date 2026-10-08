@@ -316,6 +316,7 @@ date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
             title: page.offers.installed && page.offers.installed !== "0" ? `Installed: version ${page.offers.installed}` : "Installed: the version included at installation"
             description: page.offers.error ? `Couldn't check: ${page.offers.error}`
                 : page.offers.fix ? `Bug fix ${page.offers.fix.label} is ready: ${(page.offers.fix.notes || []).join("; ")}`
+                : page.offers.waiting ? `Bug fix ${page.offers.waiting.label} installs after the next update (it needs a newer illogical-impulse shell)`
                 : "No bug fixes waiting"
             WButton { buttonText: offersProc.running ? "Checking…" : "Check now"; enabled: !offersProc.running; onClicked: page.refreshFixes() }
             WButton {

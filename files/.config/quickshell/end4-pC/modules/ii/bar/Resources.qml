@@ -83,6 +83,7 @@ BarWidgetSwitcherArea {
                 contentColor: root.contentColor
                 contentColorOverridden: root.contentColorOverridden
                 iconName: "memory"
+                label: "RAM"
                 shown: Config.options.bar.resources.alwaysShowRam
                 percentage: ResourceUsage.memoryUsedPercentage
                 warningThreshold: Config.options.bar.resources.memoryWarningThreshold
@@ -91,6 +92,7 @@ BarWidgetSwitcherArea {
                 contentColor: root.contentColor
                 contentColorOverridden: root.contentColorOverridden
                 iconName: "planner_review"
+                label: "CPU"
                 shown: Config.options.bar.resources.alwaysShowCpu
                 percentage: ResourceUsage.cpuUsage
                 Layout.leftMargin: shown ? 6 : 0
@@ -100,6 +102,7 @@ BarWidgetSwitcherArea {
                 contentColor: root.contentColor
                 contentColorOverridden: root.contentColorOverridden
                 iconName: "thermostat"
+                label: "TMP"
                 shown: Config.options.bar.resources.alwaysShowCpuTemp
                 percentage: ResourceUsage.cpuTemp / 100
                 Layout.leftMargin: shown ? 6 : 0
@@ -108,6 +111,7 @@ BarWidgetSwitcherArea {
                 contentColor: root.contentColor
                 contentColorOverridden: root.contentColorOverridden
                 iconName: "hard_drive"
+                label: "DSK"
                 shown: Config.options.bar.resources.alwaysShowDisk
                 percentage: ResourceUsage.diskUsedPercentage
                 Layout.leftMargin: shown ? 6 : 0
@@ -116,6 +120,7 @@ BarWidgetSwitcherArea {
                 contentColor: root.contentColor
                 contentColorOverridden: root.contentColorOverridden
                 iconName: "swap_horiz"
+                label: "SWP"
                 shown: Config.options.bar.resources.alwaysShowSwap
                 percentage: ResourceUsage.swapUsedPercentage
                 Layout.leftMargin: shown ? 6 : 0
@@ -140,6 +145,7 @@ BarWidgetSwitcherArea {
                 contentColor: root.contentColor
                 contentColorOverridden: root.contentColorOverridden
                 iconName: "memory"
+                label: "RAM"
                 shown: Config.options.bar.resources.alwaysShowRam
                 percentage: ResourceUsage.memoryUsedPercentage
                 warningThreshold: Config.options.bar.resources.memoryWarningThreshold
@@ -148,6 +154,7 @@ BarWidgetSwitcherArea {
                 contentColor: root.contentColor
                 contentColorOverridden: root.contentColorOverridden
                 iconName: "planner_review"
+                label: "CPU"
                 shown: Config.options.bar.resources.alwaysShowCpu
                 percentage: ResourceUsage.cpuUsage
                 Layout.leftMargin: shown ? 6 : 0
@@ -157,6 +164,7 @@ BarWidgetSwitcherArea {
                 contentColor: root.contentColor
                 contentColorOverridden: root.contentColorOverridden
                 iconName: "thermostat"
+                label: "TMP"
                 shown: Config.options.bar.resources.alwaysShowCpuTemp
                 percentage: ResourceUsage.cpuTemp / 100
                 Layout.leftMargin: shown ? 6 : 0
@@ -165,6 +173,7 @@ BarWidgetSwitcherArea {
                 contentColor: root.contentColor
                 contentColorOverridden: root.contentColorOverridden
                 iconName: "hard_drive"
+                label: "DSK"
                 shown: Config.options.bar.resources.alwaysShowDisk
                 percentage: ResourceUsage.diskUsedPercentage
                 Layout.leftMargin: shown ? 6 : 0
@@ -173,6 +182,7 @@ BarWidgetSwitcherArea {
                 contentColor: root.contentColor
                 contentColorOverridden: root.contentColorOverridden
                 iconName: "swap_horiz"
+                label: "SWP"
                 shown: Config.options.bar.resources.alwaysShowSwap
                 percentage: ResourceUsage.swapUsedPercentage
                 Layout.leftMargin: shown ? 6 : 0
@@ -197,6 +207,7 @@ BarWidgetSwitcherArea {
                 contentColorOverridden: root.contentColorOverridden
                 Layout.alignment: Qt.AlignHCenter
                 iconName: "memory"
+                label: "RAM"
                 vertical: true
                 visible: Config.options.bar.resources.alwaysShowRam
                 percentage: ResourceUsage.memoryUsedPercentage
@@ -207,6 +218,7 @@ BarWidgetSwitcherArea {
                 contentColorOverridden: root.contentColorOverridden
                 Layout.alignment: Qt.AlignHCenter
                 iconName: "planner_review"
+                label: "CPU"
                 vertical: true
                 visible: Config.options.bar.resources.alwaysShowCpu
                 percentage: ResourceUsage.cpuUsage
@@ -217,6 +229,7 @@ BarWidgetSwitcherArea {
                 contentColorOverridden: root.contentColorOverridden
                 Layout.alignment: Qt.AlignHCenter
                 iconName: "thermostat"
+                label: "TMP"
                 vertical: true
                 visible: Config.options.bar.resources.alwaysShowCpuTemp
                 percentage: ResourceUsage.cpuTemp / 100
@@ -226,6 +239,7 @@ BarWidgetSwitcherArea {
                 contentColorOverridden: root.contentColorOverridden
                 Layout.alignment: Qt.AlignHCenter
                 iconName: "hard_drive"
+                label: "DSK"
                 vertical: true
                 visible: Config.options.bar.resources.alwaysShowDisk
                 percentage: ResourceUsage.diskUsedPercentage
@@ -235,6 +249,7 @@ BarWidgetSwitcherArea {
                 contentColorOverridden: root.contentColorOverridden
                 Layout.alignment: Qt.AlignHCenter
                 iconName: "swap_horiz"
+                label: "SWP"
                 vertical: true
                 visible: Config.options.bar.resources.alwaysShowSwap
                 percentage: ResourceUsage.swapUsedPercentage
@@ -260,6 +275,7 @@ BarWidgetSwitcherArea {
                 contentColorOverridden: root.contentColorOverridden
                 Layout.alignment: Qt.AlignHCenter
                 iconName: "memory"
+                label: "RAM"
                 vertical: true
                 visible: Config.options.bar.resources.alwaysShowRam
                 percentage: ResourceUsage.memoryUsedPercentage
@@ -270,6 +286,7 @@ BarWidgetSwitcherArea {
                 contentColorOverridden: root.contentColorOverridden
                 Layout.alignment: Qt.AlignHCenter
                 iconName: "planner_review"
+                label: "CPU"
                 vertical: true
                 visible: Config.options.bar.resources.alwaysShowCpu
                 percentage: ResourceUsage.cpuUsage
@@ -280,6 +297,7 @@ BarWidgetSwitcherArea {
                 contentColorOverridden: root.contentColorOverridden
                 Layout.alignment: Qt.AlignHCenter
                 iconName: "thermostat"
+                label: "TMP"
                 vertical: true
                 visible: Config.options.bar.resources.alwaysShowCpuTemp
                 percentage: ResourceUsage.cpuTemp / 100
@@ -289,6 +307,7 @@ BarWidgetSwitcherArea {
                 contentColorOverridden: root.contentColorOverridden
                 Layout.alignment: Qt.AlignHCenter
                 iconName: "hard_drive"
+                label: "DSK"
                 vertical: true
                 visible: Config.options.bar.resources.alwaysShowDisk
                 percentage: ResourceUsage.diskUsedPercentage
@@ -298,6 +317,7 @@ BarWidgetSwitcherArea {
                 contentColorOverridden: root.contentColorOverridden
                 Layout.alignment: Qt.AlignHCenter
                 iconName: "swap_horiz"
+                label: "SWP"
                 vertical: true
                 visible: Config.options.bar.resources.alwaysShowSwap
                 percentage: ResourceUsage.swapUsedPercentage

@@ -54,6 +54,15 @@ def num(text):
         return None
 
 
+def clean_name(raw):
+    """"Intel(R) Iris(R) Xe Graphics (ADL GT2)" -> "Intel Iris Xe Graphics"; "AMD Radeon RX 7800 XT (RADV NAVI32)" ->
+    "Radeon RX 7800 XT"; "NVIDIA GeForce RTX 4060" -> "GeForce RTX 4060"."""
+    name = re.sub(r"\((R|TM)\)", "", raw)
+    name = re.sub(r"\s*\([^()]*\)\s*$", "", name)          # only a final bracketed note (driver / codename)
+    name = re.sub(r"^(AMD|NVIDIA)\s+", "", name.strip())
+    return re.sub(r"\s+", " ", name).strip()
+
+
 def vulkan_name(pci_id):
     """Marketing name from vulkaninfo for vendor:device (slow, so cached per PCI id)."""
     os.makedirs(CACHE_DIR, exist_ok=True)
@@ -63,12 +72,15 @@ def vulkan_name(pci_id):
         return cached_name
     name = ""
     try:
-        out = subprocess.run(["vulkaninfo", "--summary"], capture_output=True, text=True, timeout=8).stdout
+        # only the non-NVIDIA Vulkan drivers: loading NVIDIA's can wake a powered-down laptop GPU
+        icds = [f for f in glob.glob("/usr/share/vulkan/icd.d/*.json") if "nvidia" not in os.path.basename(f).lower()]
+        env = dict(os.environ, VK_DRIVER_FILES=":".join(icds), VK_ICD_FILENAMES=":".join(icds)) if icds else None
+        out = subprocess.run(["vulkaninfo", "--summary"], capture_output=True, text=True, timeout=8, env=env).stdout
         for block in re.split(r"\nGPU\d+:", out):
             ids = dict(re.findall(r"(vendorID|deviceID)\s*=\s*(0x[0-9a-fA-F]+)", block))
             m = re.search(r"deviceName\s*=\s*(.+)", block)
             if m and f"{ids.get('vendorID', '').lower()}:{ids.get('deviceID', '').lower()}" == pci_id.lower():
-                name = re.sub(r"\s*\(.*\)$", "", m.group(1)).replace("AMD ", "").replace("Intel(R) ", "Intel ").strip()
+                name = clean_name(m.group(1))
                 break
     except (OSError, subprocess.SubprocessError):
         pass
@@ -151,7 +163,11 @@ class Nvidia(Gpu):
         self.smi = shutil.which("nvidia-smi")
         bus = self.slot.split(":", 1)
         self.bus_id = f"0000{self.slot}" if len(bus[0]) == 4 else self.slot     # nvidia-smi: 00000000:01:00.0
-        self._name = read(os.path.join(CACHE_DIR, "nvidia-name-" + self.slot), None)
+        self._name = read(os.path.join(CACHE_DIR, "nvidia-name-" + self.slot), "") or ""
+
+    @property
+    def name(self):            # from nvidia-smi while awake (cached); never vulkaninfo, which can wake the card
+        return self._name
 
     def sample(self):
         s = self.base()
@@ -166,7 +182,7 @@ class Nvidia(Gpu):
         f = [x.strip() for x in out.strip().split("\n")[0].split(",")] if out.strip() else []
         if len(f) < 10:
             return s
-        name = re.sub(r"^NVIDIA ", "", f[0])
+        name = clean_name(f[0])
         if name and name != self._name:
             self._name = name
             os.makedirs(CACHE_DIR, exist_ok=True)
@@ -229,6 +245,39 @@ class Intel(Gpu):
 DRIVERS = {"amdgpu": Amd, "nvidia": Nvidia, "i915": Intel, "xe": Intel}
 
 
+def detect_all():
+    """Every supported GPU, the one to show first: a dedicated card before integrated graphics; GPU_CARD /
+    AMD_GPU_CARD move the named card to the front."""
+    found = []
+    for card in sorted(glob.glob(os.path.join(SYS, "class", "drm", "card[0-9]*"))):
+        if not re.fullmatch(r"card\d+", os.path.basename(card)):
+            continue
+        drv = os.path.basename(os.path.realpath(os.path.join(card, "device", "driver")))
+        cls = DRIVERS.get(drv)
+        if cls is Amd and not os.path.exists(os.path.join(card, "device", "gpu_busy_percent")):
+            continue
+        if cls is Nvidia and not shutil.which("nvidia-smi"):
+            continue
+        if cls:
+            found.append(cls(card))
+    found.sort(key=lambda g: g.integrated)
+    want = os.environ.get("GPU_CARD") or os.environ.get("AMD_GPU_CARD")
+    chosen = [g for g in found if want and os.path.basename(g.card) == want]
+    return chosen or found                       # GPU_CARD: exactly that card (shown as "Off" while it sleeps)
+
+
+def sample_best(gpus, **kw):
+    """Sample of the first GPU that is awake: a powered-down laptop GPU gives way to the integrated one."""
+    first = None
+    for g in gpus:
+        s = g.sample(**kw) if isinstance(g, Intel) else g.sample()
+        if first is None:
+            first = s
+        if not s.get("sleeping"):
+            return s
+    return first
+
+
 def detect():
     """The GPU to show: a dedicated card before integrated graphics; GPU_CARD / AMD_GPU_CARD override."""
     found = []
@@ -253,8 +302,8 @@ def detect():
 
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else "json"
-    g = detect()
-    s = (g.sample(wait=0.25) if isinstance(g, Intel) else g.sample()) if g else None
+    gpus = detect_all()
+    s = sample_best(gpus, wait=0.25) if gpus else None
     if cmd == "json":
         print(json.dumps(s))
     elif cmd == "info":
@@ -266,7 +315,9 @@ def main():
         print(f"  Usage : {round(s['busy'] * 100)} %")
         print(f"  VRAM : {s['vramUsed'] / gb:.1f}/{s['vramTotal'] / gb:.1f} GB")
         edge = next((v for k, v in s["temps"] if k == "edge"), None)    # the classic widget has always shown edge
-        print(f"  Temp : {round(edge if edge is not None else s['temp'])} °C")
+        t = edge if edge is not None else s["temp"]
+        if t:                                          # no temperature line when the card reports none
+            print(f"  Temp : {round(t)} °C")
     elif cmd == "power":
         if not s or not s["power"]:
             print("No power data available.")

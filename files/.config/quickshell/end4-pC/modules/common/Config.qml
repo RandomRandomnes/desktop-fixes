@@ -106,6 +106,7 @@ Singleton {
             }
 
             property JsonObject appearance: JsonObject {
+                property string uiBackground: "themed"
                 property bool extraBackgroundTint: true
                 property int fakeScreenRounding: 2 // 0: None | 1: Always | 2: When not fullscreen
                 property JsonObject fonts: JsonObject {
@@ -137,6 +138,9 @@ Singleton {
                 property JsonObject palette: JsonObject {
                     property string type: "auto" // Allowed: auto, scheme-content, scheme-expressive, scheme-fidelity, scheme-fruit-salad, scheme-monochrome, scheme-neutral, scheme-rainbow, scheme-tonal-spot
                     property string accentColor: ""
+                    property string namedScheme: "" // "" = from wallpaper. Allowed: any file name in scripts/colors/schemes (gruvbox)
+                    property string namedSchemePrimary: ""
+                    property string namedSchemeSecondary: ""
                 }
             }
 
@@ -156,6 +160,7 @@ Singleton {
                 property string descriptionText: "::distro::"
                 property string displayName: ""
                 property bool onlinePresets: false
+                property bool uploadGuideSeen: false
 
             }
 
@@ -234,8 +239,9 @@ Singleton {
             }
 
             property JsonObject settings: JsonObject {
-                property string style: "default" // default - minimal
+                property string style: "default" // default - minimal - dashboard
                 property real borderSize: 1
+                property real animationSpeed: 1
                 property string borderColor: "layer0Border"
                 property list<string> collapsedSections: []
             }
@@ -262,6 +268,7 @@ Singleton {
                     property bool blurWidgets: false
                     property real blurRadius: 32
                     property bool shadow: true
+                    property list<string> menuHidden: []
                     property JsonObject clock: JsonObject {
                         property bool enable: true
                         property bool showOnlyWhenLocked: false
@@ -395,6 +402,16 @@ Singleton {
                         property real size: 200
                     }
 
+                    property JsonObject imageCard: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 100
+                        property real z: 0
+                        property string path: ""
+                        property string sizeMode: "1x2"
+                    }
+
                     property JsonObject sticker: JsonObject {
                         property bool enable: false
                         property list<var> items: [] // if someone sees this and wants to add more stickers, make a PR too lazy 
@@ -492,7 +509,7 @@ Singleton {
                 property bool followFrameColor: false
                 property bool centerOnlyReserveFrame: false
                 property bool bottom: false // Instead of top
-                property int cornerStyle: 0 // 0: Hug | 1: Float | 2: Plain rectangle | 3: M3 | 4: M3 Hug | 5: Panel
+                property int cornerStyle: 0 // 0: Hug | 1: Float | 2: Plain rectangle | 3: M3 | 4: M3 Hug | 5: Panel | 6: Split Hug
                 property string groupColor: "layer1"
                 property bool floatStyleShadow: true // Show shadow behind bar when cornerStyle == 1 (Float)
                 property string borderless: "pills"
@@ -576,6 +593,7 @@ Singleton {
                 property JsonObject tooltips: JsonObject {
                     property bool enable: true
                     property bool clickToShow: false
+                    property string style: "default"
                 }
                 property JsonObject media: JsonObject {
                     property string preferredPlayer: ""
@@ -593,6 +611,9 @@ Singleton {
                 property int full: 101
                 property bool automaticSuspend: true
                 property int suspend: 3
+                property int peripheralLow: 20
+                property int peripheralCritical: 5
+                property bool peripheralNotify: true
             }
 
             property JsonObject calendar: JsonObject {
@@ -612,6 +633,17 @@ Singleton {
             property JsonObject dock: JsonObject {
                 property bool enable: false
                 property bool showBackground: true
+                property string style: "float" // float | hug
+                property string position: "bottom" // bottom | left | right
+                property bool showBorder: true
+                property real borderWidth: 1
+                property string borderColor: "layer0Border"
+                property string backgroundColor: "layer0"
+                property real radius: 23
+                property bool followFrameColor: false
+                property bool showPreviews: true
+                property real iconSize: 33
+                property real iconSpacing: 0
                 property bool showPinButton: true
                 property bool showAppsButton: true
                 property bool showMedia: true
@@ -832,6 +864,7 @@ Singleton {
             }
 
             property JsonObject sidebar: JsonObject {
+                property list<string> sectionOrder: ["banner", "quickToggles", "sliders", "media", "notifications", "bottom"]
                 property bool banner: true
                 property bool bottomGroup: true
                 property bool mediaPlayer: false
@@ -839,6 +872,8 @@ Singleton {
                 property bool wallpaperEngineCard: true // Wallpaper Engine picker card (WallpaperEngineCard.qml)
                 property bool desktopSwitch: true // "switch to KDE Plasma" button in the sidebar header (DesktopSwitch.qml)
                 property string bannerImage: ""
+                property real bannerFocusX: 0.5
+                property real bannerFocusY: 0.5
                 property bool keepRightSidebarLoaded: true
                 property JsonObject translator: JsonObject {
                     property bool enable: false
