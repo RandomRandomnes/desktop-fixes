@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 2.8 (2026-10-08, fix)
+- Housekeeping: linux-wallpaper-engine is now a small launcher instead of a second copy of the Wallpaper Engine tray-icon fix
+
 ## custom 2.7 (2026-10-08, fix)
 - Wallpaper Engine backgrounds drawn by the shell are found in any Steam library (Flatpak Steam, a library on another drive), not only in ~/.local/share/Steam
 

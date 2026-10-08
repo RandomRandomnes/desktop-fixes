@@ -1,43 +1,5 @@
-#!/bin/bash
-# Tray-icon fix (2026-10-01). Arch's /usr/bin/electronNN launcher always exports ELECTRON_FORCE_IS_PACKAGED=true, and
-# Electron treats ANY value as "packaged" (even "false"). Packaged, the app looks for its tray icon in
-# /usr/lib/electronNN/resources/assets/ (doesn't exist) -> missing-icon placeholder in the tray. Unpackaged, it uses
-# /usr/lib/linux-wallpaper-engine-ux/assets/transparent-logo.png (the only thing the app uses isPackaged for).
-# So: run the Electron binary directly, without that variable, mirroring the rest of /usr/bin/electronNN
-# (optional ~/.config/electronNN-flags.conf / electron-flags.conf, ELECTRON_IS_DEV=0).
-# Update-safe: the Electron version is read from the package's own launcher. If anything looks different, fall back to it.
-# Revert: delete this file.
-# KDE Plasma (2026-10-03): the standalone renderer covers Plasma's desktop icons, so on KDE hand off to the
-# Plasma wallpaper plugin via ~/.local/bin/wallpaper-engine-kde. Hyprland and everything else continue below.
-if [[ ":${XDG_CURRENT_DESKTOP}:" == *:KDE:* ]] && [ -x "$HOME/.local/bin/wallpaper-engine-kde" ]; then
-    exec "$HOME/.local/bin/wallpaper-engine-kde" "$@"
-fi
-# Hyprland (2026-10-03): the shell draws scene/video wallpapers itself, so the app gets a renderer stand-in first on
-# PATH (~/.local/lib/wallpaper-engine-shell/linux-wallpaperengine; it runs the real renderer for everything else).
-[ -x "$HOME/.local/lib/wallpaper-engine-shell/linux-wallpaperengine" ] && export PATH="$HOME/.local/lib/wallpaper-engine-shell:$PATH"
-ORIG=/usr/bin/linux-wallpaper-engine-ux
-ASAR=/usr/lib/linux-wallpaper-engine-ux/app.asar
-name=$(grep -o 'exec electron[0-9]*' "$ORIG" 2>/dev/null | awk '{print $2}')
-if [ -z "$name" ] || [ ! -x "/usr/lib/$name/electron" ] || [ ! -f "$ASAR" ] || [ ! -f "${ASAR%/*}/assets/transparent-logo.png" ]; then
-    exec "$ORIG" "$@"
-fi
-flags=()
-for f in "${XDG_CONFIG_HOME:-$HOME/.config}/${name}-flags.conf" "${XDG_CONFIG_HOME:-$HOME/.config}/electron-flags.conf"; do
-    [ -f "$f" ] || continue
-    while IFS= read -r line; do
-        [[ "$line" =~ ^[[:space:]]*# || -z "$line" ]] || flags+=("$line")
-    done < "$f"
-    break
-done
-unset ELECTRON_FORCE_IS_PACKAGED
-export ELECTRON_IS_DEV=0
-cmd=("/usr/lib/$name/electron" "${flags[@]}" "$ASAR" "$@")
-# Crash-at-logout fix (2026-10-01): Chromium moves only its main process into its own scope and leaves its helpers (zygote,
-# network, GPU) in whatever unit launched it. At logout that unit (Hyprland's session, Plasma's autostart service, a terminal)
-# is torn down first -> helpers die -> main aborts "GPU process isn't usable. Goodbye." (SIGILL core dump). Start it in its own
-# app scope so all its processes live and stop together. Falls back to a plain exec if systemd-run isn't usable.
-if command -v systemd-run > /dev/null && [ -S "${XDG_RUNTIME_DIR:-/run/user/$UID}/systemd/private" ]; then
-    exec systemd-run --user --scope --quiet --collect --slice=app.slice \
-        --unit="app-linux\x2dwallpaper\x2dengine\x2dux-$$.scope" -p KillMode=mixed -- "${cmd[@]}"
-fi
-exec "${cmd[@]}"
+#!/bin/sh
+# The Wallpaper Engine app's own login entry (~/.config/autostart, written by the app, used by KDE) starts
+# "linux-wallpaper-engine"; this hands it to linux-wallpaper-engine-ux next to it (Phoenix's tray-icon fix).
+# Was a symlink (2026-10-08): releases copied it as a second full copy of that script.
+exec "$(dirname "$(readlink -f "$0")")/linux-wallpaper-engine-ux" "$@"

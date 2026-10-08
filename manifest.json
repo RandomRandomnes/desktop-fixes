@@ -1,16 +1,16 @@
 {
   "format": "custom-fixes",
   "line": "custom",
-  "version": 2.7,
-  "label": "2.7",
+  "version": 2.8,
+  "label": "2.8",
   "kind": "fix",
   "date": "2026-10-08",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Wallpaper Engine backgrounds drawn by the shell are found in any Steam library (Flatpak Steam, a library on another drive), not only in ~/.local/share/Steam"
+    "Housekeeping: linux-wallpaper-engine is now a small launcher instead of a second copy of the Wallpaper Engine tray-icon fix"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "8a2a69fc265676513eb833506147e50974bec04bb99d6cdbd47324956f839088",
+  "payloadSha256": "0272a6e666d2a87a1fc1eb97b1d659e24baf2da602375a226b7fc42525797613",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
     ".config/hypr/custom/execs.lua": "ec5dfe52e454e15501721146d1524a0f3ce47c3048db48f7331305a712ce3b5c",
@@ -95,7 +95,7 @@
     ".local/bin/custom-update": "05cb28cfd5bdc82ded6191310e0d28eba7b7da5884001934822591812ea6ad18",
     ".local/bin/display-profiles": "e03de448e2c13dc43886ddf3e735cf1bb17e97ee5cc51c34fb33cfbf31ce53e6",
     ".local/bin/hypr-guard": "294032d3043d24a7a05861d6fdde1d030f3a1ed9e955c176fbd5b8b022734aee",
-    ".local/bin/linux-wallpaper-engine": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
+    ".local/bin/linux-wallpaper-engine": "42fad852f27ed5c452a1742d4b7053ba8cf85a6c19e1b927350f8ee4f6711813",
     ".local/bin/linux-wallpaper-engine-ux": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/phoenix": "69faa34d9056697936737b6b4aabce39a048dd93e7a72dd5b6b2f01b0d33b3cc",
     ".local/bin/phoenix-greeter-theme": "5267729cafe7dcd7478c6ebfdbacb7154fee9a804ebf86bf1f23880c5ebfdf7b",
@@ -191,8 +191,7 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/quickshell/end4-pC/GlobalStates.qml",
-    ".local/bin/wallpaper-engine-ctl"
+    ".local/bin/linux-wallpaper-engine"
   ],
   "test": false,
   "shell": "4517f78cf9e504ec351f8a0ff1f747f5d12e7683"
