@@ -1,5 +1,5 @@
 #!/bin/sh
-log="$HOME/hypr-autostart.log"
+log="$HOME/hypr-guard/autostart.log"; mkdir -p "$HOME/hypr-guard"
 echo "$(date +%T) autostart script started" > "$log"
 # Custom-feature switches (Settings › Extras, written by ~/.local/bin/setup-features). Missing = on.
 feature() { ! grep -q "^ *$1 = false" "$HOME/.config/hypr/custom/features.lua" 2>/dev/null; }

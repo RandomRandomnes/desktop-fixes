@@ -23,8 +23,10 @@ HOME = os.path.expanduser("~")
 QS = os.environ.get("HYPR_GUARD_QS", f"{HOME}/.config/quickshell/end4-pC")
 HC = os.environ.get("HYPR_GUARD_HC", f"{HOME}/.config/hypr/custom")
 STATE = os.environ.get("HYPR_GUARD_STATE", f"{HOME}/hypr-guard")
-SNAPROOT = os.environ.get("HYPR_GUARD_SNAPROOT", HOME)
-POINTER = f"{SNAPROOT}/.hypr-known-good-latest"
+# everything hypr-guard keeps lives in ~/hypr-guard (F22: snapshots, pointer and autostart log used to sit in ~/)
+SNAPROOT = os.environ.get("HYPR_GUARD_SNAPROOT", f"{STATE}/snapshots")
+POINTER = f"{SNAPROOT}/latest"
+AUTOSTART_LOG = f"{STATE}/autostart.log"
 KEEP_SNAPSHOTS = 3
 KEEP_BACKUPS = 20
 QS_INSTANCE = "^qs -c end4-pC$"
@@ -40,6 +42,7 @@ MANIFEST = {
     "keybinds.lua": f"{HC}/keybinds.lua",
     "hb.sh": f"{HC}/scripts/hb.sh",
     "autostart.sh": f"{HC}/scripts/autostart.sh",
+    "reapply-shell-patches.py": f"{HC}/scripts/reapply-shell-patches.py",   # shipped, now tracked too (F29)
     # Shell: app grid, widgets-behind-wallpaper fix, network fix
     "AppGridWidget.qml": f"{QS}/modules/ii/overview/AppGridWidget.qml",
     "Overview.qml": f"{QS}/modules/ii/overview/Overview.qml",
@@ -265,7 +268,7 @@ class Run:
         snap = snapshot_dir()
         if not snap:
             self.no_snapshot = True
-            self.problems.append("No snapshot found (~/.hypr-known-good-latest). Run `hypr-guard snapshot` "
+            self.problems.append("No snapshot found (~/hypr-guard/snapshots). Run `hypr-guard snapshot` "
                                  "once the desktop is confirmed working.")
             return
         head = git_head()
@@ -468,7 +471,7 @@ class Run:
         L += ["## end4-pC git status", "```", git_status.strip() or "clean", "```", ""]
         L += ["## Crashes (last 3h)", "```", cores or "none", "```", ""]
         L += ["## Desktop switch", "", f"~/.config/desktop-session = {(read(HOME + '/.config/desktop-session') or 'missing').strip()}", ""]
-        auto = read(HOME + "/hypr-autostart.log") or ""
+        auto = read(AUTOSTART_LOG) or ""
         L += ["## Autostart log (tail)", "```"] + auto.splitlines()[-12:] + ["```", ""]
 
         text = "\n".join(L)
@@ -552,6 +555,10 @@ def cmd_snapshot(args):
         print(f"Shell instances: {qs_instances()}. Use --force to snapshot anyway.")
         return 1
     snap = f"{SNAPROOT}/hypr-known-good-{time.strftime('%Y%m%d-%H%M%S')}"
+    n = 1
+    while os.path.exists(snap):       # two snapshots in the same second (F22)
+        n += 1
+        snap = f"{SNAPROOT}/hypr-known-good-{time.strftime('%Y%m%d-%H%M%S')}-{n}"
     os.makedirs(f"{snap}/base")
     for name, path in MANIFEST.items():
         if not os.path.exists(path):
@@ -578,7 +585,11 @@ def cmd_update(args):
     if git("fetch").returncode != 0:
         print("git fetch failed (offline?). Nothing changed.")
         return 1
-    behind = git("rev-list", "--count", "HEAD..@{u}").stdout.strip()
+    r = git("rev-list", "--count", "HEAD..@{u}")
+    behind = r.stdout.strip()
+    if r.returncode != 0 or not behind.isdigit():   # no upstream branch: nothing to pull, nothing is reset (F22)
+        print("end4-pC has no upstream branch to update from (git: " + (r.stderr.strip() or "no answer") + "). Nothing changed.")
+        return cmd_check(args)
     if behind == "0":
         print("end4-pC is already up to date.")
         return cmd_check(args)
@@ -612,7 +623,30 @@ def main():
         print(__doc__)
         return 2
     os.makedirs(STATE, exist_ok=True)
+    migrate_home_clutter()
     return cmds[sys.argv[1]](sys.argv[2:])
+
+
+def migrate_home_clutter():
+    """Move snapshots, the pointer and the autostart log from ~/ into ~/hypr-guard (once; F22)."""
+    if "HYPR_GUARD_SNAPROOT" in os.environ:
+        return
+    os.makedirs(SNAPROOT, exist_ok=True)
+    old_ptr = f"{HOME}/.hypr-known-good-latest"
+    latest = (read(old_ptr) or "").strip()
+    for d in sorted(os.listdir(HOME)):
+        if d.startswith("hypr-known-good-") and os.path.isdir(f"{HOME}/{d}") and not os.path.exists(f"{SNAPROOT}/{d}"):
+            shutil.move(f"{HOME}/{d}", f"{SNAPROOT}/{d}")
+            if latest == f"{HOME}/{d}" and not os.path.exists(POINTER):
+                write(POINTER, f"{SNAPROOT}/{d}\n")
+    if os.path.exists(old_ptr) and (os.path.exists(POINTER) or not latest):
+        os.remove(old_ptr)
+    old_log = f"{HOME}/hypr-autostart.log"
+    if os.path.isfile(old_log):
+        if not os.path.exists(AUTOSTART_LOG):
+            shutil.move(old_log, AUTOSTART_LOG)
+        else:
+            os.remove(old_log)
 
 
 if __name__ == "__main__":

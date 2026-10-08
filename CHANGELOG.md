@@ -1,5 +1,10 @@
 # Changelog
 
+## custom 1.100 (2026-10-08, fix)
+- hypr-guard: snapshots, their pointer and the autostart log moved from the home folder into ~/hypr-guard (moved automatically); two snapshots in the same second no longer crash; update without an upstream branch changes nothing (F22); reapply-shell-patches.py is tracked (F29)
+- Terminal colors work without the ii folder: applycolor.sh uses its own shell folder (F24)
+- switch-desktop logs out with Hyprland's own exit instead of killing every process with "hyprland" in its name (F25)
+
 ## custom 1.9 (2026-10-08, fix)
 - Setup profiles: names with capitals apply; clear messages instead of Python errors for damaged settings or profiles, a missing helper (checked before anything is written) or an unwritable export path; exports no longer always contain apps.volumeMixer, and ~/ paths stay ~/ (F13, F14, F28)
 - Custom_01 profile: invalid and unused values removed (F16)

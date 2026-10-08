@@ -32,5 +32,7 @@ else
         pgrep -f 'linux-wallpaper-engine-ux/app.asar|linux-wallpaperengine --' > /dev/null || break
         sleep 0.5
     done
-    pkill -i Hyprland
+    # Hyprland's own exit (as in its default config); `pkill -i Hyprland` also hit xdg-desktop-portal-hyprland,
+    # hyprland-* helpers and anything else with the name in it (F25). Fallback: the exact process only.
+    hyprctl dispatch 'hl.dsp.exit()' >/dev/null 2>&1 || pkill -x Hyprland
 fi
