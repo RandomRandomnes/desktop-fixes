@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 2.110 (2026-10-08, fix)
+- Virtual machines: Phoenix no longer lets a VM go to sleep when idle (waking up froze its graphics and the VM had to be reset)
+
 ## custom 2.100 (2026-10-08, fix)
 - Security: a window title or display-profile name can no longer put code into the Hyprland config (window rules, display profiles)
 - Maximize: windows can be restored after Settings changes; a newly maximized window comes to the front; minimized windows moved out another way come back visible

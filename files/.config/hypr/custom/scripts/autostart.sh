@@ -6,6 +6,12 @@ if [ -f "$HOME/.config/hypr/custom/scripts/autostart-user.sh" ]; then
   echo "$(date +%T) running autostart-user.sh" >> "$log"
   sh "$HOME/.config/hypr/custom/scripts/autostart-user.sh" >> "$log" 2>&1 &
 fi
+# In a virtual machine, idle sleep (hypridle → systemctl suspend) freezes the virtual graphics card on wake-up and the VM
+# can then only be reset (QA 2026-10-08): hold off sleep for this session there. Real PCs are not affected.
+if command -v systemd-detect-virt >/dev/null && systemd-detect-virt -q --vm; then
+  echo "$(date +%T) virtual machine: sleep is held off for this session" >> "$log"
+  systemd-inhibit --what=sleep --who=Phoenix --why="Sleep freezes the graphics of virtual machines" sleep infinity >/dev/null 2>&1 &
+fi
 # The login screen (phoenix login-screen install) shows this desktop's wallpaper and colors: refresh its copy
 [ -x "$HOME/.local/bin/phoenix-greeter-theme" ] && "$HOME/.local/bin/phoenix-greeter-theme" >> "$log" 2>&1 &
 # Custom-feature switches (Settings › Extras, written by ~/.local/bin/setup-features). Missing = on.
