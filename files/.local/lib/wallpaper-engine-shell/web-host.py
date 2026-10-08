@@ -1,15 +1,37 @@
 # Web wallpapers on Hyprland (2026-10-03). Started by the stand-in ./linux-wallpaperengine as process
 # "linux-wallpaperengine-web" with the Wallpaper Engine app's renderer arguments, so the app's
 # pkill -f "linux-wallpaperengine.*--screen-root.*<screen>" stops it; the host child gets SIGTERM when this dies.
-# Runs ~/.local/bin/wallpaper-engine-hyprland (built from the KDE plugin repo, hyprland/ folder, with the local
-# patch ~/.local/share/wallpaper-engine-hyprland-local.patch: background layer, so the shell's widgets stay above,
-# and an "audio" IPC command + window.wallpaperRegisterAudioListener for audio-reactive pages).
+# Runs ~/.local/bin/wallpaper-engine-hyprland, built on this PC by ~/.local/share/phoenix/src/wallpaper-engine-hyprland/
+# build.sh (KDE plugin repo, hyprland/ folder, plus phoenix.patch: background layer, so the shell's widgets stay above,
+# and an "audio" IPC command + window.wallpaperRegisterAudioListener for audio-reactive pages). Built here when it is
+# missing or no longer starts (e.g. after a Qt update; F23).
 # The real renderer (linux-wallpaperengine-git) crashes on every web wallpaper ("close symbol missing").
 # Pauses the page while the monitor shows a fullscreen window.
 import ctypes, json, os, signal, subprocess, sys, time
 
 HOST = os.path.expanduser("~/.local/bin/wallpaper-engine-hyprland")
+BUILD = os.path.expanduser("~/.local/share/phoenix/src/wallpaper-engine-hyprland/build.sh")
 WORKSHOP = os.path.expanduser("~/.local/share/Steam/steamapps/workshop/content/431960")
+
+
+def host_works():
+    try:
+        return subprocess.run([HOST, "--help"], capture_output=True, timeout=10).returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+def notify(title, body):
+    subprocess.run(["notify-send", "-a", "Wallpaper Engine", title, body], capture_output=True)
+
+
+if not host_works():
+    r = subprocess.run([BUILD], capture_output=True, text=True) if os.access(BUILD, os.X_OK) else None
+    if r is None or r.returncode != 0 or not host_works():
+        notify("Web wallpapers need a one-time setup",
+               ((r.stdout + r.stderr).strip().splitlines() or ["build failed"])[-1] if r else
+               "The build recipe is missing; update Phoenix (custom-update).")
+        sys.exit(1)
 
 args = sys.argv[1:]
 screens, bg, fps, silent, volume, props = [], None, None, False, 100, {}

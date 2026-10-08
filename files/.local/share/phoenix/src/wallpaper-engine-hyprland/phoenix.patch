@@ -1,0 +1,76 @@
+diff --git a/hyprland/qml/WallpaperSurface.qml b/hyprland/qml/WallpaperSurface.qml
+index eafe9d4..98775d8 100644
+--- a/hyprland/qml/WallpaperSurface.qml
++++ b/hyprland/qml/WallpaperSurface.qml
+@@ -139,6 +139,18 @@ Item {
+         settings.pdfViewerEnabled: false
+         settings.pluginsEnabled: false
+ 
++        // local patch: Wallpaper Engine's audio API, defined before the page's own scripts run
++        Component.onCompleted: {
++            const script = WebEngine.script();
++            script.name = "wallpaperEngineAudio";
++            script.injectionPoint = WebEngineScript.DocumentCreation;
++            script.worldId = WebEngineScript.MainWorld;
++            script.sourceCode = "(function(){var l=[];window.wallpaperRegisterAudioListener=function(cb){"
++                + "if(typeof cb==='function')l.push(cb);};window.__weAudio=function(a){"
++                + "for(var i=0;i<l.length;i++){try{l[i](a);}catch(e){}}};})();";
++            web.userScripts.insert(script);
++        }
++
+         onLifecycleStateChanged: root.reportLifecycle()
+ 
+         onLoadingChanged: function(info) {
+@@ -223,6 +235,12 @@ Item {
+             root.applyPaused();
+         }
+ 
++        // local patch: audio spectrum frames from the "audio" IPC command
++        function onAudioFrame(values) {
++            if (root.pageReady && !root.host.paused)
++                web.runJavaScript("window.__weAudio&&window.__weAudio(" + JSON.stringify(values) + ")");
++        }
++
+         function onPropertyValuesChanged(changed) {
+             // Scripts do not run in a frozen page; the full set is sent again on resume
+             // or with the next load.
+diff --git a/hyprland/src/WallpaperHost.cpp b/hyprland/src/WallpaperHost.cpp
+index 00abb4d..b797dd4 100644
+--- a/hyprland/src/WallpaperHost.cpp
++++ b/hyprland/src/WallpaperHost.cpp
+@@ -57,7 +57,7 @@ bool OutputSurface::create(QString* error) {
+                          Qt::WindowTransparentForInput);
+         auto* layer = LayerShellQt::Window::get(m_view.get());
+         layer->setScope(QString::fromLatin1(k_layerNamespace));
+-        layer->setLayer(LayerShellQt::Window::LayerBottom);
++        layer->setLayer(LayerShellQt::Window::LayerBackground);  // local patch: below the shell background (Bottom) so desktop widgets stay on top
+         layer->setAnchors(LayerShellQt::Window::Anchors(LayerShellQt::Window::AnchorTop) |
+                           LayerShellQt::Window::AnchorBottom | LayerShellQt::Window::AnchorLeft |
+                           LayerShellQt::Window::AnchorRight);
+@@ -292,6 +292,13 @@ QJsonObject WallpaperHost::handleRequest(const QJsonObject& request) {
+                              { QStringLiteral("changed"),
+                                QJsonArray::fromStringList(changed.keys()) } };
+     }
++    // local patch: {"command":"audio","values":[128 numbers]} -> window.wallpaperRegisterAudioListener callbacks
++    if (command == QLatin1String("audio")) {
++        const QJsonArray values = request.value(QLatin1String("values")).toArray();
++        if (values.size() != 128) return errorResponse(QStringLiteral("audio needs 128 values"));
++        if (! m_paused) emit audioFrame(values.toVariantList());
++        return QJsonObject { { QStringLiteral("ok"), true } };
++    }
+     if (command == QLatin1String("quit")) {
+         qInfo("quit requested");
+         QTimer::singleShot(0, qApp, [] {
+diff --git a/hyprland/src/WallpaperHost.hpp b/hyprland/src/WallpaperHost.hpp
+index 10a013c..523b4c0 100644
+--- a/hyprland/src/WallpaperHost.hpp
++++ b/hyprland/src/WallpaperHost.hpp
+@@ -104,6 +104,8 @@ public:
+ signals:
+     void pausedChanged();
+     void propertyValuesChanged(const QVariantMap& changed);
++    // local patch: Wallpaper Engine audio spectrum frame (128 values, 64 left + 64 right) for the page
++    void audioFrame(const QVariantList& values);
+ 
+ private:
+     QJsonObject handleRequest(const QJsonObject& request);

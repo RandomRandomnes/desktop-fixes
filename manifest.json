@@ -2,15 +2,15 @@
   "format": "custom-fixes",
   "line": "custom",
   "version": 1.99,
-  "label": "1.131",
-  "kind": "minor",
+  "label": "1.141",
+  "kind": "fix",
   "date": "2026-10-08",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Tidying: comments no longer point to files that don't ship; the hypr-guard report addresses the reader; an unused import removed (F27)"
+    "Wallpaper Engine web wallpapers: the host program is no longer shipped compiled; Phoenix ships its source recipe (upstream commit + patch, GPL-2.0) and builds it on the PC when it is missing or stops working after a Qt update (F23)"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "bf2312cfc9243f42929346d539d54a3d1a32bc7211ad7c3f76dc05f36c921666",
+  "payloadSha256": "b503bd5df8df25a9ad82b38eaf6f65b53542e6d7b4b240b0b734054444b5e4e2",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
     ".config/hypr/custom/execs.lua": "3313893ef27e9cb0ee4ce06baed0d5cb4f2ddd7f049ae585781199be18842a96",
@@ -92,14 +92,15 @@
     ".local/bin/switch-desktop": "ffd0f514bfec732dc007cfc44c67588cb58b816f3879734b81627de28df77c7d",
     ".local/bin/system-update": "5a946b6a60a9bb1ee6cc89bcd8daced6306a4c185bf0cf0577615a53ca93fda3",
     ".local/bin/wallpaper-engine-ctl": "5aaacc74d1cfa4143d47c2f5314d895a6c47ab97f26017926d594c87a31c8b40",
-    ".local/bin/wallpaper-engine-hyprland": "96cd561fbd3d36a45900899d0a6366687f58e82c58bc31eb63b2a034baec0dbf",
     ".local/bin/wallpaper-engine-kde": "295324c02b7559b88fd4a0c5e30119ddd473f4f46a16b883b3f7b9cb49f744a2",
     ".local/lib/wallpaper-engine-shell/linux-wallpaperengine": "24e44b3c9f9bf6eed12062cbaf8da76d40a11de1de77ac5164e72fe46fa2e3f3",
-    ".local/lib/wallpaper-engine-shell/web-host.py": "827fc0c74758a10fb428e21c4dc430953864a1ee443680c642e42fabb2649149",
+    ".local/lib/wallpaper-engine-shell/web-host.py": "f2b1a0ff292084173f2da4f86a9237835d5500b00b152ffad2c0a173e3c9457f",
     ".local/share/applications/quick-start.desktop": "42e99fd1f8617addf91c2fd7fd655d9524e27c51071db1c1f919870b275426fb",
     ".local/share/applications/switch-to-hyprland.desktop": "8c64dbd6e3c787dc3d7268877040cbfb6b6a6a7e9679259586a49f6d4b451422",
     ".local/share/custom-fixes/allowed_signers": "1bc55052b9f5850a21273aff66d29e2dae2de5da7ea2e52afa341a2ba4740077",
     ".local/share/custom-fixes/source.json": "efeba863f6f4bb8ac5ce8aa7639e2bf5bb7ecae762a4cfe431e9486eb4ccc64a",
+    ".local/share/phoenix/src/wallpaper-engine-hyprland/build.sh": "41de6bc3c614dc0feddf6a5f480e465ad49dcce2f0f46983d7065c68c6f934fd",
+    ".local/share/phoenix/src/wallpaper-engine-hyprland/phoenix.patch": "f088ee3aa754f7e8b62973f52597f262e1fe12a7247028c138940a067543f98b",
     ".local/share/phoenix/system/phoenix-power-meter": "ddbfaf483cd99b45375c1a2a8f697251523dcb4f9515f8e8d47101a528c8e05e",
     ".local/share/phoenix/system/phoenix-power-meter.service": "f47580bc09482ece1fee789aa1148316f4b399514412a28caa82470483af59ce",
     ".local/share/plasma/plasmoids/org.kde.plasma.kickoff.hyprswitch/contents/config/config.qml": "e23ac82ca06ab66234ba2953c829fc3ea15cae6642cf852030b783969de4698e",
@@ -171,9 +172,9 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/hypr/custom/execs.lua",
-    ".config/quickshell/end4-pC/scripts/sysstats/sysstats.py",
-    ".local/bin/hypr-guard"
+    ".local/lib/wallpaper-engine-shell/web-host.py",
+    ".local/share/phoenix/src/wallpaper-engine-hyprland/build.sh",
+    ".local/share/phoenix/src/wallpaper-engine-hyprland/phoenix.patch"
   ],
   "test": false,
   "shell": "f22e2676c7daf69776f6d1eb423ff63118776710"

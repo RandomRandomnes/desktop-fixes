@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 1.141 (2026-10-08, fix)
+- Wallpaper Engine web wallpapers: the host program is no longer shipped compiled; Phoenix ships its source recipe (upstream commit + patch, GPL-2.0) and builds it on the PC when it is missing or stops working after a Qt update (F23)
+
 ## custom 1.131 (2026-10-08, minor)
 - Tidying: comments no longer point to files that don't ship; the hypr-guard report addresses the reader; an unused import removed (F27)
 
