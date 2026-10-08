@@ -142,13 +142,21 @@ local function raise_floats_over_max(ws, except, all)
     end
 end
 
+-- Several times: a real click holds the button for a moment and Hyprland raises the clicked window again when it is
+-- released, after a single early raise (quick test clicks passed, the user's clicks didn't; 2026-10-08).
 hl.on("window.active", function(win)
     if not (win and win.fullscreen == 1 and win.workspace) then return end
     local addr = win.address
-    hl.timer(function()
-        local w = hl.get_window("address:" .. addr)
-        if w and w.fullscreen == 1 and w.workspace then raise_floats_over_max(w.workspace, w, true) end
-    end, { timeout = 1, type = "oneshot" })
+    for _, ms in ipairs({ 1, 200, 700 }) do
+        hl.timer(function()
+            local w = hl.get_window("address:" .. addr)
+            local active = hl.get_active_window()
+            -- only while it is still the maximized, focused window
+            if w and w.fullscreen == 1 and w.workspace and active and active.address == addr then
+                raise_floats_over_max(w.workspace, w, true)
+            end
+        end, { timeout = ms, type = "oneshot" })
+    end
 end)
 
 hl.on("window.fullscreen", function(win)
@@ -251,3 +259,75 @@ hl.on("monitor.added", assign_soon)
 assign_soon()   -- also after a config reload
 end
 -- workspace-groups-end
+
+-- windows-maximize-start
+-- Maximize like Windows (2026-10-08, Phoenix; windowsStyle feature). Hyprland's maximized mode puts the window on its
+-- own layer: other windows can be drawn above it while clicks still go to it (clicking inside an already focused
+-- maximized window lifts it for input without any event). So every maximize (title bar button and double-click via
+-- hb.sh, Super+D, apps that ask to be maximized) becomes a normal floating window with exactly the box Hyprland gives
+-- a maximized one; the window you see on top then always gets the clicks. Maximizing it again restores the size and
+-- place it had before; if it was moved or resized meanwhile, it is maximized again instead.
+if feature("windowsStyle") then
+local maxed = {}   -- address → { max = box, prev = box }
+
+local function box_of(w) return { x = w.at.x or w.at[1], y = w.at.y or w.at[2], w = w.size.x or w.size[1], h = w.size.y or w.size[2] } end
+local function same(a, b) return a and b and math.abs(a.x - b.x) <= 2 and math.abs(a.y - b.y) <= 2 and math.abs(a.w - b.w) <= 2 and math.abs(a.h - b.h) <= 2 end
+local function place(sel, b)
+    hl.dispatch(hl.dsp.window.resize({ x = b.w, y = b.h, window = sel }))
+    hl.dispatch(hl.dsp.window.move({ x = b.x, y = b.y, window = sel }))
+end
+
+local function convert(win)
+    if not (win and win.fullscreen == 1 and win.floating) then return end
+    local addr = win.address
+    local sel = "address:" .. addr
+    local tries, last = 0, nil
+    local function step()   -- wait until Hyprland's maximized box stops changing (layout/animation after a reload)
+        local w = hl.get_window(sel)
+        if not (w and w.fullscreen == 1) then return end
+        local max_box = box_of(w)
+        tries = tries + 1
+        if not same(max_box, last) and tries < 8 then
+            last = max_box
+            hl.timer(step, { timeout = 60, type = "oneshot" })
+            return
+        end
+        hl.dispatch(hl.dsp.window.fullscreen_state({ internal = 0, client = 0, window = sel }))
+        hl.timer(function()   -- back to a normal window, at its previous floating place
+            local n = hl.get_window(sel)
+            if not n then return end
+            local now = box_of(n)
+            local s = maxed[addr]
+            if s and same(now, s.max) then
+                place(sel, s.prev)   -- maximized by Phoenix and untouched since: restore
+                maxed[addr] = nil
+            else
+                maxed[addr] = { max = max_box, prev = now }
+                place(sel, max_box)
+            end
+        end, { timeout = 30, type = "oneshot" })
+    end
+    hl.timer(step, { timeout = 30, type = "oneshot" })
+end
+hl.on("window.fullscreen", convert)
+-- windows maximized the old way (before this, or before a config reload) switch over too
+hl.timer(function()
+    for _, w in ipairs(hl.get_windows() or {}) do convert(w) end
+end, { timeout = 1000, type = "oneshot" })
+
+hl.on("window.close", function(win) if win then maxed[win.address] = nil end end)
+
+-- A window that gets the focus while the mouse isn't over it (dock, Alt+Tab, Overview, keyboard) comes to the front,
+-- like on Windows. Focus from just hovering it (follow_mouse) doesn't raise, so moving the mouse doesn't shuffle windows.
+hl.on("window.active", function(win)
+    if not (win and win.floating and win.fullscreen == 0 and win.at and win.size) then return end
+    local c = hl.get_cursor_pos()
+    local b = box_of(win)
+    local cx, cy = c and (c.x or c[1]), c and (c.y or c[2])
+    local over = cx and cx >= b.x - 4 and cx <= b.x + b.w + 4 and cy >= b.y - 40 and cy <= b.y + b.h + 4   -- 40: its title bar
+    if not over then
+        hl.dispatch(hl.dsp.window.alter_zorder({ mode = "top", window = "address:" .. win.address }))
+    end
+end)
+end
+-- windows-maximize-end

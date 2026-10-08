@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 2.5 (2026-10-08, fix)
+- Maximize works like Windows: a maximized window is now a normal window filling the screen, so the window you see on top always gets your clicks (before, a window over a maximized one could stop responding after you clicked the maximized one); a window brought up from the dock, Alt+Tab or the Overview comes to the front
+
 ## custom 2.4 (2026-10-08, fix)
 - Settings opens at Phoenix's own pages again after the advanced (original) pages were used; the Settings window fits smaller screens (its back arrow was hidden on 1280×800)
 

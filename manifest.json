@@ -1,19 +1,19 @@
 {
   "format": "custom-fixes",
   "line": "custom",
-  "version": 2.4,
-  "label": "2.4",
+  "version": 2.5,
+  "label": "2.5",
   "kind": "fix",
   "date": "2026-10-08",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Settings opens at Phoenix's own pages again after the advanced (original) pages were used; the Settings window fits smaller screens (its back arrow was hidden on 1280\u00d7800)"
+    "Maximize works like Windows: a maximized window is now a normal window filling the screen, so the window you see on top always gets your clicks (before, a window over a maximized one could stop responding after you clicked the maximized one); a window brought up from the dock, Alt+Tab or the Overview comes to the front"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "c78ad0a92bbed30b6237c5b29457be2ada6ea71a369c2d09475065498162cb7f",
+  "payloadSha256": "01589b1bcbd7a836c1d538cfe7071673b991a1551dd61250db9be67732c617c5",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
-    ".config/hypr/custom/execs.lua": "52502ecf7d9db8331ba91a4205ce54b5b14d3fb9217782790056a6e5b895290f",
+    ".config/hypr/custom/execs.lua": "ec5dfe52e454e15501721146d1524a0f3ce47c3048db48f7331305a712ce3b5c",
     ".config/hypr/custom/general.lua": "06d1fb865ea7a689006d0e6074778f97539fe87e52e1ad05c5d1083549e1a980",
     ".config/hypr/custom/keybinds.lua": "8ee638e94053968d19b77a80a8fdb663a107063a0d0e42cf6b24ea142bca1baf",
     ".config/hypr/custom/rules.lua": "75ade8ef784f5325d456673f33af4cf07ee655f2b1f4d30f2cf5254873914395",
@@ -190,8 +190,7 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/quickshell/end4-pC/modules/ii/settingsW11/W11Settings.qml",
-    ".config/quickshell/end4-pC/modules/ii/settingsW11/WState.qml"
+    ".config/hypr/custom/execs.lua"
   ],
   "test": false,
   "shell": "4517f78cf9e504ec351f8a0ff1f747f5d12e7683"
