@@ -72,6 +72,7 @@ MANIFEST = {
     "setup-wizard.qml": f"{QS}/setup-wizard.qml",   # first-time setup wizard (2026-10-03)
     "quick-start.qml": f"{QS}/quick-start.qml",     # Quick Start guide app (2026-10-03)
     "ResourcesPopupClassic.qml": f"{QS}/modules/ii/bar/ResourcesPopupClassic.qml",
+    "BarContent.qml": f"{QS}/modules/ii/bar/BarContent.qml",   # battery widget only with a laptop battery
     "ResourceUsage.qml": f"{QS}/services/ResourceUsage.qml",
     "BarConfig.qml": f"{QS}/modules/ii/settings/pages/BarConfig.qml",
     "Config.qml": f"{QS}/modules/common/Config.qml",

@@ -57,15 +57,30 @@ cpu_model = ""
 for line in open("/proc/cpuinfo"):
     if line.startswith("model name"):
         cpu_model = re.sub(r"\s+\d+-Core Processor$", "", line.split(":", 1)[1].strip()).replace("AMD ", "")
+        # Intel: "Intel(R) Core(TM) i7-12700K CPU @ 3.60GHz" -> "Core i7-12700K"
+        cpu_model = re.sub(r"\s+CPU\s+@.*$|\s*@\s*[\d.]+\s*GHz$", "", cpu_model)
+        cpu_model = re.sub(r"\((R|TM|tm)\)", "", cpu_model).replace("Intel ", "").replace(" CPU ", " ").replace("  ", " ").strip()
         break
 threads = os.cpu_count() or 1
-cores = len({read(p) for p in glob.glob("/sys/devices/system/cpu/cpu[0-9]*/topology/core_id")}) or threads
+# physical cores: core ids repeat on each CPU package (multi-socket), so count (package, core) pairs
+cores = len({(read(os.path.join(d, "physical_package_id")), read(os.path.join(d, "core_id")))
+             for d in glob.glob("/sys/devices/system/cpu/cpu[0-9]*/topology")}) or threads
 freq_paths = sorted(glob.glob("/sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_cur_freq"),
                     key=lambda p: int(re.search(r"cpu(\d+)", p).group(1)))
-cpu_max_mhz = read_int("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq") / 1000
+# highest clock any core reports (0 where cpufreq isn't available, e.g. many VMs: the UI then leaves it out)
+cpu_max_mhz = max([read_int(p) for p in glob.glob("/sys/devices/system/cpu/cpu[0-9]*/cpufreq/cpuinfo_max_freq")] or [0]) / 1000
 governor = read("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "")
 driver = read("/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver", "")
-k10 = next(hwmon_by_name("k10temp"), None) or next(hwmon_by_name("coretemp"), None)
+# CPU temperature sensor: AMD (k10temp, or the zenpower driver), Intel (coretemp); otherwise a thermal zone
+# (x86_pkg_temp, or acpitz on many laptops/VMs). None found: the temperature is reported as unknown, not 0.
+k10 = next((h for n in ("k10temp", "zenpower", "coretemp") for h in hwmon_by_name(n)), None)
+cpu_zone = None
+if not k10:
+    for want in ("x86_pkg_temp", "acpitz"):
+        cpu_zone = next((z for z in sorted(glob.glob("/sys/class/thermal/thermal_zone*"))
+                         if read(os.path.join(z, "type")) == want), None)
+        if cpu_zone:
+            break
 rapl = "/sys/class/powercap/intel-rapl:0"
 rapl_max = read_int(os.path.join(rapl, "max_energy_range_uj"), 0)
 
@@ -170,7 +185,10 @@ while True:
 
     freqs = [read_int(p) / 1000 for p in freq_paths]
     temps = labelled_temps(k10) if k10 else {}
-    cpu_temp = temps.get("Tctl") or temps.get("Tdie") or temps.get("Package id 0") or 0
+    cpu_temp = temps.get("Tctl") or temps.get("Tdie") or temps.get("Package id 0") or (max(temps.values()) if temps else None)
+    if cpu_temp is None and cpu_zone:
+        z = read_int(os.path.join(cpu_zone, "temp"), None)
+        cpu_temp = z / 1000 if z else None
     ccd_temps = [v for k, v in sorted(temps.items()) if k.startswith("Tccd")]
 
     energy = read_int(os.path.join(rapl, "energy_uj"), None)

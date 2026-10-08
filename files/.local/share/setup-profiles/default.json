@@ -27,6 +27,17 @@
             "palette": {
                 "type": "scheme-monochrome"
             }
+        },
+        "bar": {
+            "layouts": {
+                "rightLayout": [
+                    "sysTray",
+                    "batteryIndicator",
+                    "utilButtons",
+                    "systemIcons",
+                    "powerButton"
+                ]
+            }
         }
     },
     "wallpaper": "@default",

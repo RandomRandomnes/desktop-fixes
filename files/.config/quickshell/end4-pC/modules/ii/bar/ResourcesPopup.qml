@@ -222,7 +222,7 @@ StyledPopup {
 
                 BigValue {
                     value: root.cpu ? `${Math.round(root.cpu.usage * 100)}%` : ""
-                    note: root.cpu ? `avg ${SystemStats.ghz(root.cpu.freqAvg)} GHz · max ${SystemStats.ghz(root.cpu.freqMax)} GHz` : ""
+                    note: root.cpu ? `avg ${SystemStats.ghz(root.cpu.freqAvg)} GHz` + (root.cpu.freqMax > 0 ? ` · max ${SystemStats.ghz(root.cpu.freqMax)} GHz` : "") : ""
                 }
                 RowLayout {
                     id: threadBars
@@ -238,7 +238,7 @@ StyledPopup {
                             Rectangle {
                                 anchors.bottom: parent.bottom
                                 width: parent.width
-                                height: Math.max(3, parent.height * Math.min(1, modelData / Math.max(1, root.cpu?.freqMax ?? 1)))
+                                height: Math.max(3, parent.height * Math.min(1, modelData / Math.max(1, (root.cpu?.freqMax > 0 ? root.cpu.freqMax : Math.max(...(root.cpu?.freqs ?? [1]))))))
                                 radius: 2
                                 color: Appearance.colors.colTertiary
                                 Behavior on height {
@@ -257,7 +257,8 @@ StyledPopup {
                 }
                 InfoRow {
                     label: "Temperature"
-                    value: root.cpu ? `${Math.round(root.cpu.temp)}°C` + (root.cpu.ccd.length ? ` (CCD ${root.cpu.ccd.map(t => Math.round(t)).join(" / ")}°C)` : "") : ""
+                    value: !root.cpu ? "" : root.cpu.temp == null ? "n/a (no sensor)"
+                        : `${Math.round(root.cpu.temp)}°C` + (root.cpu.ccd.length ? ` (CCD ${root.cpu.ccd.map(t => Math.round(t)).join(" / ")}°C)` : "")
                     warning: (root.cpu?.temp ?? 0) >= 85
                 }
                 InfoRow {

@@ -1,5 +1,9 @@
 # Changelog
 
+## custom 1.191 (2026-10-08, fix)
+- Other hardware: CPU temperature also from the zenpower driver and thermal zones (laptops, VMs), shown as n/a instead of 0 °C when there is no sensor; correct core count on multi-CPU systems; tidy Intel CPU names; no '0.00 GHz' maximum where the clock isn't reported
+- Laptops: the Default profile shows the battery on the taskbar; PCs without a laptop battery hide it
+
 ## custom 1.181 (2026-10-08, fix)
 - Setup assistant without internet: steps that need it show a no-connection icon, their buttons are greyed out with a note, and Next on Apps moves on instead of starting an install that would fail (rechecked every 5 s, so connecting in the Wi-Fi step enables them)
 - Terminals opened by the setup assistant come up centered in front of it (they used to open behind it when a maximized window was on the workspace) and close by themselves a few seconds after a successful run; after an error they stay open
