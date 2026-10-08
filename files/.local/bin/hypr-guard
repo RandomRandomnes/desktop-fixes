@@ -411,7 +411,10 @@ class Run:
         if r.returncode == 0 and errs:
             self.problems.append("Hyprland config errors:\n```\n" + errs + "\n```")
         p = run(["hyprctl", "plugin", "list"])
-        if p.returncode == 0 and "hyprbars" not in p.stdout:
+        # title bars belong to the windowsStyle feature; switched off, the plugin is unloaded on purpose (F11)
+        feats = read(f"{HC}/features.lua") or ""
+        bars_wanted = not re.search(r"\bwindowsStyle\s*=\s*false\b", feats)
+        if bars_wanted and p.returncode == 0 and "hyprbars" not in p.stdout:
             self.problems.append("Title bar plugin (hyprbars) isn't loaded. Usually Hyprland was updated and the "
                                  "plugin must be rebuilt to match: `yay -S hyprland-plugin-hyprbars`, then log out/in.")
         n = qs_instances()

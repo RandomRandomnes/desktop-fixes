@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 1.7 (2026-10-08, fix)
+- Windows-style windows switched off: no more 'title bar plugin isn't loaded' alert and no Hyprland config error at login (F11)
+
 ## custom 1.6 (2026-10-08, fix)
 - phoenix activate/deactivate/uninstall: the shell being switched away from (and the setup assistant) is closed; before, both shells ran until the next login
 

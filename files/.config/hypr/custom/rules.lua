@@ -1,9 +1,12 @@
 -- The shell's Settings window draws its own header (back, title, close) and is dragged by it: no hyprbars title bar.
-hl.window_rule({
-    name = "settings-no-titlebar",
-    match = { class = "^(org.quickshell)$", title = "^(Settings)$" },
-    ["hyprbars:no_bar"] = true,
-})
+-- Only while the plugin is loaded (windowsStyle on): without it the field is unknown and Hyprland reports an error (F11).
+if feature("windowsStyle") and hl.plugin and hl.plugin.hyprbars then
+    hl.window_rule({
+        name = "settings-no-titlebar",
+        match = { class = "^(org.quickshell)$", title = "^(Settings)$" },
+        ["hyprbars:no_bar"] = true,
+    })
+end
 
 -- First-time setup wizard (end4-pC setup-wizard.qml): always a centered floating window, also with tiling.
 hl.window_rule({

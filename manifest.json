@@ -1,22 +1,22 @@
 {
   "format": "custom-fixes",
   "line": "custom",
-  "version": 1.6,
-  "label": "1.6",
+  "version": 1.7,
+  "label": "1.7",
   "kind": "fix",
   "date": "2026-10-08",
   "publisher": "RandomRandomnes",
   "notes": [
-    "phoenix activate/deactivate/uninstall: the shell being switched away from (and the setup assistant) is closed; before, both shells ran until the next login"
+    "Windows-style windows switched off: no more 'title bar plugin isn't loaded' alert and no Hyprland config error at login (F11)"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "992eccabc1174073e3a2f6250095f444026ffd25fa2bc7a03c9dc703f20c7a14",
+  "payloadSha256": "ce29c8ead8ed790949e3fc8ed62214dd460c0d1143555b7546753df4febfaaf5",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
     ".config/hypr/custom/execs.lua": "e1840046232062e73741e9e82f61864d271fe13ed41449554df01a33d9956d98",
     ".config/hypr/custom/general.lua": "06d1fb865ea7a689006d0e6074778f97539fe87e52e1ad05c5d1083549e1a980",
     ".config/hypr/custom/keybinds.lua": "8ee638e94053968d19b77a80a8fdb663a107063a0d0e42cf6b24ea142bca1baf",
-    ".config/hypr/custom/rules.lua": "1cc3008eff4152a66344c395b7fb6ef5cdd861f936f7daf82f72343bb34b3604",
+    ".config/hypr/custom/rules.lua": "4dc313316f92d5fc3417a3978f75db4bd60fd4cb4b63adcddbd40792c3925b66",
     ".config/hypr/custom/scripts/autostart.sh": "e378be37ee4e5af7908915345c1f476fea17bf4f23a1036aee515a2aa62fb2f5",
     ".config/hypr/custom/scripts/hb.sh": "e0f841a85cceed0425333d8946884b684edc76a13c35a152ef8ef41fb0206675",
     ".config/hypr/custom/scripts/reapply-shell-patches.py": "3aa5700fd1f55adc1cd8f22df5a09957eeb1401a51cbb1dea6594e4db403ede2",
@@ -82,7 +82,7 @@
     ".config/quickshell/end4-pC/setup-wizard.qml": "b2f0026242647a8c9a7ebabe77ae6bf39162d03c6011c29ad892fac9a0984114",
     ".local/bin/boot-loader": "c84ab89d50ceef75f81c0ef7bb41d0377041779b2987a6a8c66a690965bafc62",
     ".local/bin/custom-update": "6496e076353054a2258ba88cf87da131138a83f39410077bb3fdf4c8295e6c85",
-    ".local/bin/hypr-guard": "979928f1cbbde27fe3d54167a7fec7569096c4bd50b33cf95dca47629c802fbf",
+    ".local/bin/hypr-guard": "00645cd93405c6fbd3a40a1c7281be84febf15447384a5bcd75b8b859f746fad",
     ".local/bin/linux-wallpaper-engine": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/linux-wallpaper-engine-ux": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/phoenix": "d23323522612783f410e773141fd9fb4b5dcb7f54fcba815c4338169e31ddf41",
@@ -169,7 +169,8 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".local/bin/phoenix"
+    ".config/hypr/custom/rules.lua",
+    ".local/bin/hypr-guard"
   ],
   "test": false,
   "shell": "f22e2676c7daf69776f6d1eb423ff63118776710"
