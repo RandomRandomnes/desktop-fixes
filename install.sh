@@ -52,10 +52,39 @@ if has_ii; then
     info "found"
 else
     warn "illogical-impulse is not installed. Phoenix is built on it."
-    info "Its official installer can set it up now: bash <(curl -s https://ii.clsty.link/get)"
+    info "Its official installer can set it up now (the same as: bash <(curl -s https://ii.clsty.link/get))."
     info "It shows every command before running it and asks questions of its own."
     ask "Run the illogical-impulse installer now?" y || die "install illogical-impulse first, then run this installer again"
-    bash <(curl -s https://ii.clsty.link/get) </dev/tty || die "the illogical-impulse installer did not finish"
+    II_DIR="$HOME/.cache/dots-hyprland"
+    if [ -d "$II_DIR/.git" ]; then
+        git -C "$II_DIR" pull -q --ff-only origin main || die "couldn't update $II_DIR; fix or remove it, then run this installer again"
+    else
+        git clone -q https://github.com/end-4/dots-hyprland "$II_DIR" || die "couldn't download illogical-impulse"
+    fi
+    git -C "$II_DIR" submodule update -q --init --recursive
+    # Quickshell pins that don't build with Qt 6.12 or newer get the upstream fix (quickshell 5d5d498) for that pin.
+    # The patch is put next to illogical-impulse's own recipe only for this build and removed afterwards.
+    QS_PKG="$II_DIR/sdata/dist-arch/illogical-impulse-quickshell-git"
+    qs_pin=$(sed -n "s/^_commit='\([0-9a-f]*\)'.*/\1/p" "$QS_PKG/PKGBUILD" 2>/dev/null || true)
+    declare -A QS_FIX=(   # pin -> sha256 of fixes/quickshell/<pin>.patch
+        [41651d7dcd62a9400eb6f4f8a8580efe00901efb]=6832746827da49eea7c77f546e90732ad1ef71f1fd194050621a57122429d597
+        [7511545ee20664e3b8b8d3322c0ffe7567c56f7a]=0dbc7190d66467633fb9edd416051267367ccade0ef59906bcd3d44d6ca22384
+    )
+    # the Qt it will be built with: the installed one, or the repositories' one if newer (the installer updates to it)
+    qt=$(pacman -Q qt6-base 2>/dev/null | awk '{print $2}' || true); qt_repo=$(LC_ALL=C pacman -Si qt6-base 2>/dev/null | awk '/^Version/ {print $3; exit}' || true)
+    [ -z "$qt" ] || { [ -n "$qt_repo" ] && [ "$(vercmp "$qt_repo" "$qt")" -gt 0 ]; } && qt="$qt_repo"; qs_patched=""
+    if [ -n "$qs_pin" ] && [ -n "${QS_FIX[$qs_pin]:-}" ] && [ "$(vercmp "${qt:-0}" 6.12)" -ge 0 ] \
+       && ! grep -q '^prepare()' "$QS_PKG/PKGBUILD"; then
+        curl -fsSL -o "$QS_PKG/phoenix-qt612.patch" "https://raw.githubusercontent.com/$REPO/main/fixes/quickshell/$qs_pin.patch" \
+            && [ "$(sha256sum "$QS_PKG/phoenix-qt612.patch" | cut -d' ' -f1)" = "${QS_FIX[$qs_pin]}" ] \
+            || die "couldn't download the Quickshell fix for Qt $qt"
+        printf '\nprepare() {\n  git -C "$srcdir/$_pkgsrc" apply "$startdir/phoenix-qt612.patch"\n}\n' >> "$QS_PKG/PKGBUILD"
+        qs_patched=1
+        info "Qt $qt: illogical-impulse's Quickshell version needs a build fix; it is applied for this installation."
+    fi
+    rc=0; (cd "$II_DIR" && ./setup install ${PHOENIX_II_ARGS:-} </dev/tty) || rc=$?
+    [ -n "$qs_patched" ] && { git -C "$II_DIR" checkout -q -- "${QS_PKG#"$II_DIR"/}/PKGBUILD"; rm -f "$QS_PKG/phoenix-qt612.patch"; }
+    [ "$rc" = 0 ] || die "the illogical-impulse installer did not finish"
     has_ii || die "illogical-impulse still isn't complete; finish its installation, then run this installer again"
 fi
 [ -f "$HOME/.config/hypr/hyprland.lua" ] || die "this illogical-impulse uses the old Hyprland config format; Phoenix needs the Lua version (Hyprland 0.55 or newer). Update illogical-impulse first"
@@ -203,6 +232,10 @@ echo "This file is just here to confirm you've been greeted :>" > "$HOME/.local/
 touch "$HOME/.local/state/setup-wizard/pending"        # the Phoenix setup assistant opens at the next login
 # without the running session's address: only settings for the next login are written, the current desktop stays as it is
 env -u HYPRLAND_INSTANCE_SIGNATURE "$HOME/.local/bin/setup-profile" apply default --yes | sed 's/^/    /'
+# the files just installed from the signed release are the known-good state hypr-guard restores and compares against
+# (--force: the Phoenix shell isn't running yet, so the usual "shell is healthy" check can't pass now)
+"$HOME/.local/bin/hypr-guard" snapshot --force >/dev/null 2>&1 && info "Recovery snapshot saved (hypr-guard)." \
+    || warn "couldn't save the hypr-guard recovery snapshot; after logging in to Phoenix run: hypr-guard snapshot"
 
 # ── 6. activate now or later ───────────────────────────────────────────────────────────────────────────────────────
 step "Done installing"

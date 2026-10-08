@@ -33,6 +33,7 @@ QS_INSTANCE = "^qs -c end4-pC$"
 MANIFEST = {
     # Hyprland custom config (not in a git repo)
     "env.lua": f"{HC}/env.lua",   # feature-switch loader (2026-10-03)
+    "variables.lua": f"{HC}/variables.lua",   # qsConfig = end4-pC (illogical-impulse's variables.lua resets it)
     "rules.lua": f"{HC}/rules.lua",
     "general.lua": f"{HC}/general.lua",
     "execs.lua": f"{HC}/execs.lua",

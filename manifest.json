@@ -1,18 +1,17 @@
 {
   "format": "custom-fixes",
   "line": "custom",
-  "version": 1.4,
-  "label": "1.4",
+  "version": 1.5,
+  "label": "1.5",
   "kind": "fix",
   "date": "2026-10-08",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Phoenix follows the illogical-impulse shell update of 2026-10-07: the right sidebar's Phoenix parts (device batteries, Wallpaper Engine picker, Switch to KDE button) are rebuilt on the new reorderable sidebar.",
-    "Each custom release now records the illogical-impulse shell version it was made on; it installs once the shell is updated (the update button does that first), and install.sh sets up exactly that version.",
-    "GPU widget: full Intel GPU names; a powered-down laptop NVIDIA GPU is never woken, and the integrated GPU is shown while it sleeps."
+    "Phoenix shell starts on new installs: illogical-impulse's variables.lua reset the shell to the stock one; Phoenix now sets it in custom/variables.lua",
+    "hypr-guard tracks custom/variables.lua"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "6c63416d1692911ed8cc0e67913a9ca6848a8e5a7978c48b4e035c4a369c82ac",
+  "payloadSha256": "df332609015125085e319f5df897648ac78d9f77177737267eb39bd8e7dfb4c6",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
     ".config/hypr/custom/execs.lua": "e1840046232062e73741e9e82f61864d271fe13ed41449554df01a33d9956d98",
@@ -22,6 +21,7 @@
     ".config/hypr/custom/scripts/autostart.sh": "e378be37ee4e5af7908915345c1f476fea17bf4f23a1036aee515a2aa62fb2f5",
     ".config/hypr/custom/scripts/hb.sh": "e0f841a85cceed0425333d8946884b684edc76a13c35a152ef8ef41fb0206675",
     ".config/hypr/custom/scripts/reapply-shell-patches.py": "3aa5700fd1f55adc1cd8f22df5a09957eeb1401a51cbb1dea6594e4db403ede2",
+    ".config/hypr/custom/variables.lua": "3859ea1ee32e82cdc61364c2d24248acf1d5a8063244f3dc96be9c39fb803337",
     ".config/quickshell/end4-pC/GlobalStates.qml": "ce1c489f14e48e4825b0caa418bc26301d499335b890d5e64f9a64effebe4d88",
     ".config/quickshell/end4-pC/modules/common/Config.qml": "b14c3a9a861fa14fc6af277bb41db2047621821e27ae92e14d0042a4e39e0a9b",
     ".config/quickshell/end4-pC/modules/ii/background/Background.qml": "ce5f82ed8f0470f15566cc8f59d2e1f3da7c89cd75e4ee8ac0bbbfe350ea0f6b",
@@ -83,7 +83,7 @@
     ".config/quickshell/end4-pC/setup-wizard.qml": "b2f0026242647a8c9a7ebabe77ae6bf39162d03c6011c29ad892fac9a0984114",
     ".local/bin/boot-loader": "c84ab89d50ceef75f81c0ef7bb41d0377041779b2987a6a8c66a690965bafc62",
     ".local/bin/custom-update": "6496e076353054a2258ba88cf87da131138a83f39410077bb3fdf4c8295e6c85",
-    ".local/bin/hypr-guard": "e3999dbc31ba6545ca95472ce86e526a73e5597378212a820845bcc441c1cb6a",
+    ".local/bin/hypr-guard": "979928f1cbbde27fe3d54167a7fec7569096c4bd50b33cf95dca47629c802fbf",
     ".local/bin/linux-wallpaper-engine": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/linux-wallpaper-engine-ux": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/phoenix": "103a3eb46af08bf43f3143d7d402dcbbe5f6724c7e4b38e2011e71a91b191ec3",
@@ -170,18 +170,8 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/quickshell/end4-pC/GlobalStates.qml",
-    ".config/quickshell/end4-pC/modules/common/Config.qml",
-    ".config/quickshell/end4-pC/modules/ii/bar/Resources.qml",
-    ".config/quickshell/end4-pC/modules/ii/settings/pages/BarConfig.qml",
-    ".config/quickshell/end4-pC/modules/ii/settingsW11/PUpdate.qml",
-    ".config/quickshell/end4-pC/modules/ii/sidebarRight/DeviceBatteries.qml",
-    ".config/quickshell/end4-pC/modules/ii/sidebarRight/SidebarRightContent.qml",
-    ".config/quickshell/end4-pC/panelFamilies/IllogicalImpulseFamily.qml",
-    ".config/quickshell/end4-pC/scripts/gpu/gpustats.py",
-    ".config/quickshell/end4-pC/scripts/sysstats/sysstats.py",
-    ".config/quickshell/end4-pC/services/Ai.qml",
-    ".local/bin/custom-update"
+    ".config/hypr/custom/variables.lua",
+    ".local/bin/hypr-guard"
   ],
   "test": false,
   "shell": "f22e2676c7daf69776f6d1eb423ff63118776710"
