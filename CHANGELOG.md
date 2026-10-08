@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 1.4 (2026-10-08, fix)
+- GPU widget: Intel GPUs show their full name (e.g. Intel Iris Xe Graphics); a powered-down laptop NVIDIA GPU is never woken to read names, and the integrated GPU is shown while it sleeps.
+
 ## custom 1.3 (2026-10-04, fix)
 - KDE Plasma integration ships with Phoenix: the start-menu entry and launcher widget for switching back to Hyprland, and the Phoenix update button for the Plasma panel.
 - The boot menu option in the setup assistant only appears on systems with the Phoenix image's boot layout; other systems keep their own boot setup.
