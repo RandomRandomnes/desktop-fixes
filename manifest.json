@@ -1,16 +1,16 @@
 {
   "format": "custom-fixes",
   "line": "custom",
-  "version": 2.8,
-  "label": "2.8",
+  "version": 2.9,
+  "label": "2.9",
   "kind": "fix",
   "date": "2026-10-08",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Housekeeping: linux-wallpaper-engine is now a small launcher instead of a second copy of the Wallpaper Engine tray-icon fix"
+    "No more false \"Desktop check: 1 problem\" alert at startup: half-read window lists are simply asked for again"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "0272a6e666d2a87a1fc1eb97b1d659e24baf2da602375a226b7fc42525797613",
+  "payloadSha256": "84946ef4aab0120180c1e2c4eb6d0d9df22c5403a4b9047b94bd6ef83b0adbf4",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
     ".config/hypr/custom/execs.lua": "ec5dfe52e454e15501721146d1524a0f3ce47c3048db48f7331305a712ce3b5c",
@@ -82,6 +82,7 @@
     ".config/quickshell/end4-pC/services/Extras.qml": "a5d99159a1df07aeb989a80a6df2bcb53d499babb55456da96978395e00778ec",
     ".config/quickshell/end4-pC/services/FirstRunExperience.qml": "517e071a485ba89a4c50dce972b8b0095983e5e79213a2744c58e715946e5ed7",
     ".config/quickshell/end4-pC/services/GameAssist.qml": "fd7cc3da80f36328bf749cd8d33a70bd9c95fa1002bdd97754f76b292b9761d7",
+    ".config/quickshell/end4-pC/services/HyprlandData.qml": "86e11a37b0f7fefc5894d1334b7697714ae34263b13f1ede0a7b8edfcf4d0b5c",
     ".config/quickshell/end4-pC/services/Network.qml": "58e672493fdb22e6d04f6b6009ab57360ecf8d3c1576590b8694509d56936b36",
     ".config/quickshell/end4-pC/services/NightSchedule.qml": "f34ae88718c92661dcb0b82d2638d65886d015befd1118d926c36008fbc771e5",
     ".config/quickshell/end4-pC/services/NotificationRules.qml": "00e9b2030ad6adaeab46bc08070cd2756fb879aa7b787d9894a72a51a0f5c982",
@@ -94,7 +95,7 @@
     ".local/bin/boot-loader": "c42781f896313567bbdc18c78699594d7be283acb91546859eb96772709294ee",
     ".local/bin/custom-update": "05cb28cfd5bdc82ded6191310e0d28eba7b7da5884001934822591812ea6ad18",
     ".local/bin/display-profiles": "e03de448e2c13dc43886ddf3e735cf1bb17e97ee5cc51c34fb33cfbf31ce53e6",
-    ".local/bin/hypr-guard": "294032d3043d24a7a05861d6fdde1d030f3a1ed9e955c176fbd5b8b022734aee",
+    ".local/bin/hypr-guard": "87714dcaf852041e649c208387569af76f4b92ea23240f0d99beb2f4294ae093",
     ".local/bin/linux-wallpaper-engine": "42fad852f27ed5c452a1742d4b7053ba8cf85a6c19e1b927350f8ee4f6711813",
     ".local/bin/linux-wallpaper-engine-ux": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/phoenix": "69faa34d9056697936737b6b4aabce39a048dd93e7a72dd5b6b2f01b0d33b3cc",
@@ -191,7 +192,8 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".local/bin/linux-wallpaper-engine"
+    ".config/quickshell/end4-pC/services/HyprlandData.qml",
+    ".local/bin/hypr-guard"
   ],
   "test": false,
   "shell": "4517f78cf9e504ec351f8a0ff1f747f5d12e7683"

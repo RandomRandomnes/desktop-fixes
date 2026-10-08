@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 2.9 (2026-10-08, fix)
+- No more false "Desktop check: 1 problem" alert at startup: half-read window lists are simply asked for again
+
 ## custom 2.8 (2026-10-08, fix)
 - Housekeeping: linux-wallpaper-engine is now a small launcher instead of a second copy of the Wallpaper Engine tray-icon fix
 
