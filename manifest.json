@@ -1,28 +1,31 @@
 {
   "format": "custom-fixes",
   "line": "custom",
-  "version": 2.1,
-  "label": "2.1",
-  "kind": "fix",
+  "version": 3.0,
+  "label": "3",
+  "kind": "feature",
   "date": "2026-10-08",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Windows over a maximized window stay clickable: after clicking the maximized window, the window on top of it no longer loses the mouse (you had to click it in the dock before)"
+    "Restore points (Settings \u203a Update): one is saved before every update with your desktop settings and package versions; 'Go back to this' undoes the update (old package versions are reinstalled after you confirm with your password)",
+    "Lock screen: pressing Enter on the empty password field no longer counts as a wrong password (three of those locked the account for 10 minutes, even for the right password); a lockout now says how long to wait",
+    "Your own login commands: put them in ~/.config/hypr/custom/scripts/autostart-user.sh and they run at every login (never replaced by updates)"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "2600132bee536d07e889e7b658fb05c9d6290800606990c89bc7af786a110c40",
+  "payloadSha256": "106262a8fe0e52d493e021d8ffecb316238b395284afcd34e5611eeb2b3f7197",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
     ".config/hypr/custom/execs.lua": "869e5058f41818296a8b468b25d3f527ff3222aa0e2478fcacdd73194d6f4d61",
     ".config/hypr/custom/general.lua": "06d1fb865ea7a689006d0e6074778f97539fe87e52e1ad05c5d1083549e1a980",
     ".config/hypr/custom/keybinds.lua": "8ee638e94053968d19b77a80a8fdb663a107063a0d0e42cf6b24ea142bca1baf",
     ".config/hypr/custom/rules.lua": "75ade8ef784f5325d456673f33af4cf07ee655f2b1f4d30f2cf5254873914395",
-    ".config/hypr/custom/scripts/autostart.sh": "2437e81ed359e60ea12682e8cbb2d9c0fcd33619874971d926833024fba61661",
+    ".config/hypr/custom/scripts/autostart.sh": "8f31cf294dec1631a2741bb7a7ce31e67c8c707354824f66bb2c7b2cb12c4f25",
     ".config/hypr/custom/scripts/hb.sh": "e0f841a85cceed0425333d8946884b684edc76a13c35a152ef8ef41fb0206675",
     ".config/hypr/custom/scripts/reapply-shell-patches.py": "3aa5700fd1f55adc1cd8f22df5a09957eeb1401a51cbb1dea6594e4db403ede2",
     ".config/hypr/custom/variables.lua": "3859ea1ee32e82cdc61364c2d24248acf1d5a8063244f3dc96be9c39fb803337",
     ".config/quickshell/end4-pC/GlobalStates.qml": "503f323f2158ca39215762585952278d8c954c14ea80be8653ae9dc39621b68c",
     ".config/quickshell/end4-pC/modules/common/Config.qml": "592f939c3489b65e58fd435bedebbcace23294cf3cd1dd8226d0bc9493ab3c41",
+    ".config/quickshell/end4-pC/modules/common/panels/lock/LockContext.qml": "36e835ce65c3b4a6929c2438f7ec9dce12cc7a4a1523b374ae67950b2f96e1ba",
     ".config/quickshell/end4-pC/modules/ii/background/Background.qml": "ce5f82ed8f0470f15566cc8f59d2e1f3da7c89cd75e4ee8ac0bbbfe350ea0f6b",
     ".config/quickshell/end4-pC/modules/ii/background/WallpaperEngineLayer.qml": "8b1fe88143cf82d69a727324700cc906c5be4e0a27562f02ec0d382e222aae53",
     ".config/quickshell/end4-pC/modules/ii/bar/BarContent.qml": "1c6eb1192575bdf90b8d5182d8e9755585b7fff8014ce3dff8a21f17fd65c7c0",
@@ -31,6 +34,7 @@
     ".config/quickshell/end4-pC/modules/ii/bar/ResourcesPopup.qml": "d3a2ccd3b1b34e8d4e69a71367c5b237b9d02091d3f134cb93a165f7bcccf2b8",
     ".config/quickshell/end4-pC/modules/ii/bar/ResourcesPopupClassic.qml": "2a01d23b08856d5b48bae4482e45fe4b6c6e0b47cc28961f287ca5473dfc2a2f",
     ".config/quickshell/end4-pC/modules/ii/bar/UpdatesCount.qml": "3fa70db35e9924132ef9572da4d2335ef430248674123aa4ad92c7c4992573af",
+    ".config/quickshell/end4-pC/modules/ii/lock/LockSurface.qml": "847399e08a7862d67641cd16c5f353239ca55dae153afa23605b1bdaee927bed",
     ".config/quickshell/end4-pC/modules/ii/overview/AppGridWidget.qml": "dce95ae64732ff8685f5c937f7d44e1d95d511c43a392e2ae1e6b7314fc9cbb1",
     ".config/quickshell/end4-pC/modules/ii/overview/Overview.qml": "347ad208afb2aefd6dc5d55cc8efadf519625ca26de06caf3589028a302e0572",
     ".config/quickshell/end4-pC/modules/ii/sessionScreen/SessionScreen.qml": "d774e5cc53aca19c720621755800a7c1f26320ad321b46afee710540b0efd3fd",
@@ -47,7 +51,7 @@
     ".config/quickshell/end4-pC/modules/ii/settingsW11/PPrivacy.qml": "287c1be3299f9e5ba89af97c422b758756c97ab401d9812c07d2e8ae5a9a78bb",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/PSystem.qml": "d3f2d51aa95873c38f9637c1809f016d199c3e73d375458609c4086c936ceee4",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/PTime.qml": "407b92d4c7059a3fd74c7bd7622895f283f4834c4cef37dae60f2e5a54f0b7d3",
-    ".config/quickshell/end4-pC/modules/ii/settingsW11/PUpdate.qml": "d569309a3621cba168b35c3cf339afc13196042d1efbeb16f3b8f4a704952cec",
+    ".config/quickshell/end4-pC/modules/ii/settingsW11/PUpdate.qml": "ce0e3cc0d02d36b003035f154d6128b990e61e92a58907344197092e9d4e7225",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/W11Settings.qml": "f22c782fad156f6dcf7f914e95696f9918fbf4f2733187695b911781e687160a",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/WAppListEditor.qml": "28e3d23c4078b1dea50880ceb8d12725581a3cfa9b44766b7ccde8f1c886700a",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/WButton.qml": "70ec7d146222ac37363e15201c6edde249095af7c57db3bf93b40656c310b6da",
@@ -86,16 +90,17 @@
     ".config/quickshell/end4-pC/setup-wizard.qml": "ece280a81ba592b271c1b8d76e947d6e430afa7ecbd76350f029fa7225ef0ac9",
     ".local/bin/boot-loader": "c42781f896313567bbdc18c78699594d7be283acb91546859eb96772709294ee",
     ".local/bin/custom-update": "05cb28cfd5bdc82ded6191310e0d28eba7b7da5884001934822591812ea6ad18",
-    ".local/bin/hypr-guard": "26187824f61a189305bd6d9695ba4f3446d8bb1eaafe1627c33090ef830999ee",
+    ".local/bin/hypr-guard": "3cbd95aed7163b9208aff0e97653db5228b60263de1f8a0e6c8fb60b6a557ef7",
     ".local/bin/linux-wallpaper-engine": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/linux-wallpaper-engine-ux": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/phoenix": "a8eaf38f8423443bed8bd7552fc9876038fd51129f02a20da802cfef338c95ec",
     ".local/bin/phoenix-report": "95f057af0512ab3d1cee1d57300f00e6e16e50cdcfe248e9f5cd6c2615160473",
+    ".local/bin/restore-point": "3e63c0b5ba456e1a8c9ba5da313f4b598bcbe0559bd1084cb9af497a754645fd",
     ".local/bin/setup-apps": "8bf4051669286f8c263f3c79ae3e0ddc4af97d2ce2a9f7c7e0b3e8095c6431ed",
     ".local/bin/setup-features": "7088a7e0d7952b5b71907cd10bc5afe4f2d186539312cab7b7c10feab93dc418",
     ".local/bin/setup-profile": "0d341f191454e5f9ee2cab6dcf46339e958df3e31045656cb68225842ed327c1",
     ".local/bin/switch-desktop": "ffd0f514bfec732dc007cfc44c67588cb58b816f3879734b81627de28df77c7d",
-    ".local/bin/system-update": "5a946b6a60a9bb1ee6cc89bcd8daced6306a4c185bf0cf0577615a53ca93fda3",
+    ".local/bin/system-update": "e8ed206ead435aeebe6f871f70bb7bc06b601a82392e5767dcbc28062b280854",
     ".local/bin/wallpaper-engine-ctl": "5aaacc74d1cfa4143d47c2f5314d895a6c47ab97f26017926d594c87a31c8b40",
     ".local/bin/wallpaper-engine-kde": "295324c02b7559b88fd4a0c5e30119ddd473f4f46a16b883b3f7b9cb49f744a2",
     ".local/bin/window-rules": "2fd1399080d4c00e41f0fe5272aaef9d565d89960152cdf421f05ac63ff4dcea",
@@ -178,8 +183,19 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/hypr/custom/execs.lua"
+    ".config/hypr/custom/scripts/autostart.sh",
+    ".config/quickshell/end4-pC/modules/common/panels/lock/LockContext.qml",
+    ".config/quickshell/end4-pC/modules/ii/lock/LockSurface.qml",
+    ".config/quickshell/end4-pC/modules/ii/settingsW11/PUpdate.qml",
+    ".local/bin/hypr-guard",
+    ".local/bin/restore-point",
+    ".local/bin/system-update"
   ],
   "test": false,
-  "shell": "4517f78cf9e504ec351f8a0ff1f747f5d12e7683"
+  "shell": "4517f78cf9e504ec351f8a0ff1f747f5d12e7683",
+  "upgrade": {
+    "title": "Phoenix 3",
+    "summary": "Restore points: undo an update in Settings \u203a Update. Also fixes the lock screen locking you out.",
+    "details": []
+  }
 }

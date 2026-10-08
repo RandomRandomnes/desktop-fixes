@@ -21,6 +21,8 @@
   as a GitHub issue.
   *Gaming* can turn Game Mode on by itself in fullscreen games (also stopping Wallpaper Engine and picking the
   Best performance power mode) and silences notifications while you play or share your screen.
+  *Update › Restore points*: a restore point is saved before every update (settings and package versions), and
+  one click goes back to it.
 - **Setup assistant** at the first start: network, Bluetooth, time and region, keyboard, display, setup profile,
   colors, wallpaper, account, applications (with Gaming and Productivity packs), drivers and updates.
 - **Setup profiles**: one file with an appearance and a set of features, to apply or to share.

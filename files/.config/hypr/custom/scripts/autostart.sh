@@ -1,6 +1,11 @@
 #!/bin/sh
 log="$HOME/hypr-guard/autostart.log"; mkdir -p "$HOME/hypr-guard"
 echo "$(date +%T) autostart script started" > "$log"
+# Your own login commands (not part of Phoenix, never shipped or overwritten): custom/scripts/autostart-user.sh
+if [ -f "$HOME/.config/hypr/custom/scripts/autostart-user.sh" ]; then
+  echo "$(date +%T) running autostart-user.sh" >> "$log"
+  sh "$HOME/.config/hypr/custom/scripts/autostart-user.sh" >> "$log" 2>&1 &
+fi
 # Custom-feature switches (Settings › Extras, written by ~/.local/bin/setup-features). Missing = on.
 feature() { ! grep -q "^ *$1 = false" "$HOME/.config/hypr/custom/features.lua" 2>/dev/null; }
 # Wallpaper Engine is off unless switched on in Settings › Extras (missing = off)

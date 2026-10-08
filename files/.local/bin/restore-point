@@ -1,0 +1,257 @@
+#!/usr/bin/env python3
+"""Restore points (2026-10-08, ours). Made by system-update before every update; Settings › Update › Restore points.
+
+  restore-point create [--reason TEXT]    save one now (prints its id)
+  restore-point list                      JSON, newest first: id, date, reason, changes since (packages, shell, fixes)
+  restore-point restore <id> [--yes]      go back to it: desktop settings now, old package versions in a terminal
+
+A restore point holds:
+  - the installed package versions (pacman -Q)
+  - the desktop settings: ~/.config/hypr, ~/.config/illogical-impulse and the shell (~/.config/quickshell/end4-pC
+    without its git history; the shell's commit is recorded and is still in that history)
+  - the Phoenix custom version that was installed
+Restoring first saves a restore point of the current state ("Before undo"), so an undo can be undone. Then it puts the
+settings back, undoes a Phoenix custom version installed since (custom-update undo), and reinstalls the old versions
+of packages that changed from pacman's package cache (/var/cache/pacman/pkg, and yay's build cache for AUR packages)
+with `sudo pacman -U` in a terminal window, where you confirm it and type your password. Packages that were added
+since stay installed; versions no longer in the cache are listed and left as they are.
+The file system isn't snapshotted: only these files and packages go back. The last 3 restore points are kept
+(about 20 MB each) in ~/.local/state/phoenix/restore-points/.
+"""
+import datetime
+import glob
+import json
+import os
+import shlex
+import shutil
+import subprocess
+import sys
+import tempfile
+
+HOME = os.path.expanduser("~")
+# The RESTORE_POINT_* overrides exist only to test on a scratch copy; TEST also skips the guard, reload, custom undo
+# and prints the package command instead of running it.
+ROOT = os.environ.get("RESTORE_POINT_ROOT", os.path.join(HOME, ".local", "state", "phoenix", "restore-points"))
+CONFIG = os.environ.get("RESTORE_POINT_CONFIG", os.path.join(HOME, ".config"))
+TEST = os.environ.get("RESTORE_POINT_TEST") == "1"
+QS_REL = "quickshell/end4-pC"
+SETTINGS = ["hypr", "illogical-impulse", QS_REL]          # relative to ~/.config
+EXCLUDE = [f"{QS_REL}/.git", "*.bak*", "*.reapply-bak*", "hypr/custom/backups"]
+RSYNC_EXCLUDE = {"hypr": ["*.bak*", "*.reapply-bak*", "/custom/backups/"], "illogical-impulse": ["*.bak*"],
+                 QS_REL: ["/.git/", "*.bak*", "*.reapply-bak*"]}   # the same, relative to each folder
+KEEP = 3
+PKG_CACHES = ["/var/cache/pacman/pkg"]
+
+
+def run(cmd, **kw):
+    return subprocess.run(cmd, capture_output=True, text=True, **kw)
+
+
+def packages():
+    out = {}
+    for line in run(["pacman", "-Q"]).stdout.splitlines():
+        parts = line.split()
+        if len(parts) == 2:
+            out[parts[0]] = parts[1]
+    return out
+
+
+def shell_head():
+    r = run(["git", "-C", os.path.join(CONFIG, QS_REL), "rev-parse", "HEAD"])
+    return r.stdout.strip() if r.returncode == 0 else ""
+
+
+def custom_label():
+    for f in ("~/.local/state/custom-fixes/installed.json", "~/.local/share/custom-fixes/base.json"):
+        try:
+            with open(os.path.expanduser(f)) as fh:
+                return str(json.load(fh).get("label") or "")
+        except (OSError, ValueError):
+            pass
+    return ""
+
+
+def points():
+    out = []
+    if not os.path.isdir(ROOT):
+        return out
+    for name in sorted(os.listdir(ROOT), reverse=True):
+        try:
+            with open(os.path.join(ROOT, name, "meta.json")) as f:
+                m = json.load(f)
+            if os.path.isfile(os.path.join(ROOT, name, "settings.tar.zst")):
+                out.append(m)
+        except (OSError, ValueError):
+            pass
+    return out
+
+
+def create(reason, keep=None):
+    """Save a restore point; then delete the oldest beyond KEEP, never `keep` (the one being restored)."""
+    os.makedirs(ROOT, exist_ok=True)
+    now = datetime.datetime.now()
+    pid = now.strftime("%Y%m%d-%H%M%S")
+    n = 2
+    while os.path.exists(os.path.join(ROOT, pid)):   # two in the same second
+        pid = now.strftime("%Y%m%d-%H%M%S") + f"-{n}"
+        n += 1
+    d = os.path.join(ROOT, pid)
+    tmp = d + ".tmp"
+    shutil.rmtree(tmp, ignore_errors=True)
+    os.makedirs(tmp)
+    with open(os.path.join(tmp, "packages.json"), "w") as f:
+        json.dump(packages(), f)
+    args = ["tar", "--zstd", "-cf", os.path.join(tmp, "settings.tar.zst"), "-C", CONFIG]
+    args += [f"--exclude={e}" for e in EXCLUDE]
+    args += [s for s in SETTINGS if os.path.exists(os.path.join(CONFIG, s))]
+    r = run(args)
+    if r.returncode not in (0, 1):   # 1 = a file changed while reading (logs), still usable
+        shutil.rmtree(tmp, ignore_errors=True)
+        sys.exit(f"restore-point: saving the settings failed: {r.stderr.strip()}")
+    meta = {"id": pid, "date": now.isoformat(timespec="seconds"), "reason": reason or "Restore point",
+            "shell": shell_head(), "custom": custom_label(), "kernel": os.uname().release}
+    with open(os.path.join(tmp, "meta.json"), "w") as f:
+        json.dump(meta, f)
+    os.replace(tmp, d)
+    for old in sorted(n for n in os.listdir(ROOT) if not n.endswith(".tmp") and n != keep)[:-KEEP]:
+        shutil.rmtree(os.path.join(ROOT, old), ignore_errors=True)
+    return pid
+
+
+def cached_file(name, version):
+    """The package file for name-version in pacman's or yay's cache, or None."""
+    pats = [os.path.join(c, f"{name}-{version}-*.pkg.tar.*") for c in PKG_CACHES]
+    pats.append(os.path.join(HOME, ".cache", "yay", "*", f"{name}-{version}-*.pkg.tar.*"))
+    for pat in pats:
+        for f in sorted(glob.glob(pat)):
+            if not f.endswith(".sig"):
+                # name-version-arch.pkg...: make sure "name" isn't the prefix of a longer package name
+                rest = os.path.basename(f)[len(name) + len(version) + 2:]
+                if rest.split(".pkg.tar")[0] in ("x86_64", "any"):
+                    return f
+    return None
+
+
+def changes(pid):
+    d = os.path.join(ROOT, pid)
+    with open(os.path.join(d, "packages.json")) as f:
+        then = json.load(f)
+    with open(os.path.join(d, "meta.json")) as f:
+        meta = json.load(f)
+    now = packages()
+    changed, missing = [], []
+    for name, ver in sorted(then.items()):
+        if now.get(name) != ver:
+            item = {"name": name, "from": now.get(name, ""), "to": ver}
+            (changed if cached_file(name, ver) else missing).append(item)
+    added = sorted(n for n in now if n not in then)
+    return {"packages": changed, "missing": missing, "added": added,
+            "shell": bool(meta.get("shell")) and meta.get("shell") != shell_head(),
+            "custom": meta.get("custom", "") != custom_label(), "customThen": meta.get("custom", "")}
+
+
+def cmd_list():
+    out = []
+    for m in points():
+        try:
+            c = changes(m["id"])
+        except (OSError, ValueError):
+            continue
+        m.update({"changedPackages": len(c["packages"]) + len(c["missing"]), "missingPackages": [p["name"] for p in c["missing"]],
+                  "reinstallPackages": len(c["packages"]), "packages": c["packages"][:50], "shellChanged": c["shell"], "customChanged": c["custom"]})
+        out.append(m)
+    print(json.dumps(out))
+
+
+def restore_settings(pid, meta):
+    d = os.path.join(ROOT, pid)
+    tmp = tempfile.mkdtemp(prefix="restore-point-")
+    try:
+        r = run(["tar", "--zstd", "-xf", os.path.join(d, "settings.tar.zst"), "-C", tmp])
+        if r.returncode != 0:
+            sys.exit(f"restore-point: reading the saved settings failed: {r.stderr.strip()}")
+        for s in SETTINGS:
+            src = os.path.join(tmp, s)
+            if not os.path.isdir(src):
+                continue
+            # --delete: files added since go away too; excluded ones (backups, the shell's git history) are left alone
+            args = ["rsync", "-a", "--delete"] + [f"--exclude={e}" for e in RSYNC_EXCLUDE.get(s, [])]
+            r = run(args + [src + "/", os.path.join(CONFIG, s) + "/"])
+            if r.returncode != 0:
+                sys.exit(f"restore-point: putting back {s} failed: {r.stderr.strip()}")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    # the shell's git state follows the restored files: same commit, index matched, files untouched
+    if meta.get("shell"):
+        run(["git", "-C", os.path.join(CONFIG, QS_REL), "reset", "-q", "--mixed", meta["shell"]])
+
+
+def cmd_restore(pid, yes):
+    d = os.path.join(ROOT, pid)
+    try:
+        with open(os.path.join(d, "meta.json")) as f:
+            meta = json.load(f)
+    except (OSError, ValueError):
+        sys.exit(f"restore-point: no restore point {pid}")
+    c = changes(pid)
+    when = meta["date"].replace("T", " ")[:16]
+    print(f"Going back to the restore point of {when} ({meta['reason']}):")
+    print(f"  - desktop settings and shell as they were then")
+    if c["custom"] and c["customThen"]:
+        print(f"  - Phoenix {custom_label()} undone (back to {c['customThen']})")
+    if c["packages"]:
+        print(f"  - {len(c['packages'])} package(s) back to their old version")
+    if c["missing"]:
+        print(f"  - not possible (no longer in the package cache): " + ", ".join(p["name"] for p in c["missing"]))
+    if not yes:
+        if input("Continue? [y/N] ").strip().lower() not in ("y", "yes"):
+            print("Nothing changed.")
+            return 1
+    before = create("Before undo", keep=pid)
+    print(f"Saved the current state first (restore point {before}).")
+    if c["custom"] and c["customThen"] and not TEST:
+        subprocess.run([os.path.join(HOME, ".local", "bin", "custom-update"), "undo"])
+    restore_settings(pid, meta)
+    print("Desktop settings put back.")
+    hg = os.path.join(HOME, ".local", "bin", "hypr-guard")
+    if os.access(hg, os.X_OK) and not TEST:   # the restored files become the known-good state, so the guard doesn't "fix" them
+        run([hg, "snapshot", "--force"])
+    if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE") and not TEST:
+        run(["hyprctl", "reload"])
+    if c["packages"]:
+        files = [cached_file(p["name"], p["to"]) for p in c["packages"]]
+        script = ("echo 'Putting back the old package versions (asks for your password):'; echo; "
+                  f"sudo pacman -U {' '.join(shlex.quote(f) for f in files)}; rc=$?; echo; "
+                  "if [ $rc -eq 0 ]; then echo 'Done. Log out and back in (or restart if the kernel changed) to finish.'; "
+                  "else echo \"pacman stopped (exit code $rc): the packages were left as they are.\"; fi")
+        if TEST:
+            print("TEST: would run: sudo pacman -U " + " ".join(files))
+        elif not sys.stdin.isatty() and os.environ.get("WAYLAND_DISPLAY") and shutil.which("kitty"):
+            subprocess.Popen(["kitty", "--class", "phoenix-setup", "--title", "Restore point: packages", "bash", "-c",
+                              script + "; read -rp 'Press Enter to close.'"],
+                             start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            print("A terminal window opened for the packages: confirm there and type your password.")
+        else:
+            subprocess.run(["bash", "-c", script])
+    else:
+        print("No packages to put back.")
+    return 0
+
+
+def main():
+    a = sys.argv[1:]
+    cmd = a[0] if a else ""
+    if cmd == "create":
+        reason = a[a.index("--reason") + 1] if "--reason" in a and a.index("--reason") + 1 < len(a) else ""
+        print(create(reason))
+    elif cmd == "list":
+        cmd_list()
+    elif cmd == "restore" and len(a) >= 2:
+        return cmd_restore(a[1], "--yes" in a)
+    else:
+        sys.exit(__doc__)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -17,7 +17,7 @@ WPage {
     property string lastSync: ""
 
     function refreshInfo() { infoProc.running = true; }
-    Component.onCompleted: { refreshInfo(); Updates.refresh(); whatsNewProc.running = true; }
+    Component.onCompleted: { refreshInfo(); Updates.refresh(); whatsNewProc.running = true; rpListProc.running = true; }
 
     // "What's new": notes of the fixes installed since they were last read (custom-update whats-new)
     property var whatsNew: []
@@ -32,7 +32,7 @@ WPage {
     }
     Connections {   // Settings keeps this page loaded: look again each time Settings opens
         target: GlobalStates
-        function onSettingsOpenChanged() { if (GlobalStates.settingsOpen) whatsNewProc.running = true }
+        function onSettingsOpenChanged() { if (GlobalStates.settingsOpen) { whatsNewProc.running = true; rpListProc.running = true } }
     }
     Process {
         id: whatsNewSeenProc
@@ -75,7 +75,7 @@ date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
     Process {
         id: updateProc
         command: ["kitty", "fish", "-i", "-l", "-c", "~/.local/bin/system-update"]
-        onExited: { Updates.refresh(); page.refreshInfo(); whatsNewProc.running = true; }
+        onExited: { Updates.refresh(); page.refreshInfo(); whatsNewProc.running = true; rpListProc.running = true; }
     }
     Process {
         id: doctorProc
@@ -178,6 +178,88 @@ date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
             icon: "memory"
             title: "Kernel"
             description: `Running ${page.running}` + (page.rebootPending ? ` · ${page.installed} installed` : "")
+        }
+    }
+
+    // ── restore points (~/.local/bin/restore-point, 2026-10-08): saved by system-update before every update ──
+    property var restorePoints: []
+    property var undoPoint: null        // the restore point being confirmed
+    readonly property string rpBin: `${Quickshell.env("HOME")}/.local/bin/restore-point`
+    function rpWhen(iso) {
+        const d = new Date(iso)
+        return isNaN(d) ? iso : d.toLocaleString(Qt.locale(), "MMM d, h:mm AP")
+    }
+    function rpSummary(p) {
+        const s = []
+        if (p.changedPackages) s.push(`${p.changedPackages} package${p.changedPackages === 1 ? "" : "s"} changed`)
+        if (p.shellChanged) s.push("the shell was updated")
+        if (p.customChanged) s.push(`Phoenix changed (was ${p.custom || "none"})`)
+        return s.length ? "Since then: " + s.join(", ") : "Nothing has changed since then"
+    }
+    Process {
+        id: rpListProc
+        command: [page.rpBin, "list"]
+        stdout: StdioCollector { onStreamFinished: { try { page.restorePoints = JSON.parse(text) } catch (e) { page.restorePoints = [] } } }
+    }
+    Process {
+        id: rpCreateProc
+        command: [page.rpBin, "create", "--reason", "Made by hand"]
+        onExited: rpListProc.running = true
+    }
+    Process {
+        id: rpRestoreProc
+        onExited: { page.undoPoint = null; rpListProc.running = true; page.refreshInfo(); page.refreshFixes(); }
+    }
+
+    WSection {
+        title: "Restore points"
+        WCard {
+            icon: "settings_backup_restore"
+            title: "Undo an update"
+            description: "A restore point is saved before every update: your desktop settings and the version of every package. "
+                + "Going back puts the settings back and reinstalls the old package versions (asks for your password)."
+            WButton {
+                buttonText: rpCreateProc.running ? "Saving…" : "Create restore point"
+                enabled: !rpCreateProc.running
+                onClicked: rpCreateProc.running = true
+            }
+        }
+        Repeater {
+            model: page.undoPoint ? [] : page.restorePoints
+            WCard {
+                required property var modelData
+                icon: modelData.reason === "Before update" ? "update" : modelData.reason === "Before undo" ? "undo" : "bookmark"
+                title: `${modelData.reason} · ${page.rpWhen(modelData.date)}`
+                description: page.rpSummary(modelData)
+                WButton {
+                    buttonText: "Go back to this"
+                    enabled: modelData.changedPackages > 0 || modelData.shellChanged || modelData.customChanged
+                    onClicked: page.undoPoint = modelData
+                }
+            }
+        }
+        WCard {
+            visible: page.undoPoint !== null
+            icon: "warning"
+            title: page.undoPoint ? `Go back to ${page.rpWhen(page.undoPoint.date)}?` : ""
+            description: !page.undoPoint ? "" : [
+                "Your desktop settings and the shell go back to how they were then, including settings you changed since.",
+                page.undoPoint.reinstallPackages > 0 ? `${page.undoPoint.reinstallPackages} package(s) go back to their old version in a terminal window, where you confirm and type your password.` : "",
+                page.undoPoint.customChanged ? "The Phoenix version installed since is undone too." : "",
+                (page.undoPoint.missingPackages ?? []).length ? `Not possible for ${page.undoPoint.missingPackages.join(", ")}: no longer in the package cache.` : "",
+                "The current state is saved as a restore point first, so you can come back."
+            ].filter(x => x).join("\n")
+            WButton { buttonText: "Cancel"; onClicked: page.undoPoint = null }
+            WButton {
+                accent: true
+                buttonText: rpRestoreProc.running ? "Going back…" : "Go back"
+                enabled: !rpRestoreProc.running
+                onClicked: {
+                    rpRestoreProc.command = ["kitty", "--class", "phoenix-setup", "--title", "Go back to a restore point", "--",
+                        "bash", "-c", `"$0" restore "$1" --yes; echo; read -r -p 'Press Enter to close.'`, page.rpBin, page.undoPoint.id]
+                    rpRestoreProc.running = true
+                }
+            }
         }
     }
 

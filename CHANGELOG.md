@@ -1,5 +1,10 @@
 # Changelog
 
+## custom 3 (2026-10-08, feature)
+- Restore points (Settings › Update): one is saved before every update with your desktop settings and package versions; 'Go back to this' undoes the update (old package versions are reinstalled after you confirm with your password)
+- Lock screen: pressing Enter on the empty password field no longer counts as a wrong password (three of those locked the account for 10 minutes, even for the right password); a lockout now says how long to wait
+- Your own login commands: put them in ~/.config/hypr/custom/scripts/autostart-user.sh and they run at every login (never replaced by updates)
+
 ## custom 2.1 (2026-10-08, fix)
 - Windows over a maximized window stay clickable: after clicking the maximized window, the window on top of it no longer loses the mouse (you had to click it in the dock before)
 
