@@ -18,12 +18,24 @@ RowLayout {
     property string line1: ""
     property string line2: ""
     property bool warning: false
-    // widest text the detail lines are expected to show; reserves the space so the pill keeps a steady width
+    // widest text each detail line is expected to show: the column is exactly that wide, so the widget keeps one
+    // size when the values change (longer text is cut with "…" instead of widening it)
     property string detailTemplate: "00.00 GHz"
+    property string detailTemplate2: detailTemplate
+    // the same for the value alone (narrow screens)
+    property string valueTemplate: "100%"
     // 2 = graph + value + detail lines, 1 = graph + value, 0 = value only (picked by Resources.qml from the screen width)
     property int density: 2
     readonly property color accent: warning ? Appearance.colors.colError : contentColor
     spacing: 5
+
+    TextMetrics {
+        id: valueMetrics
+        text: root.valueTemplate
+        font.family: Appearance.font.family.main
+        font.pixelSize: Appearance.font.pixelSize.smallest
+        font.weight: Font.Bold
+    }
 
     MaterialSymbol {
         Layout.alignment: Qt.AlignVCenter
@@ -37,6 +49,8 @@ RowLayout {
     StyledText {
         visible: root.density === 0
         Layout.alignment: Qt.AlignVCenter
+        Layout.preferredWidth: valueMetrics.advanceWidth + 2
+        horizontalAlignment: Text.AlignRight
         text: root.valueText
         color: root.accent
         font.pixelSize: Appearance.font.pixelSize.smallest
@@ -83,7 +97,10 @@ RowLayout {
         id: details
         visible: root.density >= 2
         Layout.alignment: Qt.AlignVCenter
-        Layout.preferredWidth: Math.max(implicitWidth, templateMetrics.advanceWidth + 2)
+        readonly property real fixedWidth: Math.max(templateMetrics.advanceWidth, template2Metrics.advanceWidth) + 2
+        Layout.preferredWidth: fixedWidth
+        Layout.minimumWidth: fixedWidth
+        Layout.maximumWidth: fixedWidth
         spacing: -2
 
         TextMetrics {
@@ -93,8 +110,17 @@ RowLayout {
             font.pixelSize: Appearance.font.pixelSize.smallest
             font.weight: Font.DemiBold
         }
+        TextMetrics {
+            id: template2Metrics
+            text: root.detailTemplate2
+            font.family: Appearance.font.family.main
+            font.pixelSize: Appearance.font.pixelSize.smallest
+            font.weight: Font.DemiBold
+        }
 
         StyledText {
+            Layout.fillWidth: true
+            elide: Text.ElideRight
             text: root.line1
             color: root.accent
             font.pixelSize: Appearance.font.pixelSize.smallest
@@ -102,6 +128,8 @@ RowLayout {
             font.features: { "tnum": 1 }
         }
         StyledText {
+            Layout.fillWidth: true
+            elide: Text.ElideRight
             text: root.line2
             color: root.accent
             opacity: 0.8

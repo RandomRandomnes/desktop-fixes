@@ -2,16 +2,15 @@
   "format": "custom-fixes",
   "line": "custom",
   "version": 1.99,
-  "label": "1.151",
+  "label": "1.161",
   "kind": "fix",
   "date": "2026-10-08",
   "publisher": "RandomRandomnes",
   "notes": [
-    "boot-loader use: shows what changes and asks before changing how the computer starts (--yes skips it; the setup assistant confirms in its own window)",
-    "Setup assistant \u203a Startup: no more '\u2014' when the firmware starts something else first; it offers the default and explains how to restore it"
+    "Bar resource widget keeps one size: each cell's detail text has a fixed width (longer values are cut with \u2026), and the GPU cell no longer disappears for a second when a reading is missed"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "2eea78e54ee7948c6a0deefb8bfb02cc2f521ddecdb31d1778f70ecba7d0d446",
+  "payloadSha256": "70812b58028b660ba3063574fc5630a846e200701298e60e3eb65845c1340cf3",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
     ".config/hypr/custom/execs.lua": "3313893ef27e9cb0ee4ce06baed0d5cb4f2ddd7f049ae585781199be18842a96",
@@ -26,8 +25,8 @@
     ".config/quickshell/end4-pC/modules/common/Config.qml": "b14c3a9a861fa14fc6af277bb41db2047621821e27ae92e14d0042a4e39e0a9b",
     ".config/quickshell/end4-pC/modules/ii/background/Background.qml": "ce5f82ed8f0470f15566cc8f59d2e1f3da7c89cd75e4ee8ac0bbbfe350ea0f6b",
     ".config/quickshell/end4-pC/modules/ii/background/WallpaperEngineLayer.qml": "8b1fe88143cf82d69a727324700cc906c5be4e0a27562f02ec0d382e222aae53",
-    ".config/quickshell/end4-pC/modules/ii/bar/ResourceGraph.qml": "e4dfaa71c6bf89faca9293669bde98a3378f3907d3f883b0c5d1fdc45a2b4cba",
-    ".config/quickshell/end4-pC/modules/ii/bar/Resources.qml": "5c5624bf96206e99e278bda2e391b0f6cdc47324443c8accbbbe160036efef46",
+    ".config/quickshell/end4-pC/modules/ii/bar/ResourceGraph.qml": "57d6d7b216a2c96a22b6b70daf25179b05b1a856c7472c6b26e3a431a119901f",
+    ".config/quickshell/end4-pC/modules/ii/bar/Resources.qml": "1ec4f568fff79b515fa676ef2cb80cc146cda47c60c37d895f6712b580d59954",
     ".config/quickshell/end4-pC/modules/ii/bar/ResourcesPopup.qml": "3bbda4cacd183319d190340948cf56d8b55b3553717b2e93303c0815955f751e",
     ".config/quickshell/end4-pC/modules/ii/bar/ResourcesPopupClassic.qml": "2a01d23b08856d5b48bae4482e45fe4b6c6e0b47cc28961f287ca5473dfc2a2f",
     ".config/quickshell/end4-pC/modules/ii/bar/UpdatesCount.qml": "3fa70db35e9924132ef9572da4d2335ef430248674123aa4ad92c7c4992573af",
@@ -173,8 +172,8 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/quickshell/end4-pC/setup-wizard.qml",
-    ".local/bin/boot-loader"
+    ".config/quickshell/end4-pC/modules/ii/bar/ResourceGraph.qml",
+    ".config/quickshell/end4-pC/modules/ii/bar/Resources.qml"
   ],
   "test": false,
   "shell": "f22e2676c7daf69776f6d1eb423ff63118776710"

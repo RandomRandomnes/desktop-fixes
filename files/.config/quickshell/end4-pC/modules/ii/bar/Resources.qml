@@ -32,12 +32,16 @@ BarWidgetSwitcherArea {
             readonly property var cpu: SystemStats.cpu
             readonly property var gpu: SystemStats.gpu
             readonly property var mem: SystemStats.mem
+            // once a GPU was seen its cell stays, also through a missed reading (it used to vanish for a second)
+            property bool hadGpu: false
+            onGpuChanged: if (gpu) hadGpu = true
 
             ResourceGraph {
                 contentColor: root.contentColor
                 density: root.density
                 iconName: "planner_review"
-                detailTemplate: "100°C · 100 W"
+                detailTemplate: "0.00 GHz"
+                detailTemplate2: "100°C · 000 W"
                 history: SystemStats.cpuHistory
                 valueText: parent.cpu ? `${Math.round(parent.cpu.usage * 100)}%` : "--"
                 line1: parent.cpu ? `${SystemStats.ghz(parent.cpu.freqAvg)} GHz` : ""
@@ -45,11 +49,12 @@ BarWidgetSwitcherArea {
                 warning: parent.cpu !== null && (parent.cpu.usage * 100 >= Config.options.bar.resources.cpuWarningThreshold || parent.cpu.temp >= 85)
             }
             ResourceGraph {
-                visible: parent.gpu !== null && Config.options.bar.resources.alwaysShowGpu
+                visible: (parent.gpu !== null || parent.hadGpu) && Config.options.bar.resources.alwaysShowGpu
                 contentColor: root.contentColor
                 density: root.density
                 iconName: "developer_board"
-                detailTemplate: "VRAM 16.0/16G"
+                detailTemplate: "100°C · 000 W"
+                detailTemplate2: "VRAM 00.0/00G"
                 history: SystemStats.gpuHistory
                 valueText: parent.gpu ? (parent.gpu.sleeping ? "Off" : `${Math.round(parent.gpu.busy * 100)}%`) : "--"
                 // AMD, NVIDIA or Intel: temperature and power only when the card reports them
@@ -63,7 +68,9 @@ BarWidgetSwitcherArea {
                 contentColor: root.contentColor
                 density: root.density
                 iconName: "memory"
-                detailTemplate: "zram 16.0G"
+                detailTemplate: "of 000 GB"
+                detailTemplate2: "zram 00.0G"
+                valueTemplate: "000.0G"
                 history: SystemStats.memHistory
                 valueText: parent.mem ? `${SystemStats.gb(parent.mem.used)}G` : "--"
                 line1: parent.mem ? `of ${SystemStats.gb(parent.mem.total, 0)} GB` : ""
