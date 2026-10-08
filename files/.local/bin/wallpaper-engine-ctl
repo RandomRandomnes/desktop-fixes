@@ -23,7 +23,35 @@ import sys
 import time
 
 HOME = os.path.expanduser("~")
-WORKSHOP = os.path.join(HOME, ".local/share/Steam/steamapps/workshop/content/431960")
+
+
+def find_workshop():
+    """Wallpaper Engine's workshop folder in any Steam library: the usual Steam folders (also Flatpak Steam) and the
+    extra libraries listed in libraryfolders.vdf, e.g. on another drive (F26). The first that exists, else the usual."""
+    roots = [os.path.join(HOME, p) for p in (".local/share/Steam", ".steam/steam",
+                                             ".var/app/com.valvesoftware.Steam/.local/share/Steam")]
+    libs = []
+    for root in roots:
+        libs.append(root)
+        try:
+            with open(os.path.join(root, "steamapps", "libraryfolders.vdf"), encoding="utf-8", errors="replace") as f:
+                for line in f:
+                    parts = line.strip().split('"')
+                    if len(parts) >= 4 and parts[1] == "path":
+                        libs.append(parts[3].replace("\\\\", "\\"))
+        except OSError:
+            pass
+    seen = set()
+    for lib in libs:
+        w = os.path.join(lib, "steamapps", "workshop", "content", "431960")
+        real = os.path.realpath(w)
+        if real not in seen and os.path.isdir(w):
+            return w
+        seen.add(real)
+    return os.path.join(roots[0], "steamapps", "workshop", "content", "431960")
+
+
+WORKSHOP = find_workshop()
 APP_STATE = os.path.join(HOME, ".config/Linux Wallpaper Engine/active-wallpapers.json")
 CACHE = os.path.join(os.environ.get("XDG_CACHE_HOME") or os.path.join(HOME, ".cache"), "wallpaper-engine-ctl", "list.json")
 KDE_PLUGIN = "com.github.catsout.wallpaperEngineKde"
@@ -40,7 +68,11 @@ def is_kde():
 
 def scan():
     items = []
-    for wid in os.listdir(WORKSHOP):
+    try:
+        wids = os.listdir(WORKSHOP)
+    except OSError:   # no Steam / Wallpaper Engine workshop items: an empty list, not a crash (F26)
+        return items
+    for wid in wids:
         folder = os.path.join(WORKSHOP, wid)
         try:
             with open(os.path.join(folder, "project.json"), encoding="utf-8", errors="replace") as f:
@@ -111,8 +143,7 @@ def renderer_pids():
 
 def set_hyprland(wid):
     folder = os.path.join(WORKSHOP, wid)
-    with open(APP_STATE) as f:
-        state = json.load(f)
+    state = read_state()   # the app may never have run yet (F26)
     active = state.get("activeWallpapers") or {}
     if active:
         screen, entry = next(iter(active.items()))
@@ -124,10 +155,7 @@ def set_hyprland(wid):
     state["activeWallpapers"] = {screen: entry}
 
     stop_hyprland()
-    tmp = APP_STATE + ".tmp"
-    with open(tmp, "w") as f:
-        json.dump(state, f, indent="\t")
-    os.replace(tmp, APP_STATE)
+    write_state(state)
     start_hyprland()
 
 
@@ -173,6 +201,7 @@ def read_state():
 
 
 def write_state(state):
+    os.makedirs(os.path.dirname(APP_STATE), exist_ok=True)
     tmp = APP_STATE + ".tmp"
     with open(tmp, "w") as f:
         json.dump(state, f, indent="\t")

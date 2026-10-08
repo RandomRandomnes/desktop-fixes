@@ -14,7 +14,10 @@ import subprocess
 import sys
 import time
 
-INTERVAL = float(sys.argv[1]) if len(sys.argv) > 1 else 1.0
+try:   # at least 0.2 s (0 would loop without pause); not a number: the default (F20)
+    INTERVAL = max(0.2, float(sys.argv[1])) if len(sys.argv) > 1 else 1.0
+except ValueError:
+    INTERVAL = 1.0
 # rest of the system (board, RAM, drives, fans, USB) is not metered; a fixed estimate is added to CPU + GPU
 OTHER_SYSTEM_W = 20.0
 CACHE_DIR = os.path.join(os.environ.get("XDG_CACHE_HOME") or os.path.expanduser("~/.cache"), "quickshell-sysstats")
@@ -117,11 +120,23 @@ def meminfo():
 def disk(path):
     try:
         st = os.statvfs(path)
+        dev = os.stat(path).st_dev
     except OSError:
         return None
     total = st.f_blocks * st.f_frsize
     used = (st.f_blocks - st.f_bfree) * st.f_frsize
-    return {"path": path, "used": used, "total": total}
+    return {"path": path, "used": used, "total": total, "dev": dev}
+
+
+def disks():
+    """/home and /, once each: when /home is on the system partition only "/" is listed (F20)."""
+    out = []
+    for d in (disk("/home"), disk("/")):
+        if d and not any(o["dev"] == d["dev"] for o in out):
+            out.append(d)
+    if len(out) == 1:
+        out[0]["path"] = "/"
+    return [{k: v for k, v in d.items() if k != "dev"} for d in out]
 
 
 prev_cpu = cpu_times()
@@ -186,6 +201,8 @@ while True:
             "usage": cpu_usage, "freqs": freqs,
             "freqAvg": sum(freqs) / len(freqs) if freqs else 0, "freqMax": cpu_max_mhz,
             "temp": cpu_temp, "ccd": ccd_temps, "power": cpu_power,
+            # why power is missing: the counter is root-only on most kernels, or the CPU has none (F21)
+            "powerNote": "" if cpu_power is not None else ("root only" if os.path.exists(os.path.join(rapl, "energy_uj")) else "not available"),
             "load": load, "governor": governor, "driver": driver,
         },
         "gpu": gpu,
@@ -196,7 +213,7 @@ while True:
             "swapTotal": mi.get("SwapTotal", 0) * 1024, "swapUsed": (mi.get("SwapTotal", 0) - mi.get("SwapFree", 0)) * 1024,
             "zram": zram,
         },
-        "disks": [d for d in (disk("/home"), disk("/")) if d],
+        "disks": disks(),
         "nvme": [{"model": model, "temp": labelled_temps(h).get("Composite", read_int(os.path.join(h, "temp1_input")) / 1000)}
                  for h, model in nvmes],
         "net": net,

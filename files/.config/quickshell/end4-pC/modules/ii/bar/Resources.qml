@@ -41,7 +41,7 @@ BarWidgetSwitcherArea {
                 history: SystemStats.cpuHistory
                 valueText: parent.cpu ? `${Math.round(parent.cpu.usage * 100)}%` : "--"
                 line1: parent.cpu ? `${SystemStats.ghz(parent.cpu.freqAvg)} GHz` : ""
-                line2: parent.cpu ? `${Math.round(parent.cpu.temp)}°C · ${Math.round(parent.cpu.power ?? 0)} W` : ""
+                line2: parent.cpu ? `${Math.round(parent.cpu.temp)}°C` + (parent.cpu.power != null ? ` · ${Math.round(parent.cpu.power)} W` : "") : ""
                 warning: parent.cpu !== null && (parent.cpu.usage * 100 >= Config.options.bar.resources.cpuWarningThreshold || parent.cpu.temp >= 85)
             }
             ResourceGraph {

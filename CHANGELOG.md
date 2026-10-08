@@ -1,5 +1,10 @@
 # Changelog
 
+## custom 1.120 (2026-10-08, fix)
+- System stats: /home is listed once when it shares the system partition; a 0 or invalid interval no longer loops or crashes (F20)
+- CPU power: shows why it is missing ('n/a (root only)') instead of 0 W on PCs that can't read the counter (F21)
+- Wallpaper Engine: workshop wallpapers and assets are found in any Steam library (other drives, Flatpak Steam); no crash without Steam or before the app first ran; the KDE switch handles folder names with spaces or quotes (F26)
+
 ## custom 1.110 (2026-10-08, fix)
 - Settings › Update: 'Restart required' only when the running kernel was really upgraded, also with linux-lts or linux-zen (F19)
 - Setup assistant: apps picked while a terminal window is still open are confirmed and installed after it (F18)

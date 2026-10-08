@@ -17,6 +17,13 @@ Item {
     property var project: ({})
     readonly property string type: (project.type ?? "").toLowerCase()
     readonly property string fileUrl: project.file && wallpaper.dir ? `file://${wallpaper.dir}/${project.file}` : ""
+    // Wallpaper Engine's own assets sit in the same Steam library as the wallpaper (…/steamapps/workshop/content/
+    // 431960/<id> -> …/steamapps/common/wallpaper_engine/assets), also when that library is on another drive (F26)
+    readonly property string assetsDir: {
+        const i = (wallpaper.dir ?? "").indexOf("/steamapps/workshop/")
+        return i >= 0 ? `${wallpaper.dir.substring(0, i)}/steamapps/common/wallpaper_engine/assets`
+                      : `${Quickshell.env("HOME")}/.local/share/Steam/steamapps/common/wallpaper_engine/assets`
+    }
     readonly property real volume: wallpaper.silent ? 0 : Math.max(0, Math.min(100, wallpaper.volume ?? 100))
     // The app's per-wallpaper settings (--set-property, strings) typed using project.json general.properties,
     // as the scene renderer's override JSON {name: value}. Empty string = project defaults.
@@ -59,7 +66,7 @@ Item {
         id: sceneComponent
         SceneViewer {
             id: scene
-            assets: `file://${Quickshell.env("HOME")}/.local/share/Steam/steamapps/common/wallpaper_engine/assets`
+            assets: `file://${root.assetsDir}`
             source: root.fileUrl
             fps: root.wallpaper.fps || 60
             volume: root.volume / 100

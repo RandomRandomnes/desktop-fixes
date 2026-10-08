@@ -235,7 +235,7 @@ StyledPopup {
                 }
                 InfoRow {
                     label: "Package power"
-                    value: root.cpu?.power != null ? `${root.cpu.power.toFixed(1)} W` : "n/a"
+                    value: root.cpu?.power != null ? `${root.cpu.power.toFixed(1)} W` : `n/a${root.cpu?.powerNote ? ` (${root.cpu.powerNote})` : ""}`
                 }
                 InfoRow {
                     label: "Load average"
