@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 1.171 (2026-10-08, fix)
+- Resources hover popup keeps one size: fixed card widths (long values are shortened with …), fixed widths for the big values and the bottom row, and the GPU rows no longer vanish for a second when a reading is missed
+
 ## custom 1.161 (2026-10-08, fix)
 - Bar resource widget keeps one size: each cell's detail text has a fixed width (longer values are cut with …), and the GPU cell no longer disappears for a second when a reading is missed
 

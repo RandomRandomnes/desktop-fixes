@@ -13,7 +13,10 @@ StyledPopup {
     id: root
 
     readonly property var cpu: SystemStats.cpu
-    readonly property var gpu: SystemStats.gpu
+    // the last GPU reading: a single missed sample used to hide the GPU rows for a second (the popup changed height)
+    property var gpu: SystemStats.gpu
+    // fixed card width: the popup keeps one size; longer values are shortened with … inside the card
+    readonly property int cardWidth: 440
     readonly property var mem: SystemStats.mem
     readonly property var sys: SystemStats.sys
     readonly property var sample: SystemStats.sample
@@ -24,9 +27,10 @@ StyledPopup {
         required property string title
         required property string subtitle
         required property string iconName
-        Layout.fillWidth: true
         Layout.fillHeight: true
-        Layout.preferredWidth: 280
+        Layout.preferredWidth: root.cardWidth
+        Layout.minimumWidth: root.cardWidth
+        Layout.maximumWidth: root.cardWidth
         implicitHeight: cardColumn.implicitHeight + 24
         radius: Appearance.rounding.normal
         color: Appearance.colors.colSurfaceContainerLow
@@ -77,8 +81,17 @@ StyledPopup {
         id: big
         required property string value
         property string note: ""
+        property string template: "100%"   // widest value: fixed width, so the note beside it doesn't slide
         spacing: 10
+        TextMetrics {
+            id: bigMetrics
+            text: big.template
+            font.family: Appearance.font.family.main
+            font.pixelSize: Appearance.font.pixelSize.huge
+            font.weight: Font.DemiBold
+        }
         StyledText {
+            Layout.preferredWidth: bigMetrics.advanceWidth + 2
             text: big.value
             font.pixelSize: Appearance.font.pixelSize.huge
             font.weight: Font.DemiBold
@@ -145,7 +158,14 @@ StyledPopup {
         required property string label
         required property string value
         property string note: ""
+        // widest value / note: fixed widths, so the items in this row don't slide when the numbers change
+        property string valueTemplate: ""
+        property string noteTemplate: ""
         spacing: 5
+        TextMetrics { id: footValueMetrics; text: foot.valueTemplate; font.family: Appearance.font.family.main
+                      font.pixelSize: Appearance.font.pixelSize.small; font.weight: Font.DemiBold }
+        TextMetrics { id: footNoteMetrics; text: foot.noteTemplate; font.family: Appearance.font.family.main
+                      font.pixelSize: Appearance.font.pixelSize.smaller }
         MaterialSymbol {
             text: foot.iconName
             iconSize: Appearance.font.pixelSize.normal
@@ -157,6 +177,7 @@ StyledPopup {
             color: Appearance.colors.colOnSurfaceVariant
         }
         StyledText {
+            Layout.preferredWidth: foot.valueTemplate ? footValueMetrics.advanceWidth + 2 : implicitWidth
             text: foot.value
             font.pixelSize: Appearance.font.pixelSize.small
             font.weight: Font.DemiBold
@@ -165,6 +186,7 @@ StyledPopup {
         }
         StyledText {
             visible: foot.note !== ""
+            Layout.preferredWidth: foot.noteTemplate ? footNoteMetrics.advanceWidth + 2 : implicitWidth
             text: foot.note
             font.pixelSize: Appearance.font.pixelSize.smaller
             font.features: { "tnum": 1 }
@@ -175,6 +197,11 @@ StyledPopup {
 
     ColumnLayout {
         spacing: 8
+
+        Connections {   // keeps root.gpu at the last reading (see above)
+            target: SystemStats
+            function onGpuChanged() { if (SystemStats.gpu) root.gpu = SystemStats.gpu }
+        }
 
         StyledText {
             visible: !SystemStats.ready
@@ -304,6 +331,7 @@ StyledPopup {
                 subtitle: root.mem ? `${Math.pow(2, Math.ceil(Math.log2(root.mem.total / 1073741824)))} GB installed` : ""
 
                 BigValue {
+                    template: "000.0 GB"
                     value: root.mem ? `${SystemStats.gb(root.mem.used)} GB` : ""
                     note: root.mem ? `used of ${SystemStats.gb(root.mem.total)} GB` : ""
                 }
@@ -364,6 +392,7 @@ StyledPopup {
         RowLayout {
             visible: SystemStats.ready
             Layout.fillWidth: true
+            Layout.maximumWidth: root.cardWidth * 2 + 8 - 12   // never wider than the cards above
             Layout.leftMargin: 6
             Layout.rightMargin: 6
             spacing: 18
@@ -382,6 +411,8 @@ StyledPopup {
             FooterItem {
                 iconName: "bolt"
                 label: "System"
+                valueTemplate: "≈ 0000 W"
+                noteTemplate: "CPU 000 + GPU 000 + ~00 rest"
                 value: root.sys ? `≈ ${Math.round(root.sys.powerEstimate)} W` : ""
                 note: root.sys ? `CPU ${Math.round(root.cpu?.power ?? 0)} + GPU ${Math.round(root.gpu?.power ?? 0)} + ~${Math.round(root.sys.powerOther)} rest` : ""
             }
@@ -389,6 +420,7 @@ StyledPopup {
             FooterItem {
                 iconName: "swap_vert"
                 label: ""
+                valueTemplate: "↑ 000 KB/s  ↓ 000 KB/s"
                 value: root.sample ? `↑ ${SystemStats.rate(root.sample.net.tx)}  ↓ ${SystemStats.rate(root.sample.net.rx)}` : ""
             }
         }
