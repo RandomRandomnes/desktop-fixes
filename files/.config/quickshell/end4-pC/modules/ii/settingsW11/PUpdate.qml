@@ -21,8 +21,11 @@ WPage {
 
     Process {
         id: infoProc
+        // the running kernel's package (linux, linux-lts, linux-zen, …) and whether its modules are still there:
+        // pacman removes /usr/lib/modules/<running version> when that kernel is upgraded (F19)
         command: ["bash", "-c", `uname -r
-pacman -Q linux 2>/dev/null | awk '{print $2}'
+k=linux; for f in lts zen hardened rt; do case "$(uname -r)" in *-$f) k=linux-$f;; esac; done; pacman -Q $k 2>/dev/null | awk '{print $2}'
+[ -d "/usr/lib/modules/$(uname -r)" ] && echo current || echo pending
 grep -E '\\[ALPM\\] (upgraded|installed|removed) ' /var/log/pacman.log | tail -n 14 | tac
 echo '---'
 head -n 1 ~/hypr-guard/report.md 2>/dev/null
@@ -33,7 +36,8 @@ date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
                 const head = parts[0].split("\n");
                 page.running = head[0] ?? "";
                 page.installed = head[1] ?? "";
-                page.history = head.slice(2).filter(l => l).map(l => {
+                page.kernelState = head[2] ?? "";
+                page.history = head.slice(3).filter(l => l).map(l => {
                     const m = l.match(/^\[([^\]]+)\] \[ALPM\] (\w+) (\S+) \((.*)\)$/);
                     return m ? { date: m[1].substring(0, 16).replace("T", " "), action: m[2], pkg: m[3], ver: m[4] } : null;
                 }).filter(x => x);
@@ -44,8 +48,8 @@ date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
         }
     }
 
-    // installed kernel version looks like 7.2.7.arch1-1, uname like 7.2.7-arch1-1
-    readonly property bool rebootPending: running !== "" && installed !== "" && running.replace(/-/g, ".") !== installed.replace(/-/g, ".")
+    property string kernelState: ""
+    readonly property bool rebootPending: kernelState === "pending"
 
     Process {
         id: updateProc

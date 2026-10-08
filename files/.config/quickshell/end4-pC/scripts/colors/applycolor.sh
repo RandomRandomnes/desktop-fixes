@@ -35,13 +35,20 @@ apply_kitty() {
     echo "Template file not found for Kitty theme. Skipping that."
     return
   fi
-  # Copy template
+  # Fill in the template in a temporary file and install it only when every color was filled in: a half-filled
+  # theme ("#$term0 #") makes kitty open with "Errors parsing configuration" (F30), e.g. before the first colors exist
   mkdir -p "$STATE_DIR"/user/generated/terminal
-  cp "$SCRIPT_DIR/terminal/kitty-theme.conf" "$STATE_DIR"/user/generated/terminal/kitty-theme.conf
-  # Apply colors
+  local out="$STATE_DIR"/user/generated/terminal/kitty-theme.conf tmp
+  tmp="$(mktemp "$out.XXXXXX")" || return
+  cp "$SCRIPT_DIR/terminal/kitty-theme.conf" "$tmp"
   for i in "${!colorlist[@]}"; do
-    sed -i "s/${colorlist[$i]} #/${colorvalues[$i]#\#}/g" "$STATE_DIR"/user/generated/terminal/kitty-theme.conf
+    sed -i "s/${colorlist[$i]} #/${colorvalues[$i]#\#}/g" "$tmp"
   done
+  if grep -q '\$term' "$tmp"; then
+    rm -f "$tmp"; [ -e "$out" ] || : > "$out"   # kitty accepts an empty include
+    echo "Terminal colors aren't generated yet; kitty theme left as it is."; return
+  fi
+  chmod 644 "$tmp"; mv -f "$tmp" "$out"
 
   # Reload
   kill -SIGUSR1 $(pidof kitty)
@@ -62,6 +69,10 @@ apply_anyterm() {
   done
 
   sed -i "s/\$alpha/$term_alpha/g" "$STATE_DIR/user/generated/terminal/sequences.txt"
+  # colors not generated yet: sending the unfilled template would print junk into every open terminal (F30)
+  if grep -q '\$term' "$STATE_DIR/user/generated/terminal/sequences.txt"; then
+    rm -f "$STATE_DIR/user/generated/terminal/sequences.txt"; return
+  fi
 
   # KDE's message service (kwrited, inside kded6) holds a pty and shows whatever is written to it as a notification
   # ("Local System Message Service"); it is not a terminal, so it gets no color sequences (2026-10-04, ours)

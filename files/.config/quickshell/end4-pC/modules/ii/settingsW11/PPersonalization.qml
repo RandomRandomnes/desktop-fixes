@@ -125,7 +125,12 @@ Item {
         id: background
         WPage {
             id: bp
-            readonly property var recent: Wallpapers.wallpapers.slice(0, 12)
+            // only image files directly in the wallpaper folder: the shared folder model also lists subfolders, and
+            // lists another folder when ~/Pictures/Wallpapers doesn't exist (F17)
+            readonly property var recent: Wallpapers.wallpapers.filter(p => {
+                const ext = p.slice(p.lastIndexOf(".") + 1).toLowerCase()
+                return Wallpapers.extensions.includes(ext) && p.substring(0, p.lastIndexOf("/")) === Wallpapers.effectiveDirectory
+            }).slice(0, 12)
             Component.onCompleted: Wallpapers.load()
 
             RoundedImage {
@@ -141,6 +146,15 @@ Item {
                     description: Wallpapers.effectiveDirectory
                     WButton { buttonText: "Shuffle"; iconName: "shuffle"; onClicked: Wallpapers.randomFromCurrentFolder() }
                     WButton { buttonText: "Browse photos"; accent: true; onClicked: { GlobalStates.settingsOpen = false; GlobalStates.wallpaperSelectorOpen = true; } }
+                }
+                StyledText {
+                    visible: bp.recent.length === 0
+                    Layout.fillWidth: true
+                    Layout.topMargin: 4
+                    text: `No pictures in ${Wallpapers.effectiveDirectory} yet. Use "Browse photos" to pick one from another folder.`
+                    wrapMode: Text.Wrap
+                    font.pixelSize: Appearance.font.pixelSize.small
+                    color: Appearance.colors.colSubtext
                 }
                 GridLayout {
                     Layout.fillWidth: true

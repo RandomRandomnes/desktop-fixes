@@ -1,5 +1,11 @@
 # Changelog
 
+## custom 1.110 (2026-10-08, fix)
+- Settings › Update: 'Restart required' only when the running kernel was really upgraded, also with linux-lts or linux-zen (F19)
+- Setup assistant: apps picked while a terminal window is still open are confirmed and installed after it (F18)
+- Settings › Background › Recent images: only pictures in the wallpaper folder, no folder tiles or other folders (F17)
+- kitty no longer reports 'Errors parsing configuration' when terminal colors aren't generated yet, and open terminals get no junk text then (F30)
+
 ## custom 1.100 (2026-10-08, fix)
 - hypr-guard: snapshots, their pointer and the autostart log moved from the home folder into ~/hypr-guard (moved automatically); two snapshots in the same second no longer crash; update without an upstream branch changes nothing (F22); reapply-shell-patches.py is tracked (F29)
 - Terminal colors work without the ii folder: applycolor.sh uses its own shell folder (F24)

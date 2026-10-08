@@ -96,6 +96,7 @@ ApplicationWindow {
     property var picked: []               // ids
     property string appsStatus: ""
     property bool confirmingApps: false   // the "these apps will be installed" prompt
+    property var termQueue: []            // terminal jobs waiting for the open terminal window to close (F18)
 
     // hardware
     property string gpuText: ""
@@ -167,7 +168,7 @@ ApplicationWindow {
             applyProc.running = true
             return
         }
-        if (root.cur.id === "apps" && root.picked.length > 0 && !termProc.running) {
+        if (root.cur.id === "apps" && root.picked.length > 0) {   // also while a terminal is open: it queues (F18)
             root.confirmingApps = true
             return
         }
@@ -178,8 +179,11 @@ ApplicationWindow {
     }
     function installPicked() {
         root.confirmingApps = false
-        root.appsStatus = "Installation in progress in the terminal window…"
-        root.terminal([`${root.bin}/setup-apps`, "install", ...root.picked], "Installing applications")
+        const ids = root.picked
+        root.picked = []   // handed over; picking more later queues another installation
+        root.appsStatus = termProc.running ? "Waiting: the installation starts when the open terminal window is closed."
+                                           : "Installation in progress in the terminal window…"
+        root.terminal([`${root.bin}/setup-apps`, "install", ...ids], "Installing applications")
         root.go(root.step + 1)
     }
     function appById(id) { return root.catalog.apps.find(a => a.id === id) || { id: id, name: id, icon: "apps" } }
@@ -197,6 +201,10 @@ ApplicationWindow {
         root.picked = p
     }
     function terminal(args, title) {
+        if (termProc.running) {   // one terminal at a time; starting a running Process again would drop the job
+            root.termQueue = root.termQueue.concat([{ args: args, title: title }])
+            return
+        }
         termProc.command = ["kitty", "--title", title, "--", ...args]
         termProc.running = true
     }
@@ -265,6 +273,12 @@ ApplicationWindow {
             root.sysStatus = root.sysStatus.endsWith("…") ? "Completed." : root.sysStatus
             installedProc.running = true
             bootProc.running = true
+            if (root.termQueue.length > 0) {
+                const job = root.termQueue[0]
+                root.termQueue = root.termQueue.slice(1)
+                if (job.title === "Installing applications") root.appsStatus = "Installation in progress in the terminal window…"
+                root.terminal(job.args, job.title)
+            }
         }
     }
     Process {
@@ -654,8 +668,7 @@ ApplicationWindow {
                 WCard {
                     icon: "download"
                     title: root.picked.length === 0 ? "No applications selected" : `${root.picked.length} application${root.picked.length === 1 ? "" : "s"} selected`
-                    description: termProc.running ? root.appsStatus
-                        : root.picked.length === 0 ? (root.appsStatus || "Selected applications are installed when Next is pressed")
+                    description: root.picked.length === 0 ? (root.appsStatus || "Selected applications are installed when Next is pressed")
                         : root.picked.map(id => root.appById(id).name).join(", ") + ". Installation starts when Next is pressed"
                 }
             }
