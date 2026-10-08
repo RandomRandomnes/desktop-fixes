@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+"""CPU package power for the Phoenix system stats, without opening the energy counter to every program (2026-10-08).
+
+Runs as root (phoenix-power-meter.service). Reads the RAPL package energy counters, which the kernel keeps root-only
+because fast, precise readings allow a power side-channel attack (PLATYPUS, CVE-2020-8694), and publishes only a
+coarse value: the average over 1 second, rounded to 0.5 W, in /run/phoenix-power/cpu.json (readable by everyone).
+That is all the bar needs and carries no usable signal for that attack.
+Installed by `phoenix power-meter install` into /usr/local/libexec (root-owned copy).
+"""
+import glob
+import json
+import os
+import time
+
+OUT_DIR = os.environ.get("RUNTIME_DIRECTORY", "/run/phoenix-power")
+OUT = os.path.join(OUT_DIR, "cpu.json")
+INTERVAL = 1.0
+STEP = 0.5   # watts
+
+
+def read_int(path):
+    try:
+        with open(path) as f:
+            return int(f.read().strip())
+    except (OSError, ValueError):
+        return None
+
+
+def packages():
+    """Top-level domains only (intel-rapl:N = one CPU package each; intel-rapl:N:M are parts of it)."""
+    out = []
+    for d in sorted(glob.glob("/sys/class/powercap/intel-rapl:*")):
+        if d.count(":") == 1 and read_int(os.path.join(d, "energy_uj")) is not None:
+            out.append((d, read_int(os.path.join(d, "max_energy_range_uj")) or 0))
+    return out
+
+
+def write(watts):
+    tmp = OUT + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump({"cpuWatts": watts, "time": int(time.time())}, f)
+    os.chmod(tmp, 0o644)
+    os.replace(tmp, OUT)
+
+
+def main():
+    os.makedirs(OUT_DIR, exist_ok=True)
+    pkgs = packages()
+    if not pkgs:
+        write(None)   # no RAPL counter on this CPU
+        while True:
+            time.sleep(3600)
+    prev = [read_int(os.path.join(d, "energy_uj")) for d, _ in pkgs]
+    prev_t = time.monotonic()
+    while True:
+        time.sleep(INTERVAL)
+        now = [read_int(os.path.join(d, "energy_uj")) for d, _ in pkgs]
+        t = time.monotonic()
+        total = 0.0
+        for (d, rng), a, b in zip(pkgs, prev, now):
+            if a is None or b is None:
+                continue
+            delta = b - a
+            if delta < 0 and rng:
+                delta += rng
+            total += delta / 1e6
+        watts = round(total / (t - prev_t) / STEP) * STEP
+        write(watts)
+        prev, prev_t = now, t
+
+
+if __name__ == "__main__":
+    main()

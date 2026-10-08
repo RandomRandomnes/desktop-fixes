@@ -88,7 +88,13 @@ phoenix status        # installed? active? versions
 phoenix activate      # use Phoenix
 phoenix deactivate    # back to your own illogical-impulse setup
 phoenix uninstall     # remove Phoenix and restore what it replaced
+phoenix power-meter   # status of the CPU power meter (install | remove)
 ```
+
+**CPU power** in the system stats comes from a small background service, the *CPU power meter*, which the installer
+offers. The CPU's energy counter can only be read by root, on purpose: fast, precise readings allow a power
+side-channel attack. The service runs as root, sandboxed, and publishes only a 1-second average rounded to 0.5 W.
+Without it, CPU power shows "n/a".
 
 Phoenix and illogical-impulse share two things: the Hyprland folder `~/.config/hypr/custom` and the shell settings
 `~/.config/illogical-impulse/config.json`. Switching swaps these between your copy and Phoenix's copy (kept in

@@ -232,6 +232,14 @@ echo "This file is just here to confirm you've been greeted :>" > "$HOME/.local/
 touch "$HOME/.local/state/setup-wizard/pending"        # the Phoenix setup assistant opens at the next login
 # without the running session's address: only settings for the next login are written, the current desktop stays as it is
 env -u HYPRLAND_INSTANCE_SIGNATURE "$HOME/.local/bin/setup-profile" apply default --yes | sed 's/^/    /'
+# CPU power in the system stats: the energy counter is root-only, a small root service publishes a coarse reading
+if [ -e /sys/class/powercap/intel-rapl:0/energy_uj ] && [ -x "$HOME/.local/bin/phoenix" ]; then
+    info "CPU power in the system stats needs a small background service (runs as root, publishes only a rounded"
+    info "1-second reading; the CPU's energy counter itself stays protected)."
+    if ask "Install the CPU power meter (asks for your password)?" y; then
+        "$HOME/.local/bin/phoenix" power-meter install | sed 's/^/    /' || warn "not installed; CPU power shows n/a (later: phoenix power-meter install)"
+    fi
+fi
 # the files just installed from the signed release are the known-good state hypr-guard restores and compares against
 # (--force: the Phoenix shell isn't running yet, so the usual "shell is healthy" check can't pass now)
 "$HOME/.local/bin/hypr-guard" snapshot --force >/dev/null 2>&1 && info "Recovery snapshot saved (hypr-guard)." \

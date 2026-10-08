@@ -139,6 +139,20 @@ def disks():
     return [{k: v for k, v in d.items() if k != "dev"} for d in out]
 
 
+METER = "/run/phoenix-power/cpu.json"
+
+
+def meter_watts():
+    """CPU package watts from phoenix-power-meter.service (the counter itself stays root-only; F21). None if the
+    meter isn't installed, isn't running (reading older than 5 s) or the CPU has no counter."""
+    try:
+        with open(METER) as f:
+            m = json.load(f)
+        return float(m["cpuWatts"]) if m.get("cpuWatts") is not None and time.time() - m.get("time", 0) < 5 else None
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+
 prev_cpu = cpu_times()
 prev_energy = read_int(os.path.join(rapl, "energy_uj"), None)
 prev_net = net_bytes()
@@ -161,8 +175,8 @@ while True:
     ccd_temps = [v for k, v in sorted(temps.items()) if k.startswith("Tccd")]
 
     energy = read_int(os.path.join(rapl, "energy_uj"), None)
-    cpu_power = None
-    if energy is not None and prev_energy is not None:
+    cpu_power = meter_watts()   # the root power meter's coarse reading, when it runs (phoenix power-meter)
+    if cpu_power is None and energy is not None and prev_energy is not None:
         delta = energy - prev_energy
         if delta < 0 and rapl_max:
             delta += rapl_max
@@ -202,7 +216,8 @@ while True:
             "freqAvg": sum(freqs) / len(freqs) if freqs else 0, "freqMax": cpu_max_mhz,
             "temp": cpu_temp, "ccd": ccd_temps, "power": cpu_power,
             # why power is missing: the counter is root-only on most kernels, or the CPU has none (F21)
-            "powerNote": "" if cpu_power is not None else ("root only" if os.path.exists(os.path.join(rapl, "energy_uj")) else "not available"),
+            "powerNote": "" if cpu_power is not None else ("power meter not installed"
+                                                            if os.path.exists(os.path.join(rapl, "energy_uj")) else "not available"),
             "load": load, "governor": governor, "driver": driver,
         },
         "gpu": gpu,

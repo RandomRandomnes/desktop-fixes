@@ -5,6 +5,9 @@
 #   phoenix activate             use the Phoenix shell (your own illogical-impulse setup is kept aside)
 #   phoenix deactivate           back to your own illogical-impulse setup (Phoenix is kept aside)
 #   phoenix uninstall [--yes]    remove Phoenix and put back everything it replaced
+#   phoenix power-meter [install|remove|status]
+#                                CPU power for the system stats: a small root service that publishes a coarse reading
+#                                (1 s average, 0.5 W steps), so the energy counter itself stays root-only
 #
 # Phoenix and illogical-impulse share two things: the Hyprland user folder ~/.config/hypr/custom and the shell settings
 # ~/.config/illogical-impulse/config.json. Switching swaps those two between the active side and a copy kept in
@@ -93,6 +96,7 @@ cmd_uninstall() {
         read -r -p "Remove Phoenix and restore what it replaced? [y/N] " a
         [[ "$a" =~ ^[yY] ]] || { echo "Nothing changed."; return; }
     fi
+    [ -f "$METER_UNIT" ] && cmd_power_meter remove   # the root service, if it was installed (asks for the password)
     active && { swap "$STATE/phoenix-side" "$STATE/user-side"; echo no > "$STATE/active"; }
     rm -rf "$STATE/phoenix-side"
     local n_removed=0 n_restored=0 rel
@@ -117,10 +121,41 @@ cmd_uninstall() {
     rm -f "$HOME/.local/bin/phoenix"
 }
 
+# The service runs as root, so it runs root-owned copies, never the files in this home folder (any program running as
+# the user could change those).
+METER_SRC="$HOME/.local/share/phoenix/system"
+METER_BIN=/usr/local/libexec/phoenix-power-meter
+METER_UNIT=/etc/systemd/system/phoenix-power-meter.service
+cmd_power_meter() {
+    case "${1:-status}" in
+        install)
+            [ -f "$METER_SRC/phoenix-power-meter" ] && [ -f "$METER_SRC/phoenix-power-meter.service" ] \
+                || die "the power meter files are missing in $METER_SRC (update Phoenix first)"
+            echo "Installing the CPU power meter (asks for your password)."
+            sudo install -D -m 755 -o root -g root "$METER_SRC/phoenix-power-meter" "$METER_BIN" \
+                && sudo install -D -m 644 -o root -g root "$METER_SRC/phoenix-power-meter.service" "$METER_UNIT" \
+                && sudo systemctl daemon-reload && sudo systemctl enable --now phoenix-power-meter.service \
+                || die "installing the power meter failed"
+            echo "Done: CPU power shows in the system stats within a few seconds." ;;
+        remove)
+            [ -f "$METER_UNIT" ] || [ -f "$METER_BIN" ] || { echo "The power meter isn't installed."; return; }
+            sudo systemctl disable --now phoenix-power-meter.service 2>/dev/null
+            sudo rm -f "$METER_UNIT" "$METER_BIN" && sudo systemctl daemon-reload
+            echo "Power meter removed." ;;
+        status)
+            if systemctl is-active -q phoenix-power-meter.service; then
+                echo "Power meter: running ($(cat /run/phoenix-power/cpu.json 2>/dev/null))"
+            elif [ -f "$METER_UNIT" ]; then echo "Power meter: installed, not running (systemctl status phoenix-power-meter)"
+            else echo "Power meter: not installed (phoenix power-meter install)"; fi ;;
+        *) die "usage: phoenix power-meter [install|remove|status]" ;;
+    esac
+}
+
 case "${1:-status}" in
     status) cmd_status ;;
     activate) cmd_activate ;;
     deactivate) cmd_deactivate ;;
     uninstall) cmd_uninstall "${2:-}" ;;
-    *) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+    power-meter) cmd_power_meter "${2:-status}" ;;
+    *) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
 esac

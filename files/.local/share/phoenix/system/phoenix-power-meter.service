@@ -1,0 +1,25 @@
+[Unit]
+Description=Phoenix CPU power meter (coarse RAPL reading for the system stats)
+
+[Service]
+ExecStart=/usr/local/libexec/phoenix-power-meter
+Restart=on-failure
+RuntimeDirectory=phoenix-power
+RuntimeDirectoryMode=0755
+# root only to read the counter; nothing else
+CapabilityBoundingSet=
+NoNewPrivileges=yes
+PrivateNetwork=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallFilter=@system-service
+
+[Install]
+WantedBy=multi-user.target
