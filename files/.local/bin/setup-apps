@@ -15,6 +15,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 
 HOME = os.path.expanduser("~")
 CATALOG = os.path.join(HOME, ".local", "share", "setup-profiles", "apps.json")
@@ -32,7 +33,18 @@ def is_installed(app):
     return subprocess.run(["pacman", "-Qq", app["packages"][0]], capture_output=True).returncode == 0
 
 
-def pause():
+def pause(rc=1, seconds=5):
+    """After a success the window closes by itself after a few seconds; after a failure it waits, so the messages
+    can be read."""
+    if rc == 0:
+        try:
+            for left in range(seconds, 0, -1):
+                print(f"\rThis window closes in {left} s.  ", end="", flush=True)
+                time.sleep(1)
+            print()
+        except KeyboardInterrupt:
+            pass
+        return
     try:
         input("\nPress Enter to close this window.")
     except EOFError:
@@ -62,7 +74,7 @@ def install(ids):
     if flat:
         rc |= subprocess.run(["flatpak", "install", "-y", "--noninteractive", "flathub", *flat]).returncode
     print("\nInstallation completed." if rc == 0 else "\nSome applications could not be installed (see the output above).")
-    pause()
+    pause(rc)
     return rc
 
 
@@ -108,7 +120,7 @@ def run(what):
         if not pkgs and not aur:
             if not notes:
                 print("No additional graphics drivers are required (AMD and generic graphics are supported).")
-            pause()
+            pause(1 if notes else 0)   # a note about the card: keep it readable
             return 0
         print("Installing graphics drivers: " + " ".join(pkgs + aur) + "\n")
         rc = subprocess.run(["sudo", "pacman", "-S", "--needed", "--noconfirm", *pkgs]).returncode if pkgs else 0
@@ -120,13 +132,13 @@ def run(what):
                 print("No AUR helper (yay/paru): install " + ", ".join(aur) + " from the AUR.")
                 rc |= 1
         print("\nCompleted. Restart the computer to use the new driver." if rc == 0 else "\nThe driver could not be installed.")
-        pause()
+        pause(rc, 10)
         return rc
     if what == "update":
         updater = os.path.join(HOME, ".local", "bin", "system-update")
         cmd = [updater] if os.access(updater, os.X_OK) else ["sudo", "pacman", "-Syu"]
         rc = subprocess.run(cmd).returncode
-        pause()
+        pause(rc)
         return rc
     sys.exit(__doc__)
 

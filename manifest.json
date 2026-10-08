@@ -2,21 +2,23 @@
   "format": "custom-fixes",
   "line": "custom",
   "version": 1.99,
-  "label": "1.171",
+  "label": "1.181",
   "kind": "fix",
   "date": "2026-10-08",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Resources hover popup keeps one size: fixed card widths (long values are shortened with \u2026), fixed widths for the big values and the bottom row, and the GPU rows no longer vanish for a second when a reading is missed"
+    "Setup assistant without internet: steps that need it show a no-connection icon, their buttons are greyed out with a note, and Next on Apps moves on instead of starting an install that would fail (rechecked every 5 s, so connecting in the Wi-Fi step enables them)",
+    "Terminals opened by the setup assistant come up centered in front of it (they used to open behind it when a maximized window was on the workspace) and close by themselves a few seconds after a successful run; after an error they stay open",
+    "Account: Change your password opens its own window in front; the Account step says the password is the one chosen during installation"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "3aadb4e326934cc33e32fb99cac01e02259acb85ce91513a28412c7cfbba9213",
+  "payloadSha256": "5a271bc1943007f85c92d003d0fa6115dfc7842fc690e8ab720d01282c0ffc63",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
     ".config/hypr/custom/execs.lua": "3313893ef27e9cb0ee4ce06baed0d5cb4f2ddd7f049ae585781199be18842a96",
     ".config/hypr/custom/general.lua": "06d1fb865ea7a689006d0e6074778f97539fe87e52e1ad05c5d1083549e1a980",
     ".config/hypr/custom/keybinds.lua": "8ee638e94053968d19b77a80a8fdb663a107063a0d0e42cf6b24ea142bca1baf",
-    ".config/hypr/custom/rules.lua": "4dc313316f92d5fc3417a3978f75db4bd60fd4cb4b63adcddbd40792c3925b66",
+    ".config/hypr/custom/rules.lua": "93e8bf5322c080adc12261b4f836e266f3fc30024e3399282d1596282a366ec0",
     ".config/hypr/custom/scripts/autostart.sh": "2437e81ed359e60ea12682e8cbb2d9c0fcd33619874971d926833024fba61661",
     ".config/hypr/custom/scripts/hb.sh": "e0f841a85cceed0425333d8946884b684edc76a13c35a152ef8ef41fb0206675",
     ".config/hypr/custom/scripts/reapply-shell-patches.py": "3aa5700fd1f55adc1cd8f22df5a09957eeb1401a51cbb1dea6594e4db403ede2",
@@ -35,7 +37,7 @@
     ".config/quickshell/end4-pC/modules/ii/sessionScreen/SessionScreen.qml": "d774e5cc53aca19c720621755800a7c1f26320ad321b46afee710540b0efd3fd",
     ".config/quickshell/end4-pC/modules/ii/settings/pages/BarConfig.qml": "9b2676ccafc396acf57bcea784025b2f4b91f343a27ed28c4aebfbb4a24ed0ab",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/PAccessibility.qml": "a8713fddea50bc7f75127c745fcccf34044a90cd17532a8d48ee743201e682f9",
-    ".config/quickshell/end4-pC/modules/ii/settingsW11/PAccounts.qml": "8f2b6a8d030e71824cf4bf7e3c901acf4580ee09eefcf2453ee9b54887295ee6",
+    ".config/quickshell/end4-pC/modules/ii/settingsW11/PAccounts.qml": "60c97f633fec93c6a9413d53cf69d5b48b6bde5e6da08390691054663655afaa",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/PApps.qml": "31f5e42c8ecc97184a5967edc27978d733b7c9a7a2fa5695347916373b82f38d",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/PDevices.qml": "9e96b6a2ca7626cd3d3567098bb0995445b8e7c56e088f6471ceedc341453cb3",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/PExtras.qml": "557c7eae4e8810c6b6442c6abc75399dc7323ebedc4e4e3ade89849feddb1d53",
@@ -79,14 +81,14 @@
     ".config/quickshell/end4-pC/services/SystemStats.qml": "048b6f87a9dcbb2ef218710d3b2a5f8d655ed21ef1241992a25f908fca017a6c",
     ".config/quickshell/end4-pC/services/Updates.qml": "fea9f057abeae155ac89dcb02d30b2239c1fe5f92d648e63cf1d572ae6dc968a",
     ".config/quickshell/end4-pC/services/ai/ClaudeCodeApiStrategy.qml": "71a1f160c1365a9e6fb56b153f11ae5645f10579ebc175715fc142b16b007131",
-    ".config/quickshell/end4-pC/setup-wizard.qml": "2a0d812305b74af45d0c25d614cd04f0b21f26737f10575d3621688a4169fccb",
-    ".local/bin/boot-loader": "3bfc8c60ec7dacbb3ae55c708f206790976cdacc0f63a3ec05de90de27f5fcf4",
+    ".config/quickshell/end4-pC/setup-wizard.qml": "ece280a81ba592b271c1b8d76e947d6e430afa7ecbd76350f029fa7225ef0ac9",
+    ".local/bin/boot-loader": "c42781f896313567bbdc18c78699594d7be283acb91546859eb96772709294ee",
     ".local/bin/custom-update": "6496e076353054a2258ba88cf87da131138a83f39410077bb3fdf4c8295e6c85",
     ".local/bin/hypr-guard": "df9788d1d5e33637b0930b31e0542c48239f6bec1f17e51b74a0944c37b11516",
     ".local/bin/linux-wallpaper-engine": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/linux-wallpaper-engine-ux": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/phoenix": "a8eaf38f8423443bed8bd7552fc9876038fd51129f02a20da802cfef338c95ec",
-    ".local/bin/setup-apps": "a39fd228bf06ae8caade9432078a2795bae797901d62987e54a83b32e41b1ddc",
+    ".local/bin/setup-apps": "8bf4051669286f8c263f3c79ae3e0ddc4af97d2ce2a9f7c7e0b3e8095c6431ed",
     ".local/bin/setup-features": "7088a7e0d7952b5b71907cd10bc5afe4f2d186539312cab7b7c10feab93dc418",
     ".local/bin/setup-profile": "428d6e82660d52d1d484dba4f8529c93cc60e835d5fff1237b96d67a77b0e138",
     ".local/bin/switch-desktop": "ffd0f514bfec732dc007cfc44c67588cb58b816f3879734b81627de28df77c7d",
@@ -172,7 +174,11 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/quickshell/end4-pC/modules/ii/bar/ResourcesPopup.qml"
+    ".config/hypr/custom/rules.lua",
+    ".config/quickshell/end4-pC/modules/ii/settingsW11/PAccounts.qml",
+    ".config/quickshell/end4-pC/setup-wizard.qml",
+    ".local/bin/boot-loader",
+    ".local/bin/setup-apps"
   ],
   "test": false,
   "shell": "f22e2676c7daf69776f6d1eb423ff63118776710"

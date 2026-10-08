@@ -94,7 +94,10 @@ WPage {
 
     WSection {
         title: "Account settings"
-        WLink { icon: "password"; title: "Change your password"; description: "Opens a terminal running passwd"; chevronIcon: "open_in_new"; action: () => Quickshell.execDetached(["bash", "-c", Config.options.apps.changePassword]) }
+        // its own centered terminal in front (class phoenix-setup, custom/rules.lua); the stock "kitty -1" could reuse
+        // an open kitty window, and from the setup assistant it could open behind it
+        WLink { icon: "password"; title: "Change your password"; description: "Opens a window that asks for the current password, then the new one twice"; chevronIcon: "open_in_new"
+                action: () => Quickshell.execDetached(["kitty", "--class", "phoenix-setup", "--title", "Change password", "--hold", "passwd"]) }
         WLink { icon: "key"; title: "Sign-in options"; description: "Lock screen, keyring, password requirements"; page: "privacy" }
         WLink { icon: "group"; title: "Other users"; description: "Add or manage user accounts"; chevronIcon: "open_in_new"; action: () => Quickshell.execDetached(["bash", "-c", Config.options.apps.manageUser]) }
     }

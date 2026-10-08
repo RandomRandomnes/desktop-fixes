@@ -66,7 +66,7 @@ ApplicationWindow {
           text: "Select a desktop wallpaper." },
         { id: "account",   title: "Account",           icon: "account_circle",
           heading: "User account",
-          text: "Set the profile picture and the display name." },
+          text: "Set the profile picture and the display name. Your password is the one chosen during installation; to change it, use Change your password below." },
         { id: "apps",      title: "Apps",              icon: "apps",
           heading: "Applications",
           text: "Firefox is installed by default. Select additional applications to install. Installation runs in a terminal window and requires the administrator password." },
@@ -98,6 +98,13 @@ ApplicationWindow {
     property bool confirmingApps: false   // the "these apps will be installed" prompt
     property var termQueue: []            // terminal jobs waiting for the open terminal window to close (F18)
 
+    // internet: NetworkManager's connectivity check, every 5 s while the assistant is open, so connecting in the
+    // Wi-Fi step enables the online actions right away. Steps that need it say so and don't start doomed installs.
+    // "unknown" (check switched off) or no nmcli counts as online, so nothing is blocked by mistake.
+    property bool online: true
+    readonly property var onlineSteps: ["apps", "system"]
+    readonly property string offlineNote: "No internet connection. Connect in the Wi-Fi step, or do this later in Settings."
+
     // hardware
     property string gpuText: ""
     property bool needsDriver: false
@@ -115,6 +122,7 @@ ApplicationWindow {
     ]
     readonly property string bootNote: {
         const c = root.bootChoice
+        if (!root.online && (c === "grub" || c === "refind") && c !== root.boot.current) return `${c === "grub" ? "GRUB" : "rEFInd"} is downloaded when it is installed. ` + root.offlineNote
         if (root.boot.current === "other" && c === "direct") return "The computer currently starts something else first (for example after a firmware update reset the boot order). Apply to start Arch Linux directly again."
         if (c === root.boot.current && c !== "direct") return "In use. To install a fresh copy, choose another option first, or run boot-loader in a terminal."
         if (c === "direct") return "The computer starts Arch Linux directly. Other systems, such as Windows, start from the firmware boot menu (often F8, F11 or F12 at power-on)."
@@ -169,6 +177,11 @@ ApplicationWindow {
             applyProc.running = true
             return
         }
+        if (root.cur.id === "apps" && root.picked.length > 0 && !root.online) {   // offline: keep the picks, move on
+            root.appsStatus = "Not installed: no internet connection. Come back to this step after connecting, or install them later in Settings › Apps."
+            root.go(root.step + 1)
+            return
+        }
         if (root.cur.id === "apps" && root.picked.length > 0) {   // also while a terminal is open: it queues (F18)
             root.confirmingApps = true
             return
@@ -206,11 +219,23 @@ ApplicationWindow {
             root.termQueue = root.termQueue.concat([{ args: args, title: title }])
             return
         }
-        termProc.command = ["kitty", "--title", title, "--", ...args]
+        // class phoenix-setup: a centered window in front of this assistant (custom/rules.lua "setup-terminal")
+        termProc.command = ["kitty", "--class", "phoenix-setup", "--title", title, "--", ...args]
         termProc.running = true
     }
 
     // ── processes ──
+    Process {
+        id: netProc
+        command: ["nmcli", "-t", "-f", "CONNECTIVITY", "general"]
+        stdout: StdioCollector {
+            onStreamFinished: { const c = text.trim(); root.online = c === "full" || c === "unknown" || c === "" }
+        }
+    }
+    Timer {
+        interval: 5000; running: true; repeat: true; triggeredOnStart: true
+        onTriggered: netProc.running = true
+    }
     Process {
         id: listProc
         running: true
@@ -451,7 +476,9 @@ ApplicationWindow {
                             opacity: stepButton.index <= root.step ? 1 : 0.5
                             MaterialSymbol {
                                 Layout.leftMargin: 6
-                                text: stepButton.index < root.step ? "check_circle" : stepButton.modelData.icon
+                                // offline: steps that need internet show "no connection" instead of their icon
+                                text: stepButton.index < root.step ? "check_circle"
+                                    : !root.online && root.onlineSteps.includes(stepButton.modelData.id) ? "cloud_off" : stepButton.modelData.icon
                                 fill: stepButton.index <= root.step ? 1 : 0
                                 iconSize: 20
                                 color: stepButton.index === root.step ? Appearance.colors.colPrimary : Appearance.colors.colOnLayer1
@@ -459,6 +486,7 @@ ApplicationWindow {
                             StyledText {
                                 Layout.fillWidth: true
                                 text: stepButton.modelData.title
+                                elide: Text.ElideRight
                                 font.weight: stepButton.index === root.step ? Font.DemiBold : Font.Normal
                                 color: Appearance.colors.colOnLayer1
                             }
@@ -673,6 +701,7 @@ ApplicationWindow {
                     icon: "download"
                     title: root.picked.length === 0 ? "No applications selected" : `${root.picked.length} application${root.picked.length === 1 ? "" : "s"} selected`
                     description: root.picked.length === 0 ? (root.appsStatus || "Selected applications are installed when Next is pressed")
+                        : !root.online ? root.picked.map(id => root.appById(id).name).join(", ") + ". " + root.offlineNote
                         : root.picked.map(id => root.appById(id).name).join(", ") + ". Installation starts when Next is pressed"
                 }
             }
@@ -787,11 +816,12 @@ ApplicationWindow {
                 WCard {
                     icon: "developer_board"
                     title: root.needsDriver ? "Graphics driver" : "Graphics driver: no action required"
-                    description: root.needsDriver ? "NVIDIA or Intel graphics detected. Install the driver for full performance; a restart is required afterwards."
+                    description: root.needsDriver && !root.online ? "NVIDIA or Intel graphics detected. " + root.offlineNote
+                        : root.needsDriver ? "NVIDIA or Intel graphics detected. Install the driver for full performance; a restart is required afterwards."
                         : "AMD and generic graphics are supported without additional drivers."
                     WButton {
                         visible: root.needsDriver
-                        enabled: !termProc.running
+                        enabled: !termProc.running && root.online
                         buttonText: "Install driver"
                         onClicked: {
                             root.sysStatus = "Installing the graphics driver…"
@@ -826,6 +856,7 @@ ApplicationWindow {
                     WButton {
                         enabled: !termProc.running && root.bootChoice !== root.boot.current
                             && !(root.bootChoice === "grub" && root.boot.secureBoot)
+                            && (root.online || root.bootChoice === "direct" || root.bootChoice === "systemd-boot")   // GRUB/rEFInd are downloaded
                         buttonText: "Apply"
                         onClicked: {
                             root.terminal([`${root.bin}/boot-loader`, "use", root.bootChoice, "--yes"], "Boot menu")   // confirmed here
@@ -838,10 +869,11 @@ ApplicationWindow {
                 WCard {
                     icon: "system_update_alt"
                     title: "Install all updates"
-                    description: root.sysStatus !== "" ? root.sysStatus : "Recommended after installation. A terminal window opens and requests the administrator password."
+                    description: root.sysStatus !== "" ? root.sysStatus : !root.online ? root.offlineNote
+                        : "Recommended after installation. A terminal window opens and requests the administrator password."
                     WButton {
                         accent: true
-                        enabled: !termProc.running
+                        enabled: !termProc.running && root.online
                         buttonText: "Update now"
                         onClicked: {
                             root.sysStatus = "Installing updates…"

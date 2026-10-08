@@ -1,5 +1,10 @@
 # Changelog
 
+## custom 1.181 (2026-10-08, fix)
+- Setup assistant without internet: steps that need it show a no-connection icon, their buttons are greyed out with a note, and Next on Apps moves on instead of starting an install that would fail (rechecked every 5 s, so connecting in the Wi-Fi step enables them)
+- Terminals opened by the setup assistant come up centered in front of it (they used to open behind it when a maximized window was on the workspace) and close by themselves a few seconds after a successful run; after an error they stay open
+- Account: Change your password opens its own window in front; the Account step says the password is the one chosen during installation
+
 ## custom 1.171 (2026-10-08, fix)
 - Resources hover popup keeps one size: fixed card widths (long values are shortened with …), fixed widths for the big values and the bottom row, and the GPU rows no longer vanish for a second when a reading is missed
 

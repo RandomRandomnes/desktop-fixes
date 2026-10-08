@@ -219,7 +219,15 @@ as_root() {
         | awk -v o="$(boot_order)" 'BEGIN{n=split(o,a,",")} {name[$1]=substr($0,6)} END{for(i=1;i<=n;i++) if(a[i] in name) printf "%s%s", (i>1?", ":""), name[a[i]]; print ""}')"
 }
 
-pause() { [ -t 0 ] && read -r -p $'\nPress Enter to close this window.' _ || true; }
+# after a success the terminal closes by itself after a few seconds; otherwise it waits so the messages can be read
+pause() {
+    [ -t 0 ] || return 0
+    if [ "${1:-1}" = 0 ]; then
+        local n; for n in 5 4 3 2 1; do printf '\rThis window closes in %s s.  ' "$n"; sleep 1; done; echo
+    else
+        read -r -p $'\nPress Enter to close this window.' _ || true
+    fi
+}
 
 cmd_use() {
     local want="${1:-}" name
@@ -228,7 +236,7 @@ cmd_use() {
         systemd-boot) name="systemd-boot" ;; refind) name="rEFInd" ;;
         *) echo "use: direct | grub | systemd-boot | refind"; exit 2 ;;
     esac
-    if [ "$(current)" = "$want" ] && [ "$want" = direct ]; then echo "The computer already starts $name."; pause; exit 0; fi
+    if [ "$(current)" = "$want" ] && [ "$want" = direct ]; then echo "The computer already starts $name."; pause 0; exit 0; fi
     echo "From the next restart, the computer starts with: $name."
     [ "$want" != direct ] && echo "A fresh copy is installed. Other boot options stay installed and remain available in the firmware boot menu."
     [ "$want" = systemd-boot ] && [ -n "$(windows_other_esp)" ] && \
@@ -247,7 +255,7 @@ cmd_use() {
     else sudo "$(readlink -f "$0")" __root "$want"; rc=$?; fi
     echo
     [ $rc = 0 ] && echo "Completed. The change takes effect at the next restart." || echo "The boot setup was not changed."
-    pause
+    pause $rc
     exit $rc
 }
 

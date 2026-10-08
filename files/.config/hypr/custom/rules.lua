@@ -16,6 +16,19 @@ hl.window_rule({
     center = true,
 })
 
+-- Terminals the setup assistant opens (app installs, drivers, updates, boot menu; kitty --class phoenix-setup):
+-- a centered window in front of the assistant. Without this, a maximized window on the workspace made the new
+-- terminal take over as maximized (illogical-impulse's on_focus_under_fullscreen = 2), and Phoenix's
+-- float-over-maximized fix then lifted the assistant above it.
+hl.window_rule({
+    name = "setup-terminal",
+    match = { class = "^(phoenix-setup)$" },
+    float = true,
+    center = true,
+    size = {"(monitor_w*0.50)", "(monitor_h*0.55)"},
+    fullscreen_state = "0 0",
+})
+
 -- All rules here belong to the windowsStyle feature (features-start in env.lua).
 if feature("windowsStyle") then
 
