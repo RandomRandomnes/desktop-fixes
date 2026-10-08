@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 1.8 (2026-10-08, fix)
+- Graphics drivers: only the graphics card counts (NVIDIA HDMI audio, Intel Wi-Fi or CPU parts no longer install drivers); older NVIDIA cards get the 580xx driver instead of nvidia-open, which doesn't support them (F12)
+
 ## custom 1.7 (2026-10-08, fix)
 - Windows-style windows switched off: no more 'title bar plugin isn't loaded' alert and no Hyprland config error at login (F11)
 

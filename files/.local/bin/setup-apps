@@ -5,6 +5,7 @@
   setup-apps installed            ids of catalog apps that are installed (used by setup-profile export)
   setup-apps install <id>...      install apps; run it in a terminal, it asks for your password (sudo)
   setup-apps run <command>        terminal helper: drivers | update
+  setup-apps drivers-plan [file]  which graphics drivers `run drivers` would install (file: saved `lspci -mm -n` output)
 
 The catalog is ~/.local/share/setup-profiles/apps.json (pacman / aur / flatpak). Setup profiles list app ids in
 "apps"; the wizard preselects those.
@@ -65,20 +66,59 @@ def install(ids):
     return rc
 
 
+def drivers_plan(lspci_text=None):
+    """(repo packages, AUR packages, notes) for the graphics hardware. Only display controllers (PCI class 03xx)
+    count, by vendor ID: NVIDIA HDMI audio, Intel Wi-Fi or chipset parts don't (F12)."""
+    if lspci_text is None:
+        lspci_text = subprocess.run(["lspci", "-mm", "-n"], capture_output=True, text=True).stdout
+    nvidia, intel = [], False
+    for line in lspci_text.splitlines():
+        f = [x.strip('"') for x in line.split()]
+        if len(f) < 4 or not f[1].startswith("03"):
+            continue
+        vendor, device = f[2].lower(), f[3].lower()
+        if vendor == "10de":
+            nvidia.append(int(device, 16))
+        elif vendor == "8086":
+            intel = True
+    pkgs, aur, notes = [], [], []
+    if nvidia:
+        newest = max(nvidia)
+        # NVIDIA device IDs rise with each generation: Turing (2018) starts at 0x1e00; Maxwell, Pascal and Volta are
+        # 0x1340-0x1dff (not supported by nvidia-open; the 580xx driver is their last one); Kepler and older below.
+        if newest >= 0x1E00:
+            pkgs += ["nvidia-open-dkms", "nvidia-utils", "lib32-nvidia-utils", "linux-headers"]
+        elif newest >= 0x1340:
+            pkgs += ["linux-headers"]
+            aur += ["nvidia-580xx-dkms", "nvidia-580xx-utils", "lib32-nvidia-580xx-utils"]
+            notes.append("NVIDIA Maxwell, Pascal or Volta card (for example GTX 750, 900 or 10 series): using the 580xx driver, the newest one for these cards.")
+        else:
+            notes.append("This NVIDIA card is a Kepler or older model (for example GTX 600 or most of the 700 series). No current driver supports "
+                         "it, so the built-in open-source driver (nouveau) stays in use.")
+    if intel:
+        pkgs += ["vulkan-intel", "lib32-vulkan-intel", "intel-media-driver"]
+    return pkgs, aur, notes
+
+
 def run(what):
     if what == "drivers":
-        gpus = subprocess.run(["lspci"], capture_output=True, text=True).stdout.lower()
-        pkgs = []
-        if "nvidia" in gpus:
-            pkgs += ["nvidia-open-dkms", "nvidia-utils", "lib32-nvidia-utils", "linux-headers"]
-        if "intel" in gpus and ("vga" in gpus or "display" in gpus):
-            pkgs += ["vulkan-intel", "lib32-vulkan-intel", "intel-media-driver"]
-        if not pkgs:
-            print("No additional graphics drivers are required (AMD and generic graphics are supported).")
+        pkgs, aur, notes = drivers_plan()
+        for n in notes:
+            print(n)
+        if not pkgs and not aur:
+            if not notes:
+                print("No additional graphics drivers are required (AMD and generic graphics are supported).")
             pause()
             return 0
-        print("Installing graphics drivers: " + " ".join(pkgs) + "\n")
-        rc = subprocess.run(["sudo", "pacman", "-S", "--needed", "--noconfirm", *pkgs]).returncode
+        print("Installing graphics drivers: " + " ".join(pkgs + aur) + "\n")
+        rc = subprocess.run(["sudo", "pacman", "-S", "--needed", "--noconfirm", *pkgs]).returncode if pkgs else 0
+        if aur:
+            helper = shutil.which("yay") or shutil.which("paru")
+            if helper:
+                rc |= subprocess.run([helper, "-S", "--needed", "--noconfirm", *aur]).returncode
+            else:
+                print("No AUR helper (yay/paru): install " + ", ".join(aur) + " from the AUR.")
+                rc |= 1
         print("\nCompleted. Restart the computer to use the new driver." if rc == 0 else "\nThe driver could not be installed.")
         pause()
         return rc
@@ -100,6 +140,10 @@ def main():
         print("\n".join(app["id"] for app in catalog()["apps"] if is_installed(app)))
     elif cmd == "install" and len(a) > 1:
         sys.exit(install(a[1:]))
+    elif cmd == "drivers-plan":
+        text = open(a[1]).read() if len(a) > 1 else None
+        pkgs, aur, notes = drivers_plan(text)
+        print(json.dumps({"packages": pkgs, "aur": aur, "notes": notes}))
     elif cmd == "run" and len(a) == 2:
         sys.exit(run(a[1]))
     else:
