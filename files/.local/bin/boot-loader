@@ -7,6 +7,7 @@
 #   boot-loader use grub       install the current GRUB and start it first (only with Secure Boot off)
 #   boot-loader use systemd-boot
 #   boot-loader use refind
+#   ... [--yes]                without --yes, "use" shows what changes and asks before doing it (a terminal is needed)
 #
 # "use" asks for the administrator password. Installed boot menus are not removed when switching; only the firmware
 # boot order changes, so every installed option stays available in the firmware boot menu.
@@ -233,6 +234,14 @@ cmd_use() {
     [ "$want" = systemd-boot ] && [ -n "$(windows_other_esp)" ] && \
         echo "Note: Windows is on a separate EFI partition and does not appear in the systemd-boot menu; use the firmware boot menu to start it."
     echo
+    if [ "${2:-}" != --yes ]; then   # it changes how the computer starts: confirm first
+        if [ -t 0 ]; then
+            local a; read -r -p "Continue? [y/N] " a
+            [[ "$a" =~ ^[yY] ]] || { echo "Nothing changed."; pause; exit 1; }
+        else
+            echo "Not changed: run it in a terminal to confirm, or add --yes."; exit 1
+        fi
+    fi
     local rc
     if [ "$(id -u)" = 0 ]; then ( as_root "$want" ); rc=$?
     else sudo "$(readlink -f "$0")" __root "$want"; rc=$?; fi
@@ -244,7 +253,7 @@ cmd_use() {
 
 case "${1:-status}" in
     status) cmd_status ;;
-    use) cmd_use "${2:-}" ;;
+    use) cmd_use "${2:-}" "${3:-}" ;;
     __root) [ "$(id -u)" = 0 ] || exit 1; as_root "${2:-}" ;;
-    *) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+    *) sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
 esac

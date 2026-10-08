@@ -1,5 +1,9 @@
 # Changelog
 
+## custom 1.151 (2026-10-08, fix)
+- boot-loader use: shows what changes and asks before changing how the computer starts (--yes skips it; the setup assistant confirms in its own window)
+- Setup assistant › Startup: no more '—' when the firmware starts something else first; it offers the default and explains how to restore it
+
 ## custom 1.141 (2026-10-08, fix)
 - Wallpaper Engine web wallpapers: the host program is no longer shipped compiled; Phoenix ships its source recipe (upstream commit + patch, GPL-2.0) and builds it on the PC when it is missing or stops working after a Qt update (F23)
 

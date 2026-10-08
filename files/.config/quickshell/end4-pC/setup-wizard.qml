@@ -115,6 +115,7 @@ ApplicationWindow {
     ]
     readonly property string bootNote: {
         const c = root.bootChoice
+        if (root.boot.current === "other" && c === "direct") return "The computer currently starts something else first (for example after a firmware update reset the boot order). Apply to start Arch Linux directly again."
         if (c === root.boot.current && c !== "direct") return "In use. To install a fresh copy, choose another option first, or run boot-loader in a terminal."
         if (c === "direct") return "The computer starts Arch Linux directly. Other systems, such as Windows, start from the firmware boot menu (often F8, F11 or F12 at power-on)."
         if (c === "grub") return root.boot.secureBoot ? "Not available while Secure Boot is on: the current GRUB cannot start the signed system without shim. Choose systemd-boot or rEFInd."
@@ -288,7 +289,10 @@ ApplicationWindow {
         stdout: StdioCollector {
             onStreamFinished: {
                 try { root.boot = JSON.parse(text) } catch (e) { root.boot = ({}) }
-                if (root.bootChoice === "" || root.bootChoice === "other") root.bootChoice = root.boot.current || "direct"
+                // "other": the firmware starts something boot-loader doesn't manage (e.g. after a firmware reset); the
+                // dropdown has no such option, so it offers the default (it showed "—" before)
+                if (root.bootChoice === "" || root.bootChoice === "other")
+                    root.bootChoice = root.boot.current && root.boot.current !== "other" ? root.boot.current : "direct"
             }
         }
     }
@@ -824,7 +828,7 @@ ApplicationWindow {
                             && !(root.bootChoice === "grub" && root.boot.secureBoot)
                         buttonText: "Apply"
                         onClicked: {
-                            root.terminal([`${root.bin}/boot-loader`, "use", root.bootChoice], "Boot menu")
+                            root.terminal([`${root.bin}/boot-loader`, "use", root.bootChoice, "--yes"], "Boot menu")   // confirmed here
                         }
                     }
                 }

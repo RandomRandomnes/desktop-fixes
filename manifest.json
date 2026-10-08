@@ -2,15 +2,16 @@
   "format": "custom-fixes",
   "line": "custom",
   "version": 1.99,
-  "label": "1.141",
+  "label": "1.151",
   "kind": "fix",
   "date": "2026-10-08",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Wallpaper Engine web wallpapers: the host program is no longer shipped compiled; Phoenix ships its source recipe (upstream commit + patch, GPL-2.0) and builds it on the PC when it is missing or stops working after a Qt update (F23)"
+    "boot-loader use: shows what changes and asks before changing how the computer starts (--yes skips it; the setup assistant confirms in its own window)",
+    "Setup assistant \u203a Startup: no more '\u2014' when the firmware starts something else first; it offers the default and explains how to restore it"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "b503bd5df8df25a9ad82b38eaf6f65b53542e6d7b4b240b0b734054444b5e4e2",
+  "payloadSha256": "2eea78e54ee7948c6a0deefb8bfb02cc2f521ddecdb31d1778f70ecba7d0d446",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
     ".config/hypr/custom/execs.lua": "3313893ef27e9cb0ee4ce06baed0d5cb4f2ddd7f049ae585781199be18842a96",
@@ -79,8 +80,8 @@
     ".config/quickshell/end4-pC/services/SystemStats.qml": "048b6f87a9dcbb2ef218710d3b2a5f8d655ed21ef1241992a25f908fca017a6c",
     ".config/quickshell/end4-pC/services/Updates.qml": "fea9f057abeae155ac89dcb02d30b2239c1fe5f92d648e63cf1d572ae6dc968a",
     ".config/quickshell/end4-pC/services/ai/ClaudeCodeApiStrategy.qml": "71a1f160c1365a9e6fb56b153f11ae5645f10579ebc175715fc142b16b007131",
-    ".config/quickshell/end4-pC/setup-wizard.qml": "eea25aab376713e6f47d60e22a8a3b21ed2cbe43278192acb6b14e50b40e3f45",
-    ".local/bin/boot-loader": "c84ab89d50ceef75f81c0ef7bb41d0377041779b2987a6a8c66a690965bafc62",
+    ".config/quickshell/end4-pC/setup-wizard.qml": "2a0d812305b74af45d0c25d614cd04f0b21f26737f10575d3621688a4169fccb",
+    ".local/bin/boot-loader": "3bfc8c60ec7dacbb3ae55c708f206790976cdacc0f63a3ec05de90de27f5fcf4",
     ".local/bin/custom-update": "6496e076353054a2258ba88cf87da131138a83f39410077bb3fdf4c8295e6c85",
     ".local/bin/hypr-guard": "df9788d1d5e33637b0930b31e0542c48239f6bec1f17e51b74a0944c37b11516",
     ".local/bin/linux-wallpaper-engine": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
@@ -172,9 +173,8 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".local/lib/wallpaper-engine-shell/web-host.py",
-    ".local/share/phoenix/src/wallpaper-engine-hyprland/build.sh",
-    ".local/share/phoenix/src/wallpaper-engine-hyprland/phoenix.patch"
+    ".config/quickshell/end4-pC/setup-wizard.qml",
+    ".local/bin/boot-loader"
   ],
   "test": false,
   "shell": "f22e2676c7daf69776f6d1eb423ff63118776710"
