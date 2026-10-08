@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 2.4 (2026-10-08, fix)
+- Settings opens at Phoenix's own pages again after the advanced (original) pages were used; the Settings window fits smaller screens (its back arrow was hidden on 1280×800)
+
 ## custom 2.3 (2026-10-08, fix)
 - Setup assistant: the Account step now offers the login screen (Login screen at startup); turning it on there waits for any other terminal window of the assistant
 

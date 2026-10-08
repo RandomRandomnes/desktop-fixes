@@ -1,16 +1,16 @@
 {
   "format": "custom-fixes",
   "line": "custom",
-  "version": 2.3,
-  "label": "2.3",
+  "version": 2.4,
+  "label": "2.4",
   "kind": "fix",
   "date": "2026-10-08",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Setup assistant: the Account step now offers the login screen (Login screen at startup); turning it on there waits for any other terminal window of the assistant"
+    "Settings opens at Phoenix's own pages again after the advanced (original) pages were used; the Settings window fits smaller screens (its back arrow was hidden on 1280\u00d7800)"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "d536508ba31deb377dc855a60e082820b81ff471f201f3d20c22dd45ea35a51b",
+  "payloadSha256": "c78ad0a92bbed30b6237c5b29457be2ada6ea71a369c2d09475065498162cb7f",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
     ".config/hypr/custom/execs.lua": "52502ecf7d9db8331ba91a4205ce54b5b14d3fb9217782790056a6e5b895290f",
@@ -50,7 +50,7 @@
     ".config/quickshell/end4-pC/modules/ii/settingsW11/PSystem.qml": "2ca38a819f13177f0e9a7a82f5832740ddaf9f6bbf338f9b2b237cbcf2e036e9",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/PTime.qml": "407b92d4c7059a3fd74c7bd7622895f283f4834c4cef37dae60f2e5a54f0b7d3",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/PUpdate.qml": "ce0e3cc0d02d36b003035f154d6128b990e61e92a58907344197092e9d4e7225",
-    ".config/quickshell/end4-pC/modules/ii/settingsW11/W11Settings.qml": "f22c782fad156f6dcf7f914e95696f9918fbf4f2733187695b911781e687160a",
+    ".config/quickshell/end4-pC/modules/ii/settingsW11/W11Settings.qml": "5773c82acea3b8ab26964b37b876082293504f568ebc29d202c85dcaa89f5fa6",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/WAppListEditor.qml": "28e3d23c4078b1dea50880ceb8d12725581a3cfa9b44766b7ccde8f1c886700a",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/WButton.qml": "70ec7d146222ac37363e15201c6edde249095af7c57db3bf93b40656c310b6da",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/WCard.qml": "de2c6d8e49cdb7c3da4228cbd13d66d6d8db360d686fe34257e3e55b81b59cd8",
@@ -60,7 +60,7 @@
     ".config/quickshell/end4-pC/modules/ii/settingsW11/WReport.qml": "efdd4c9f8cb4710a0abcdf8a8124cf45a1d35815c4d28f432562d0aeafbd8fe1",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/WSection.qml": "a3af906c11203ea58dcaf8096760761bb0cb793724f2c236e3a1903c74492407",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/WSlider.qml": "4245eb93a9e3d70d059e3ede346a8abbf1562b2e63c43c85746fb4e03499f994",
-    ".config/quickshell/end4-pC/modules/ii/settingsW11/WState.qml": "eaed49ec0c0c23fef0927be4f4313afcba4eed6a2267153231026232708d8b6b",
+    ".config/quickshell/end4-pC/modules/ii/settingsW11/WState.qml": "c1fd79164adb7ffef5f6b5b707caaea13f9400fa49359e90ccf370b67dbd7d5a",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/WTile.qml": "1e899fe700d11a959c5015f54d7c0cb0bb14dfc4bbe3f753830eac01892dc694",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/WToggle.qml": "c110be1a893b45578cd003911395c6f06192cbdd3e9277c6eec006625cd093be",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/WWindowRules.qml": "2ea79b63ada9fdfcb3a664bc18bd070a0cad1453766c6f8659386b5b1cf4f3f2",
@@ -190,8 +190,8 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/quickshell/end4-pC/modules/ii/settingsW11/PAccounts.qml",
-    ".config/quickshell/end4-pC/setup-wizard.qml"
+    ".config/quickshell/end4-pC/modules/ii/settingsW11/W11Settings.qml",
+    ".config/quickshell/end4-pC/modules/ii/settingsW11/WState.qml"
   ],
   "test": false,
   "shell": "4517f78cf9e504ec351f8a0ff1f747f5d12e7683"

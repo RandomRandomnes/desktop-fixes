@@ -27,8 +27,12 @@ Scope {
         visible: GlobalStates.settingsOpen
         title: "Settings"
         color: Appearance.colors.colLayer0
-        implicitWidth: 1240
-        implicitHeight: 820
+        // fits smaller screens (2026-10-08): on a 1280×800 screen the 820 px window hid its header (back arrow) under the bar
+        readonly property var mon: Hyprland.focusedMonitor
+        readonly property real monW: mon ? mon.width / (mon.scale || 1) : 1920
+        readonly property real monH: mon ? mon.height / (mon.scale || 1) : 1080
+        implicitWidth: Math.min(1240, monW - 40)
+        implicitHeight: Math.min(820, monH - 120)
 
         function hide() {
             GlobalStates.settingsOpen = false;

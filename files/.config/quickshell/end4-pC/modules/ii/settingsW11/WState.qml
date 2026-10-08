@@ -199,5 +199,10 @@ Singleton {
         function onSettingsTargetChanged() {
             if (GlobalStates.settingsTarget) root.advanced = true;
         }
+        // Closing Settings leaves the original (advanced) pages: the next open starts at Phoenix's own Settings again
+        // (2026-10-08; it used to stay in the advanced view for good)
+        function onSettingsOpenChanged() {
+            if (!GlobalStates.settingsOpen) root.advanced = false;
+        }
     }
 }
