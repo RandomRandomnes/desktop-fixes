@@ -18,7 +18,7 @@ Item {
         anchors.fill: parent
         sourceComponent: ({
             "display": display, "sound": sound, "notifications": notifications, "power": power,
-            "storage": storage, "multitasking": multitasking, "clipboard": clipboard, "about": about
+            "storage": storage, "multitasking": multitasking, "clipboard": clipboard, "about": about, "report": report
         })[WState.sub] ?? overview
     }
 
@@ -51,9 +51,12 @@ Item {
                 WLink { icon: "view_quilt"; title: "Multitasking"; description: "Window layout, gaps, workspaces, title bars"; sub: "multitasking" }
                 WLink { icon: "content_paste"; title: "Clipboard"; description: "Clipboard history"; sub: "clipboard" }
                 WLink { icon: "info"; title: "About"; description: "Device specifications, rename this PC"; sub: "about" }
+                WLink { icon: "bug_report"; title: "Report a problem"; description: "Send the Phoenix project a report with your system details"; sub: "report" }
             }
         }
     }
+
+    Component { id: report; WReport {} }
 
     // ── Display ────────────────────────────────────────────────────
     Component {
@@ -321,6 +324,7 @@ Item {
                     checked: Notifications.silent
                     onToggled: v => Notifications.silent = v
                 }
+                WLink { icon: "sports_esports"; title: "Turn on do not disturb automatically"; description: "While playing a fullscreen game or sharing your screen"; page: "gaming" }
             }
             WSection {
                 title: "Banners"
@@ -780,6 +784,7 @@ Item {
                 WLink { icon: "monitoring"; title: "Task manager"; chevronIcon: "open_in_new"; action: () => Quickshell.execDetached(["bash", "-c", Config.options.apps.taskManager]) }
                 WLink { icon: "local_fire_department"; title: "About Phoenix"; description: "Project page, updates, setup profiles"; chevronIcon: "open_in_new"; action: () => Quickshell.execDetached(["xdg-open", "https://github.com/RandomRandomnes/phoenix"]) }
                 WLink { icon: "info"; title: "About illogical-impulse"; description: "Shell version, credits, links"; action: () => { WState.go("advanced"); GlobalStates.openSettingsAt("about"); } }
+                WLink { icon: "bug_report"; title: "Report a problem"; description: "Something not working? Send a report"; sub: "report" }
             }
         }
     }

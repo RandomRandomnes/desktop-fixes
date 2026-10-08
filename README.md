@@ -15,7 +15,12 @@
 - **Taskbar and dock** from illogical-impulse, plus live **CPU / GPU / RAM graphs** with a details popup
   (AMD, NVIDIA with the proprietary driver, and Intel graphics).
 - **Settings app** (`Super` + `I`) laid out like Windows Settings: System, Bluetooth & devices, Network,
-  Personalization, Apps, Update and Extras, where every Phoenix feature has its own switch.
+  Personalization, Apps, Update and Extras, where every Phoenix feature has its own switch. *Apps › Window rules* sets
+  how an app's windows open (floating, size, position, workspace, monitor, opacity, maximized, no title bar).
+  *System › Report a problem* builds a bug report with your system details (personal data removed) and opens it
+  as a GitHub issue.
+  *Gaming* can turn Game Mode on by itself in fullscreen games (also stopping Wallpaper Engine and picking the
+  Best performance power mode) and silences notifications while you play or share your screen.
 - **Setup assistant** at the first start: network, Bluetooth, time and region, keyboard, display, setup profile,
   colors, wallpaper, account, applications (with Gaming and Productivity packs), drivers and updates.
 - **Setup profiles**: one file with an appearance and a set of features, to apply or to share.

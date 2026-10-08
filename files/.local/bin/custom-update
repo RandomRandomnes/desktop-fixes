@@ -21,6 +21,7 @@ Two kinds of fixes, two numbered release lines in one GitHub repo:
   custom-update undo                put back the files from before the last custom install
   custom-update consent yes|no      custom fixes on/off (the setup wizard and Settings › Update do this)
   custom-update test-channel on|off also see test releases
+  custom-update whats-new [--seen]  notes of the fixes installed since they were last read (JSON); --seen marks them read
 
 Releases live in the repo named in ~/.local/share/custom-fixes/source.json: a signed index (release "index":
 index.json + .sig) listing both lines, and per release manifest.json (+ .sig) and a payload tarball. Signatures are
@@ -49,6 +50,7 @@ BASE = os.path.join(SHARE, "base.json")          # version the clone was built w
 STATE = os.path.join(HOME, ".local", "state", "custom-fixes")
 INSTALLED = os.path.join(STATE, "installed.json")      # custom line
 SYSTEM = os.path.join(STATE, "system.json")            # system line: {"applied": {label: {...}}}
+WHATSNEW = os.path.join(STATE, "whats-new.json")        # notes of installed releases not read yet (Settings › Update)
 SCHEME = 2                                             # 2 = two release lines (custom-*/system-* tags)
 PUBLISHER = os.path.join(HOME, ".local", "state", "custom-fixes-publisher")
 NAMESPACE = "custom-fixes"
@@ -416,6 +418,7 @@ def install_system(src, entry):
     st["applied"][lab] = {"date": datetime.datetime.now().isoformat(timespec="seconds"), "changed": changed,
                           "kept": kept, "skipped": skipped, "customAtApply": inst.get("label") or ""}
     save(SYSTEM, st)
+    record_whats_new(src, "system", None, m)
     print(f"System fix {lab}: {len(changed)} file(s) updated." + "".join(f"\n  - {n}" for n in m.get("notes", [])))
     for rel in kept:
         print(f"  kept the locally modified ~/{rel} (the new version is saved as ~/{rel}.fixes-new)")
@@ -649,6 +652,7 @@ def install(src, label, yes, what):
         os.replace(tmp, dst)
         record[rel] = digest
         changed.append(rel)
+    prev_key = cur_key(inst)
     save(INSTALLED, {"scheme": SCHEME, "version": m["version"], "label": vlabel(m), "previous": inst["version"],
                      "previousLegacy": bool(inst.get("legacy")),
                      "previousLabel": inst.get("label") or str(inst["version"]), "date": m.get("date", ""),
@@ -659,9 +663,47 @@ def install(src, label, yes, what):
     guard = os.path.join(HOME, ".local", "bin", "hypr-guard")
     if changed and os.access(guard, os.X_OK):
         subprocess.run([guard, "snapshot", "--force"], capture_output=True)   # the fixes are the new known-good state
+    record_whats_new(src, "custom", prev_key, m)
     print(f"Installed version {vlabel(m)}: {len(changed)} file(s) updated.")
     for rel in kept:
         print(f"  kept the locally modified ~/{rel} (the new version is saved as ~/{rel}.fixes-new)")
+    return 0
+
+
+def record_whats_new(src, line, prev_key, m):
+    """After an install: keep the notes of every release of this line from the previous version up to the installed
+    one (an update can skip several versions), added to what is still unread, and announce it."""
+    try:
+        rels = [r for r in line_index(src, line) if prev_key is None or prev_key < vkey(r) <= vkey(m)]
+    except Exception:
+        rels = []
+    if prev_key is None or not rels:
+        rels = [m]
+    items = [{"line": line, "label": vlabel(r), "date": r.get("date", ""), "notes": list(r.get("notes", []))}
+             for r in sorted(rels, key=vkey) if r.get("notes")]
+    if not items:
+        return
+    data = load(WHATSNEW, {})
+    old = data.get("items", []) if not data.get("seen", True) else []
+    have = {(i["line"], i["label"]) for i in old}
+    data = {"seen": False, "items": (old + [i for i in items if (i["line"], i["label"]) not in have])[-30:]}
+    save(WHATSNEW, data)
+    name = "Phoenix updated" if line == "custom" else "System fix installed"
+    first = items[-1]["notes"][0]
+    body = (first if len(first) <= 140 else first[:137] + "…") + "\nSettings › Update shows what's new."
+    try:
+        subprocess.run(["notify-send", "-a", "Phoenix", "-i", "system-software-update",
+                        f"{name}: {vlabel(m)}", body], capture_output=True, timeout=5)
+    except (OSError, subprocess.SubprocessError):
+        pass
+
+
+def cmd_whats_new(mark_seen):
+    data = load(WHATSNEW, {"seen": True, "items": []})
+    if mark_seen and not data.get("seen", True):
+        data["seen"] = True
+        save(WHATSNEW, data)
+    print(json.dumps({"unread": not data.get("seen", True), "items": data.get("items", [])}))
     return 0
 
 
@@ -817,6 +859,8 @@ def main():
     elif cmd == "consent" and len(a) == 2 and a[1] in ("yes", "no"):
         set_extra("customFixes", a[1] == "yes")
         print(f"Custom fixes: {'enabled' if a[1] == 'yes' else 'disabled'}")
+    elif cmd == "whats-new":
+        sys.exit(cmd_whats_new("--seen" in a))
     elif cmd == "test-channel" and len(a) == 2 and a[1] in ("on", "off"):
         set_extra("customFixesTest", a[1] == "on")
         print(f"Test releases: {a[1]}")

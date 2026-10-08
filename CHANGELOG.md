@@ -1,5 +1,12 @@
 # Changelog
 
+## custom 2 (2026-10-08, feature)
+- Window rules (Settings › Apps › Window rules): choose how an app's windows open: floating, size, position, workspace, monitor, opacity, maximized or fullscreen, no title bar
+- What's new: after an update a notification and Settings › Update show what changed
+- Report a problem (Settings › System): builds a bug report with your system details, personal data removed, and opens it as a GitHub issue
+- Game Mode (Settings › Gaming) can turn on by itself in fullscreen games, and also stops Wallpaper Engine and picks the Best performance power mode
+- Do not disturb while playing a fullscreen game or sharing your screen (on by default, can be switched off in Settings › Gaming)
+
 ## custom 1.191 (2026-10-08, fix)
 - Other hardware: CPU temperature also from the zenpower driver and thermal zones (laptops, VMs), shown as n/a instead of 0 °C when there is no sensor; correct core count on multi-CPU systems; tidy Intel CPU names; no '0.00 GHz' maximum where the clock isn't reported
 - Laptops: the Default profile shows the battery on the taskbar; PCs without a laptop battery hide it

@@ -1,0 +1,213 @@
+#!/usr/bin/env python3
+"""Window rules you make yourself (2026-10-08, ours). Used by Settings › Apps › Window rules.
+
+  window-rules list             your rules (JSON)
+  window-rules windows          open windows to pick from (JSON: class, title, app name)
+  window-rules save             replace your rules with the JSON list on stdin, then apply
+  window-rules apply            rewrite the Hyprland rules from the saved list and reload Hyprland
+
+Your rules are kept in ~/.config/hypr/custom/window-rules.json and written as Hyprland rules to
+~/.config/hypr/custom/user-rules.lua, which custom/rules.lua loads last (your rules win over Phoenix's own).
+Phoenix updates never ship or overwrite these two files, and setup profiles don't include them.
+save/apply print {"ok": true|false, "errors": [...]}: Hyprland's own messages if a rule was rejected.
+
+A rule: {"id", "enabled", "app" (shown name), "matchBy": "class"|"title", "match" (exact app class, or text the
+title contains), "float", "center", "position" ("top-left"|"top-right"|"bottom-left"|"bottom-right"),
+"width"/"height" (percent of the monitor), "workspace", "silent", "monitor", "opacity" (0.1-1), "pin",
+"fullscreen", "maximize", "noTitleBar"}. Unset or false options are left alone.
+"""
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+import uuid
+
+HOME = os.path.expanduser("~")
+HC = os.path.join(HOME, ".config", "hypr", "custom")
+DATA = os.path.join(HC, "window-rules.json")
+OUT = os.path.join(HC, "user-rules.lua")
+
+# corners, as fractions of the monitor with a small margin (the bar is at the top). The move is computed from the
+# size this rule sets: Hyprland evaluates it before the size rule applies, so window_w would be the old size.
+POSITIONS = {"top-left": (0.02, 0.06, False, False), "top-right": (0.98, 0.06, True, False),
+             "bottom-left": (0.02, 0.96, False, True), "bottom-right": (0.98, 0.96, True, True)}
+
+
+def hyprctl(*args):
+    try:
+        return subprocess.run(["hyprctl", *args], capture_output=True, text=True, timeout=10).stdout
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
+def lua_str(s):
+    s = str(s).replace("\\", "\\\\").replace('"', '\\"').replace("\n", " ").replace("\r", " ")
+    return '"' + s + '"'
+
+
+def load():
+    try:
+        with open(DATA) as f:
+            rules = json.load(f)
+        return rules if isinstance(rules, list) else []
+    except (OSError, ValueError):
+        return []
+
+
+def clean(r):
+    """Keep only known options with sane values; a rule without a match is dropped."""
+    if not isinstance(r, dict) or not str(r.get("match", "")).strip():
+        return None
+    rid = str(r.get("id") or "")
+    out = {"id": rid if re.fullmatch(r"[a-z0-9]{6,32}", rid) else uuid.uuid4().hex[:10],
+           "enabled": r.get("enabled", True) is not False,
+           "app": str(r.get("app") or r["match"]).strip()[:80],
+           "matchBy": "title" if r.get("matchBy") == "title" else "class",
+           "match": str(r["match"]).strip()[:200]}
+    for k in ("float", "center", "silent", "pin", "fullscreen", "maximize", "noTitleBar"):
+        if r.get(k) is True:
+            out[k] = True
+    if r.get("position") in POSITIONS:
+        out["position"] = r["position"]
+    for k in ("width", "height"):
+        try:
+            v = int(r.get(k) or 0)
+        except (TypeError, ValueError):
+            v = 0
+        if 10 <= v <= 100:
+            out[k] = v
+    if out.get("position") and not (out.get("width") and out.get("height")):
+        out["width"], out["height"] = out.get("width", 50), out.get("height", 50)   # a position needs a size
+    for k in ("workspace", "monitor"):
+        v = str(r.get(k) or "").strip()
+        if v and re.fullmatch(r"[A-Za-z0-9:_.+-]{1,40}", v):
+            out[k] = v
+    try:
+        op = float(r.get("opacity") or 0)
+        if 0.1 <= op < 1:
+            out["opacity"] = round(op, 2)
+    except (TypeError, ValueError):
+        pass
+    return out
+
+
+def lua_rule(r):
+    m = re.sub(r"([.^$*+?()\[\]{}|\\])", r"\\\1", r["match"])   # only regex special characters
+    match = f"class = {lua_str('^(' + m + ')$')}" if r["matchBy"] == "class" else f"title = {lua_str('.*' + m + '.*')}"
+    props = []
+    # moving, sizing, centering and pinning only work on floating windows
+    floating = r.get("float") or r.get("pin") or r.get("position") or r.get("center") or r.get("width")
+    if floating:
+        props.append("float = true")
+    if r.get("width") and r.get("height"):
+        props.append(f'size = {{"(monitor_w*{r["width"] / 100:.2f})", "(monitor_h*{r["height"] / 100:.2f})"}}')
+    if r.get("position"):
+        fx, fy, from_right, from_bottom = POSITIONS[r["position"]]
+        if from_right:
+            fx -= r["width"] / 100
+        if from_bottom:
+            fy -= r["height"] / 100
+        props.append(f'move = {{"(monitor_w*{fx:.3f})", "(monitor_h*{fy:.3f})"}}')
+    elif r.get("center"):
+        props.append("center = true")
+    if r.get("workspace"):
+        props.append(f"workspace = {lua_str(r['workspace'] + (' silent' if r.get('silent') else ''))}")
+    if r.get("monitor"):
+        props.append(f"monitor = {lua_str(r['monitor'])}")
+    if r.get("opacity"):
+        props.append(f"opacity = {lua_str(r['opacity'])}")
+    if r.get("pin"):
+        props.append("pin = true")
+    # the window's full-screen state, always explicit: otherwise a new window takes over a maximized window's place
+    # on that workspace (illogical-impulse's on_focus_under_fullscreen = 2) and the size/position rules don't show
+    if r.get("fullscreen"):
+        props.append('fullscreen_state = "2 2"')
+    elif r.get("maximize"):
+        props.append('fullscreen_state = "1 1"')
+    elif floating:
+        props.append('fullscreen_state = "0 0"')
+    lines = []
+    name = lua_str("user-" + r["id"])
+    if props:
+        lines.append(f"rule({{ name = {name}, match = {{ {match} }}, {', '.join(props)} }})")
+    if r.get("noTitleBar"):   # only while the title bar plugin is loaded (otherwise Hyprland reports an unknown field)
+        lines.append(f'if hl.plugin and hl.plugin.hyprbars then rule({{ name = {lua_str("user-" + r["id"] + "-nobar")}, '
+                     f'match = {{ {match} }}, ["hyprbars:no_bar"] = true }}) end')
+    return lines
+
+
+def write_lua(rules):
+    body = ["-- Written by ~/.local/bin/window-rules from window-rules.json (Settings › Apps › Window rules).",
+            "-- Edit them there; changes made here are replaced the next time the rules are saved.",
+            "local function rule(t) local ok, err = pcall(hl.window_rule, t) if not ok then print(\"user window rule: \" .. tostring(err)) end end"]
+    for r in rules:
+        if r.get("enabled", True):
+            body.append(f"-- {r['app']}")
+            body.extend(lua_rule(r))
+    os.makedirs(HC, exist_ok=True)
+    tmp = OUT + ".tmp"
+    with open(tmp, "w") as f:
+        f.write("\n".join(body) + "\n")
+    os.replace(tmp, OUT)
+
+
+def apply(rules):
+    write_lua(rules)
+    if not os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+        return {"ok": True, "errors": [], "note": "applies at the next Hyprland login"}
+    hyprctl("reload")
+    time.sleep(0.3)
+    errs = [l for l in hyprctl("configerrors").splitlines() if l.strip()]
+    mine = [l for l in errs if "user-rules.lua" in l or "user window rule" in l]
+    return {"ok": not mine, "errors": mine}
+
+
+def save(rules):
+    rules = [c for c in (clean(r) for r in rules) if c]
+    os.makedirs(HC, exist_ok=True)
+    tmp = DATA + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(rules, f, indent=2)
+    os.replace(tmp, DATA)
+    return apply(rules)
+
+
+def windows():
+    try:
+        clients = json.loads(hyprctl("clients", "-j") or "[]")
+    except ValueError:
+        clients = []
+    seen, out = set(), []
+    for c in clients:
+        cls = c.get("class") or c.get("initialClass") or ""
+        if not cls or cls in seen:
+            continue
+        seen.add(cls)
+        out.append({"class": cls, "title": c.get("title", ""), "app": c.get("initialTitle") or cls})
+    return sorted(out, key=lambda w: w["class"].lower())
+
+
+def main():
+    cmd = sys.argv[1] if len(sys.argv) > 1 else "list"
+    if cmd == "list":
+        print(json.dumps(load()))
+    elif cmd == "windows":
+        print(json.dumps(windows()))
+    elif cmd == "save":
+        try:
+            rules = json.load(sys.stdin)
+        except ValueError as e:
+            print(json.dumps({"ok": False, "errors": [f"not a rule list: {e}"]}))
+            return 1
+        print(json.dumps(save(rules if isinstance(rules, list) else [])))
+    elif cmd == "apply":
+        print(json.dumps(apply(load())))
+    else:
+        sys.exit(__doc__)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

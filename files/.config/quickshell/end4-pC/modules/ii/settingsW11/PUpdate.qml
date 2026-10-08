@@ -17,7 +17,28 @@ WPage {
     property string lastSync: ""
 
     function refreshInfo() { infoProc.running = true; }
-    Component.onCompleted: { refreshInfo(); Updates.refresh(); }
+    Component.onCompleted: { refreshInfo(); Updates.refresh(); whatsNewProc.running = true; }
+
+    // "What's new": notes of the fixes installed since they were last read (custom-update whats-new)
+    property var whatsNew: []
+    Process {
+        id: whatsNewProc
+        command: ["bash", "-c", "~/.local/bin/custom-update whats-new"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try { const d = JSON.parse(text); page.whatsNew = d.unread ? d.items : [] } catch (e) { page.whatsNew = [] }
+            }
+        }
+    }
+    Connections {   // Settings keeps this page loaded: look again each time Settings opens
+        target: GlobalStates
+        function onSettingsOpenChanged() { if (GlobalStates.settingsOpen) whatsNewProc.running = true }
+    }
+    Process {
+        id: whatsNewSeenProc
+        command: ["bash", "-c", "~/.local/bin/custom-update whats-new --seen"]
+        onExited: page.whatsNew = []
+    }
 
     Process {
         id: infoProc
@@ -54,7 +75,7 @@ date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
     Process {
         id: updateProc
         command: ["kitty", "fish", "-i", "-l", "-c", "~/.local/bin/system-update"]
-        onExited: { Updates.refresh(); page.refreshInfo(); }
+        onExited: { Updates.refresh(); page.refreshInfo(); whatsNewProc.running = true; }
     }
     Process {
         id: doctorProc
@@ -116,6 +137,26 @@ date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
                 enabled: !updateProc.running && Updates.count > 0
                 onClicked: updateProc.running = true
             }
+        }
+    }
+
+    WSection {
+        visible: page.whatsNew.length > 0
+        title: "What's new"
+        Repeater {
+            model: page.whatsNew.slice().reverse()   // newest first
+            WCard {
+                required property var modelData
+                icon: modelData.line === "system" ? "build" : "new_releases"
+                title: (modelData.line === "system" ? "System fix " : "Phoenix ") + modelData.label
+                    + (modelData.date ? ` · ${modelData.date}` : "")
+                description: modelData.notes.map(n => "• " + n).join("\n")
+            }
+        }
+        RowLayout {
+            Layout.fillWidth: true
+            Item { Layout.fillWidth: true }
+            WButton { buttonText: "Got it"; accent: true; onClicked: whatsNewSeenProc.running = true }
         }
     }
 

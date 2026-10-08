@@ -84,13 +84,15 @@ MANIFEST = {
     "ResourceGraph.qml": f"{QS}/modules/ii/bar/ResourceGraph.qml",
     "SystemStats.qml": f"{QS}/services/SystemStats.qml",
     "sysstats.py": f"{QS}/scripts/sysstats/sysstats.py",
+    # Shell: automatic Game Mode + Do Not Disturb for games (2026-10-08, ours; started from GlobalStates.qml)
+    "GameAssist.qml": f"{QS}/services/GameAssist.qml",
     # Shell: bar update button runs ~/.local/bin/system-update; count includes pending shell updates
     "UpdatesCount.qml": f"{QS}/modules/ii/bar/UpdatesCount.qml",
     "Updates.qml": f"{QS}/services/Updates.qml",
     # Shell: Windows 11 style settings (whole folder is ours; IllogicalImpulseFamily.qml loads W11Settings)
     **{f"settingsW11__{n}": f"{QS}/modules/ii/settingsW11/{n}" for n in [
         "W11Settings.qml", "WState.qml", "WCard.qml", "WToggle.qml", "WCombo.qml", "WSlider.qml", "WLink.qml",
-        "WSection.qml", "WButton.qml", "WPage.qml", "WTile.qml", "WAppListEditor.qml", "defaultapps.py",
+        "WSection.qml", "WButton.qml", "WPage.qml", "WTile.qml", "WAppListEditor.qml", "WWindowRules.qml", "WReport.qml", "defaultapps.py",
         "PHome.qml", "PSystem.qml", "PDevices.qml", "PNetwork.qml", "PPersonalization.qml", "PApps.qml",
         "PAccounts.qml", "PTime.qml", "PGaming.qml", "PAccessibility.qml", "PPrivacy.qml", "PUpdate.qml", "PExtras.qml"]},
 }

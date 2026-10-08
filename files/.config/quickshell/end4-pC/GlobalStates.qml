@@ -73,6 +73,8 @@ Singleton {
     property bool backgroundVisible: true
     // Starts the custom-feature switch service (services/Extras.qml, ours) with the shell.
     readonly property bool extrasStarted: Extras.extras !== undefined
+    // Starts automatic Game Mode / Do Not Disturb for games (services/GameAssist.qml, ours).
+    readonly property bool gameAssistStarted: GameAssist.extras !== undefined
 
     // Wallpaper Engine check lives here (not in Background.qml) so it survives reloadBackground():
     // a freshly created background surface starts with the known value instead of false, which used to

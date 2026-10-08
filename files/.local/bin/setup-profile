@@ -46,7 +46,8 @@ SWITCHWALL = os.path.join(SHELL_DIR, "scripts", "colors", "switchwall.sh")
 
 # switch name -> where it lives in config.json
 FEATURES = {k: ("extras", k) for k in ["windowsStyle", "minimizeToDock", "wallpaperEngine", "resourceGraphs",
-                                       "appGrid", "powerMenuKde", "claudeCodeAi", "updatesScript", "steamTray"]}
+                                       "appGrid", "powerMenuKde", "claudeCodeAi", "updatesScript", "steamTray",
+                                       "gameModeAuto", "autoDnd"]}
 FEATURES.update({k: ("sidebar", k) for k in ["wallpaperEngineCard", "deviceBatteries", "desktopSwitch"]})
 # Never changed by a profile: what the dock and the app grid contain stays as the user arranged it.
 PROTECTED = [("dock", "pinnedApps"), ("overview", "appGridShowAll"), ("overview", "appGridApps"),

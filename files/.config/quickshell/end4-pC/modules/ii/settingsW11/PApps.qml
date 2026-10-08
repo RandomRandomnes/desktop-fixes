@@ -15,7 +15,7 @@ Item {
 
     Loader {
         anchors.fill: parent
-        sourceComponent: ({ "installed": installed, "defaults": defaults, "startup": startup })[WState.sub] ?? overview
+        sourceComponent: ({ "installed": installed, "defaults": defaults, "startup": startup, "rules": rules })[WState.sub] ?? overview
     }
 
     readonly property string helper: Quickshell.shellPath("modules/ii/settingsW11/defaultapps.py")
@@ -34,6 +34,7 @@ Item {
                 WLink { icon: "apps"; title: "Installed apps"; description: "Uninstall and open apps"; sub: "installed" }
                 WLink { icon: "app_registration"; title: "Default apps"; description: "Defaults for files and links: browser, file manager, media"; sub: "defaults" }
                 WLink { icon: "rocket_launch"; title: "Startup"; description: "Apps that start automatically when you sign in"; sub: "startup" }
+                WLink { icon: "select_window"; title: "Window rules"; description: "How an app's windows open: floating, size, position, workspace, opacity"; sub: "rules" }
             }
             WSection {
                 title: "Related"
@@ -41,6 +42,12 @@ Item {
                 WLink { icon: "terminal"; title: "Default terminal"; description: Config.options.apps.terminal; sub: "defaults" }
             }
         }
+    }
+
+    // ── Window rules (WWindowRules.qml) ────────────────────────────
+    Component {
+        id: rules
+        WWindowRules {}
     }
 
     // ── Installed apps ─────────────────────────────────────────────

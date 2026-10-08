@@ -57,3 +57,13 @@ hl.window_rule({
 })
 
 end
+
+-- Your own window rules (Settings › Apps › Window rules, ~/.local/bin/window-rules). Loaded last, so they win.
+-- A broken file never stops the rest of the configuration from loading.
+do
+    local f = HOME .. "/.config/hypr/custom/user-rules.lua"
+    if is_file_exists(f) then
+        local ok, err = pcall(dofile, f)
+        if not ok then print("user-rules.lua: " .. tostring(err)) end
+    end
+end

@@ -1,0 +1,174 @@
+#!/usr/bin/env python3
+"""Problem report for Phoenix (2026-10-08, ours). Used by Settings › System › Report a problem.
+
+  phoenix-report make [TEXT]    collect a report (TEXT = what went wrong, or on stdin with "-"), print JSON:
+                                {"path", "title", "body", "url"}; url opens a new GitHub issue with it filled in
+
+The report holds: versions (Phoenix, kernel, Hyprland, Quickshell, Qt), the graphics card and processor,
+`phoenix status`, `custom-update status` and the hypr-guard desktop check (it runs `hypr-guard doctor`, which only
+reads): problems found, files that differ, Hyprland config errors, the shell's errors, crashes and the autostart log.
+Personal data is removed before anything is shown or saved: user name, real name, home folder, computer name,
+e-mail, IP and MAC addresses, network names, drive labels and UUIDs. The report is saved in
+~/.local/state/phoenix/reports/ (the last 10 are kept) and only leaves this PC if you post it.
+"""
+import datetime
+import json
+import os
+import re
+import socket
+import subprocess
+import sys
+import urllib.parse
+
+HOME = os.path.expanduser("~")
+OUT = os.path.join(HOME, ".local", "state", "phoenix", "reports")
+REPO = "RandomRandomnes/phoenix"
+URL_MAX = 7000   # GitHub refuses longer new-issue links; past it the body is pasted from the clipboard instead
+
+
+def run(cmd, timeout=30):
+    try:
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        return (p.stdout + p.stderr).strip()
+    except (OSError, subprocess.SubprocessError) as e:
+        return f"({cmd[0]} unavailable: {e.__class__.__name__})"
+
+
+def private_words():
+    """Exact strings to hide, longest first, with what replaces them."""
+    user = os.environ.get("USER") or os.path.basename(HOME)
+    words = {HOME: "~", user: "<user>"}
+    try:
+        host = socket.gethostname()
+        if host and host not in ("localhost", "archlinux"):
+            words[host] = "<pc>"
+    except OSError:
+        pass
+    gecos = run(["getent", "passwd", user]).split(":")
+    if len(gecos) > 4:
+        for part in gecos[4].split(","):
+            for name in [part.strip()] + part.split():
+                if len(name.strip()) >= 3:
+                    words[name.strip()] = "<name>"
+    for line in run(["nmcli", "-t", "-f", "NAME", "connection", "show"]).splitlines():
+        line = line.replace("\\:", ":").strip()
+        if len(line) >= 3 and line not in ("lo", "docker0"):
+            words[line] = "<network>"
+    for line in run(["lsblk", "-rno", "LABEL"]).splitlines():
+        line = line.replace("\\x20", " ").strip()
+        if len(line) >= 3:
+            words[line] = "<drive>"
+    return sorted(words.items(), key=lambda kv: -len(kv[0]))
+
+
+def scrub(text, words):
+    for word, repl in words:
+        text = re.sub(r"(?<![\w-])" + re.escape(word) + r"(?![\w-])", repl, text, flags=re.I)
+    text = re.sub(r"/run/media/[^/\s]+/[^\s/]+", "/run/media/<drive>", text)
+    text = re.sub(r"[\w.+-]+@[\w-]+\.[\w.-]+", "<email>", text)
+    text = re.sub(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", "<uuid>", text, flags=re.I)
+    text = re.sub(r"\b(?:[0-9a-f]{2}:){5}[0-9a-f]{2}\b", "<mac>", text, flags=re.I)
+    text = re.sub(r"\b(?:\d{1,3}\.){3}\d{1,3}\b", "<ip>", text)
+    text = re.sub(r"\b(?:[0-9a-f]{1,4}:){3,7}[0-9a-f]{1,4}\b", "<ip>", text, flags=re.I)
+    return text
+
+
+def versions():
+    inst = {}
+    for f in ("~/.local/state/custom-fixes/installed.json", "~/.local/share/custom-fixes/base.json"):
+        try:
+            with open(os.path.expanduser(f)) as fh:
+                inst = json.load(fh)
+            break
+        except (OSError, ValueError):
+            pass
+    pkgs = run(["pacman", "-Q", "hyprland", "qt6-base", "quickshell-git", "illogical-impulse-quickshell-git"])
+    gpu = [l.split(": ", 1)[-1] for l in run(["lspci"]).splitlines() if re.search(r"VGA|3D|Display", l)]
+    cpu = next((l.split(":", 1)[1].strip() for l in run(["cat", "/proc/cpuinfo"]).splitlines()
+                if l.startswith("model name")), "?")
+    qs = run(["qs", "--version"]).splitlines()
+    rows = [("Phoenix", inst.get("label") or "unknown"),
+            ("Kernel", os.uname().release),
+            ("Hyprland", (run(["hyprctl", "version"]).splitlines() or ["?"])[0]),
+            ("Quickshell", qs[0] if qs else "?"),
+            ("Packages", ", ".join(dict.fromkeys(l for l in pkgs.splitlines() if "was not found" not in l))),
+            ("Graphics", "; ".join(gpu) or "?"),
+            ("Processor", cpu)]
+    return "\n".join(f"- **{k}:** {v}" for k, v in rows)
+
+
+def guard():
+    run(["hypr-guard", "doctor"], timeout=90)
+    try:
+        with open(os.path.join(HOME, "hypr-guard", "report.md")) as f:
+            text = f.read()
+    except OSError:
+        return "(no desktop check report)"
+    keep, mode, code = [], "", None
+    for line in text.splitlines():
+        if line.startswith("> "):
+            continue
+        if line.startswith("## "):   # the tracked-file table: only files that differ; the git status list: left out
+            mode = "files" if line.startswith("## Tracked files") else "skip" if "git status" in line else ""
+            if mode == "files":
+                keep.append("## Tracked files that differ")
+            if mode:
+                continue
+        if mode == "files":
+            if line.startswith("| ") and not line.endswith("| ok |") and not line.startswith(("| file", "|---")):
+                keep.append(line.replace("| ", "- ", 1).replace(" | ", ": ").rstrip(" |"))
+        elif mode == "skip":
+            pass
+        elif line.startswith("```"):   # code blocks: their last 25 lines
+            if code is None:
+                code = []
+            else:
+                keep.extend(code[-25:])
+                code = None
+            keep.append(line)
+        elif code is not None:
+            code.append(line)
+        else:
+            keep.append(line)
+    out = "\n".join(keep).strip()
+    return re.sub(r"^## ", "#### ", re.sub(r"^# ", "", out, flags=re.M), flags=re.M)
+
+
+def make(note):
+    words = private_words()
+    note = (note or "").strip()
+    first = scrub(note.splitlines()[0], words) if note else ""   # scrubbed before shortening: a cut e-mail stays hidden
+    title = (first[:80] + ("…" if len(first) > 80 else "")) or "Problem report"
+    body = "\n\n".join([
+        "### What happened\n\n" + (note or "_(not described)_"),
+        "### System\n\n" + versions(),
+        "### Phoenix\n\n```\n" + run(["phoenix", "status"]) + "\n" + run(["custom-update", "status"]) + "\n```",
+        "### Desktop check (hypr-guard)\n\n" + guard(),
+        "_Made with Settings › System › Report a problem. Personal data was removed automatically._",
+    ])
+    body = scrub(body, words)
+    os.makedirs(OUT, exist_ok=True)
+    path = os.path.join(OUT, datetime.datetime.now().strftime("report-%Y%m%d-%H%M%S.md"))
+    with open(path, "w") as f:
+        f.write(f"# {title}\n\n{body}\n")
+    for old in sorted(os.listdir(OUT))[:-10]:
+        os.remove(os.path.join(OUT, old))
+    base = f"https://github.com/{REPO}/issues/new?"
+    url = base + urllib.parse.urlencode({"title": title, "body": body})
+    pasted = len(url) > URL_MAX
+    if pasted:
+        url = base + urllib.parse.urlencode({"title": title, "body": "<!-- The report is on your clipboard: paste it here (Ctrl+V), replacing this line. -->"})
+    return {"path": path, "title": title, "body": body, "url": url, "paste": pasted}
+
+
+def main():
+    a = sys.argv[1:]
+    if not a or a[0] != "make":
+        sys.exit(__doc__)
+    note = sys.stdin.read() if a[1:] == ["-"] else " ".join(a[1:])
+    print(json.dumps(make(note)))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

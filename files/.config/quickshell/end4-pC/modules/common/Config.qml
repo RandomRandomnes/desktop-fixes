@@ -859,6 +859,11 @@ Singleton {
                 property bool claudeCodeAi: true      // Claude Code as a model in the AI sidebar
                 property bool updatesScript: true     // bar updates button runs ~/.local/bin/system-update
                 property bool steamTray: true         // start Steam in the tray at login
+                property bool gameModeAuto: false     // Game Mode turns on by itself while a fullscreen game has the focus (services/GameAssist.qml)
+                property bool gameModeWallpaper: true // Game Mode also stops Wallpaper Engine
+                property bool gameModePerformance: true // Game Mode also picks the Best performance power mode
+                property bool autoDnd: true           // Do Not Disturb while a fullscreen game has the focus
+                property bool autoDndScreenShare: true // ...and while the screen is shared
                 property bool customFixes: false      // get the author's bug fixes (~/.local/bin/custom-update); asked in the setup wizard
                 property bool customFixesTest: false  // also see test releases (testers)
             }
