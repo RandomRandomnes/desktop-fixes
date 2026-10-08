@@ -1,17 +1,16 @@
 {
   "format": "custom-fixes",
   "line": "custom",
-  "version": 1.5,
-  "label": "1.5",
+  "version": 1.6,
+  "label": "1.6",
   "kind": "fix",
   "date": "2026-10-08",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Phoenix shell starts on new installs: illogical-impulse's variables.lua reset the shell to the stock one; Phoenix now sets it in custom/variables.lua",
-    "hypr-guard tracks custom/variables.lua"
+    "phoenix activate/deactivate/uninstall: the shell being switched away from (and the setup assistant) is closed; before, both shells ran until the next login"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "df332609015125085e319f5df897648ac78d9f77177737267eb39bd8e7dfb4c6",
+  "payloadSha256": "992eccabc1174073e3a2f6250095f444026ffd25fa2bc7a03c9dc703f20c7a14",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
     ".config/hypr/custom/execs.lua": "e1840046232062e73741e9e82f61864d271fe13ed41449554df01a33d9956d98",
@@ -86,7 +85,7 @@
     ".local/bin/hypr-guard": "979928f1cbbde27fe3d54167a7fec7569096c4bd50b33cf95dca47629c802fbf",
     ".local/bin/linux-wallpaper-engine": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/linux-wallpaper-engine-ux": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
-    ".local/bin/phoenix": "103a3eb46af08bf43f3143d7d402dcbbe5f6724c7e4b38e2011e71a91b191ec3",
+    ".local/bin/phoenix": "d23323522612783f410e773141fd9fb4b5dcb7f54fcba815c4338169e31ddf41",
     ".local/bin/setup-apps": "7dacdaaa8bd9d2b6abb30c36769a396a8e7f50b32b562c91d8ac55994e445216",
     ".local/bin/setup-features": "7088a7e0d7952b5b71907cd10bc5afe4f2d186539312cab7b7c10feab93dc418",
     ".local/bin/setup-profile": "c74f932514eea6aeddf96864149d162804339f5614fd1ea2ca7f64ec2b3b65f6",
@@ -170,8 +169,7 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/hypr/custom/variables.lua",
-    ".local/bin/hypr-guard"
+    ".local/bin/phoenix"
   ],
   "test": false,
   "shell": "f22e2676c7daf69776f6d1eb423ff63118776710"

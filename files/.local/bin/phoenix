@@ -44,7 +44,13 @@ qs_config_of_ii() {   # the shell illogical-impulse starts on its own (its varia
 restart_shell() {     # $1 = quickshell config to run now
     [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] || { echo "Log in to Hyprland to use it."; return; }
     hyprctl reload >/dev/null 2>&1
-    qs kill >/dev/null 2>&1; sleep 1
+    # every running instance belongs to the side being left (its bar, the setup assistant, Settings): stop them all;
+    # a plain `qs kill` only stops the default config's instance
+    local pid
+    for pid in $(LC_ALL=C.UTF-8 qs list --all 2>/dev/null | awk '/Process ID:/ {print $3}'); do
+        qs kill --pid "$pid" >/dev/null 2>&1
+    done
+    sleep 1
     hyprctl dispatch "hl.dsp.exec_cmd(\"qs -c $1\")" >/dev/null 2>&1
     echo "The shell was restarted. Log out and back in once to finish switching (login programs, title bars)."
 }

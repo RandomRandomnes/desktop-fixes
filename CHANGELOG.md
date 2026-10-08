@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 1.6 (2026-10-08, fix)
+- phoenix activate/deactivate/uninstall: the shell being switched away from (and the setup assistant) is closed; before, both shells ran until the next login
+
 ## custom 1.5 (2026-10-08, fix)
 - Phoenix shell starts on new installs: illogical-impulse's variables.lua reset the shell to the stock one; Phoenix now sets it in custom/variables.lua
 - hypr-guard tracks custom/variables.lua
