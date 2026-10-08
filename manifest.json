@@ -1,23 +1,19 @@
 {
   "format": "custom-fixes",
   "line": "custom",
-  "version": 2.0,
-  "label": "2",
-  "kind": "feature",
+  "version": 2.1,
+  "label": "2.1",
+  "kind": "fix",
   "date": "2026-10-08",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Window rules (Settings \u203a Apps \u203a Window rules): choose how an app's windows open: floating, size, position, workspace, monitor, opacity, maximized or fullscreen, no title bar",
-    "What's new: after an update a notification and Settings \u203a Update show what changed",
-    "Report a problem (Settings \u203a System): builds a bug report with your system details, personal data removed, and opens it as a GitHub issue",
-    "Game Mode (Settings \u203a Gaming) can turn on by itself in fullscreen games, and also stops Wallpaper Engine and picks the Best performance power mode",
-    "Do not disturb while playing a fullscreen game or sharing your screen (on by default, can be switched off in Settings \u203a Gaming)"
+    "Windows over a maximized window stay clickable: after clicking the maximized window, the window on top of it no longer loses the mouse (you had to click it in the dock before)"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "9230f699b88f5a1a7eb45cae36fe500b84acdf17dae223d60516e9a76e2542bf",
+  "payloadSha256": "2600132bee536d07e889e7b658fb05c9d6290800606990c89bc7af786a110c40",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
-    ".config/hypr/custom/execs.lua": "3313893ef27e9cb0ee4ce06baed0d5cb4f2ddd7f049ae585781199be18842a96",
+    ".config/hypr/custom/execs.lua": "869e5058f41818296a8b468b25d3f527ff3222aa0e2478fcacdd73194d6f4d61",
     ".config/hypr/custom/general.lua": "06d1fb865ea7a689006d0e6074778f97539fe87e52e1ad05c5d1083549e1a980",
     ".config/hypr/custom/keybinds.lua": "8ee638e94053968d19b77a80a8fdb663a107063a0d0e42cf6b24ea142bca1baf",
     ".config/hypr/custom/rules.lua": "75ade8ef784f5325d456673f33af4cf07ee655f2b1f4d30f2cf5254873914395",
@@ -182,29 +178,8 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/hypr/custom/rules.lua",
-    ".config/quickshell/end4-pC/GlobalStates.qml",
-    ".config/quickshell/end4-pC/modules/common/Config.qml",
-    ".config/quickshell/end4-pC/modules/ii/settingsW11/PApps.qml",
-    ".config/quickshell/end4-pC/modules/ii/settingsW11/PGaming.qml",
-    ".config/quickshell/end4-pC/modules/ii/settingsW11/PSystem.qml",
-    ".config/quickshell/end4-pC/modules/ii/settingsW11/PUpdate.qml",
-    ".config/quickshell/end4-pC/modules/ii/settingsW11/WReport.qml",
-    ".config/quickshell/end4-pC/modules/ii/settingsW11/WState.qml",
-    ".config/quickshell/end4-pC/modules/ii/settingsW11/WWindowRules.qml",
-    ".config/quickshell/end4-pC/services/GameAssist.qml",
-    ".local/bin/custom-update",
-    ".local/bin/hypr-guard",
-    ".local/bin/phoenix-report",
-    ".local/bin/setup-profile",
-    ".local/bin/window-rules",
-    ".local/share/setup-profiles/default.json"
+    ".config/hypr/custom/execs.lua"
   ],
   "test": false,
-  "shell": "4517f78cf9e504ec351f8a0ff1f747f5d12e7683",
-  "upgrade": {
-    "title": "Phoenix 2",
-    "summary": "Five new features: window rules, What's new, Report a problem, automatic Game Mode and Do Not Disturb for games.",
-    "details": []
-  }
+  "shell": "4517f78cf9e504ec351f8a0ff1f747f5d12e7683"
 }

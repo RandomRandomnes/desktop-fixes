@@ -128,15 +128,28 @@ local MIN = "special:minimized"
 -- window on that workspace. Floating windows that were already open are still drawn on top, but clicks and
 -- hover go to the maximized window behind them. Raising them sets the flag again; the stacking among them
 -- is kept. True fullscreen (mode 2) is left alone.
-local function raise_floats_over_max(ws, except)
+-- Focusing the maximized window (clicking it, or hovering it) has the same effect even though the flag stays
+-- set: the other floating windows are still drawn on top, but clicks and hover keep going to the maximized
+-- window until a float is raised again (2026-10-08). So they are raised again (all = true) whenever it gets
+-- the focus, a moment later so Hyprland's own raise of the clicked window comes first.
+local function raise_floats_over_max(ws, except, all)
     if not (ws and ws.has_fullscreen and ws.fullscreen_mode == 1) then return end
     for _, w in ipairs(hl.get_workspace_windows(ws.id) or {}) do
-        if w.floating and w.fullscreen == 0 and not w.allowed_over_fullscreen
+        if w.floating and w.fullscreen == 0 and (all or not w.allowed_over_fullscreen)
             and not (except and w.address == except.address) then
             hl.dispatch(hl.dsp.window.alter_zorder({ mode = "top", window = "address:" .. w.address }))
         end
     end
 end
+
+hl.on("window.active", function(win)
+    if not (win and win.fullscreen == 1 and win.workspace) then return end
+    local addr = win.address
+    hl.timer(function()
+        local w = hl.get_window("address:" .. addr)
+        if w and w.fullscreen == 1 and w.workspace then raise_floats_over_max(w.workspace, w, true) end
+    end, { timeout = 1, type = "oneshot" })
+end)
 
 hl.on("window.fullscreen", function(win)
     if win and win.fullscreen == 1 and win.workspace then raise_floats_over_max(win.workspace, win) end

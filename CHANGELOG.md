@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 2.1 (2026-10-08, fix)
+- Windows over a maximized window stay clickable: after clicking the maximized window, the window on top of it no longer loses the mouse (you had to click it in the dock before)
+
 ## custom 2 (2026-10-08, feature)
 - Window rules (Settings › Apps › Window rules): choose how an app's windows open: floating, size, position, workspace, monitor, opacity, maximized or fullscreen, no title bar
 - What's new: after an update a notification and Settings › Update show what changed
