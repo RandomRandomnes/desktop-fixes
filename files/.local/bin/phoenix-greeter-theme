@@ -1,0 +1,19 @@
+#!/bin/bash
+# Copies this desktop's look to the login screen (2026-10-08, ours): Phoenix's wallpaper colors, the wallpaper and the
+# account picture, into /var/lib/phoenix-greeter/theme (made writable for the main user by `phoenix login-screen
+# install`). Run at every login by custom/scripts/autostart.sh; does nothing when the login screen isn't installed.
+T=/var/lib/phoenix-greeter/theme
+[ -d "$T" ] && [ -w "$T" ] || exit 0
+colors="$HOME/.local/state/quickshell/user/generated/colors.json"
+wall=$(python3 -c 'import json,os,sys; print(json.load(open(os.path.expanduser("~/.config/illogical-impulse/config.json")))["background"]["wallpaperPath"])' 2>/dev/null)
+face="$HOME/.face"; [ -f "$face" ] || face="/var/lib/AccountsService/icons/$USER"
+copy() {   # only when it changed; through a temporary file so the login screen never reads half a file
+    [ -f "$1" ] || return 0
+    cmp -s "$1" "$T/$2" && return 0
+    cp -f "$1" "$T/$2.tmp" && mv -f "$T/$2.tmp" "$T/$2"
+}
+copy "$colors" colors.json
+case "$wall" in *.jpg|*.jpeg|*.png|*.webp|*.JPG|*.PNG) copy "$wall" wallpaper ;; esac
+if [ -f "$face" ]; then copy "$face" face; else rm -f "$T/face"; fi
+chmod 644 "$T"/* 2>/dev/null
+exit 0

@@ -1,5 +1,15 @@
 # Changelog
 
+## custom 2.2 (2026-10-08, fix)
+- Login screen (Settings › Accounts › Login screen at startup): a Phoenix-style login screen instead of signing in automatically, with several users, Hyprland or KDE Plasma, and a clear message after too many wrong passwords
+- Restore points (Settings › Update): one is saved before every update; 'Go back to this' undoes it
+- Lock screen: Enter on the empty password field no longer counts as a wrong password; a lockout says how long to wait
+- Night light can follow sunset and sunrise (Settings › System › Display)
+- Notifications: turn them off per app, keep an app out of pop-up banners, optional notification sound (Settings › System › Notifications)
+- Display profiles: save a monitor setup and Phoenix switches to it by itself when those displays are plugged in
+- Several screens: each screen gets its own workspaces (1-10, 11-20, …) and its own taskbar items
+- Your own login commands in ~/.config/hypr/custom/scripts/autostart-user.sh
+
 ## custom 3 (2026-10-08, feature)
 - Restore points (Settings › Update): one is saved before every update with your desktop settings and package versions; 'Go back to this' undoes the update (old package versions are reinstalled after you confirm with your password)
 - Lock screen: pressing Enter on the empty password field no longer counts as a wrong password (three of those locked the account for 10 minutes, even for the right password); a lockout now says how long to wait

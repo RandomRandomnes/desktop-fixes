@@ -160,3 +160,94 @@ hl.on("window.move_to_workspace", function(win, ws)
 end)
 end
 -- float-over-max-end
+
+-- workspace-groups-start
+-- Each screen gets its own 10 workspaces (2026-10-08, Phoenix; feature "workspaceGroups", Settings › Extras):
+-- the first screen 1-10, the second 11-20, the third 21-30, … Screens are numbered in the order they were first seen
+-- (by make/model/serial, kept in ~/.local/state/phoenix/screen-order), so a screen keeps its numbers across ports and
+-- restarts. A screen that is plugged in starts on the first workspace of its group, and that group's workspaces always
+-- open on it. ii's Super+1…0 already go to the workspace with that number in the current screen's group
+-- (workspace_in_group), and each bar shows its own screen's group.
+if feature("workspaceGroups") then
+local ORDER_FILE = HOME .. "/.local/state/phoenix/screen-order"
+
+local function read_order()
+    local order = {}
+    local f = io.open(ORDER_FILE, "r")
+    if f then
+        for line in f:lines() do if line ~= "" then table.insert(order, line) end end
+        f:close()
+    end
+    return order
+end
+
+local function write_order(order)
+    os.execute("mkdir -p \"" .. HOME .. "/.local/state/phoenix\"")
+    local f = io.open(ORDER_FILE, "w")
+    if f then f:write(table.concat(order, "\n") .. "\n"); f:close() end
+end
+
+local function index_of(list, value)
+    for i, v in ipairs(list) do if v == value then return i end end
+    return nil
+end
+
+local rules = {}   -- workspace number → its rule (replaced when its screen changes)
+
+local function assign_groups()
+    local mons = hl.get_monitors() or {}
+    table.sort(mons, function(a, b) return a.id < b.id end)
+    local order, changed = read_order(), false
+    for _, m in ipairs(mons) do
+        local key = (m.description and m.description ~= "") and m.description or m.name
+        if not index_of(order, key) then table.insert(order, key); changed = true end
+    end
+    if changed then write_order(order) end
+    local owner = {}   -- group number → the connected screen it belongs to
+    for _, m in ipairs(mons) do
+        local key = (m.description and m.description ~= "") and m.description or m.name
+        local group = index_of(order, key) - 1
+        owner[group] = m
+        local first = group * workspaceGroupSize + 1
+        for ws = first, first + workspaceGroupSize - 1 do
+            if rules[ws] then pcall(function() rules[ws]:set_enabled(false) end) end
+            local ok, rule = pcall(hl.workspace_rule, { workspace = tostring(ws), monitor = m.name, default = (ws == first) })
+            rules[ws] = ok and rule or nil
+        end
+    end
+    -- workspaces on the wrong screen (Hyprland parks a screen's workspaces elsewhere when it is unplugged) go home
+    for _, w in ipairs(hl.get_workspaces() or {}) do
+        if w.id and w.id > 0 and w.monitor then
+            local home = owner[math.floor((w.id - 1) / workspaceGroupSize)]
+            if home and home.name ~= w.monitor.name then
+                pcall(hl.dispatch, hl.dsp.workspace.move({ workspace = w.id, monitor = home.name }))
+            end
+        end
+    end
+    -- a screen showing a workspace of another group switches to the first of its own; focus stays where it was
+    local focused = hl.get_active_workspace()
+    for group, m in pairs(owner) do
+        local first = group * workspaceGroupSize + 1
+        local now = hl.get_monitor(m.name)
+        local active = now and now.active_workspace and now.active_workspace.id or 0
+        if active < first or active > first + workspaceGroupSize - 1 then
+            pcall(hl.dispatch, hl.dsp.focus({ workspace = first }))
+        end
+    end
+    if focused and focused.id and focused.id > 0 then
+        local f = hl.get_active_workspace()
+        -- only back to a workspace that still exists (an empty one is removed when its screen switches away)
+        if f and f.id ~= focused.id and hl.get_workspace(focused.id) then
+            pcall(hl.dispatch, hl.dsp.focus({ workspace = focused.id }))
+        end
+    end
+end
+
+local function assign_soon()
+    hl.timer(assign_groups, { timeout = 500, type = "oneshot" })
+end
+hl.on("hyprland.start", assign_soon)
+hl.on("monitor.added", assign_soon)
+assign_soon()   -- also after a config reload
+end
+-- workspace-groups-end

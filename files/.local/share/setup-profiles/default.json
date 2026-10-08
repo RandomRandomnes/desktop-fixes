@@ -17,6 +17,7 @@
         "steamTray": false,
         "gameModeAuto": false,
         "autoDnd": true,
+        "workspaceGroups": true,
         "wallpaperEngineCard": true,
         "deviceBatteries": true,
         "desktopSwitch": false

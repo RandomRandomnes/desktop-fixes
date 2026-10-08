@@ -555,6 +555,8 @@ Singleton {
                 }
                 
                 property list<string> screenList: [] // List of names, like "eDP-1", find out with 'hyprctl monitors' command
+                // Phoenix (2026-10-08): widgets hidden on one screen only, as "<screen model>\t<widget id>" (Settings › Personalization › Taskbar)
+                property list<string> hiddenOnScreen: []
                 property JsonObject utilButtons: JsonObject {
                     property bool showScreenSnip: true
                     property bool showColorPicker: true
@@ -704,6 +706,9 @@ Singleton {
                     property bool automatic: true
                     property string from: "19:00" // Format: "HH:mm", 24-hour time
                     property string to: "06:30"   // Format: "HH:mm", 24-hour time
+                    property bool followSun: false // Phoenix: from/to follow today's sunset/sunrise (services/NightSchedule.qml)
+                    property string ownFrom: ""   // Phoenix: your own hours, kept while followSun is on and put back after
+                    property string ownTo: ""
                     property int colorTemperature: 5000
                 }
                 property JsonObject antiFlashbang: JsonObject {
@@ -744,6 +749,7 @@ Singleton {
             property JsonObject notifications: JsonObject {
                 property int timeout: 7000
                 property string position: "top_right"
+                property bool playSound: false // Phoenix: a sound for new notifications (per app in Settings › System › Notifications)
             }
 
             property JsonObject osd: JsonObject {
@@ -859,11 +865,13 @@ Singleton {
                 property bool claudeCodeAi: true      // Claude Code as a model in the AI sidebar
                 property bool updatesScript: true     // bar updates button runs ~/.local/bin/system-update
                 property bool steamTray: true         // start Steam in the tray at login
+                property bool workspaceGroups: true   // each screen its own workspaces: 1-10, 11-20, … (custom/execs.lua workspace-groups)
                 property bool gameModeAuto: false     // Game Mode turns on by itself while a fullscreen game has the focus (services/GameAssist.qml)
                 property bool gameModeWallpaper: true // Game Mode also stops Wallpaper Engine
                 property bool gameModePerformance: true // Game Mode also picks the Best performance power mode
                 property bool autoDnd: true           // Do Not Disturb while a fullscreen game has the focus
                 property bool autoDndScreenShare: true // ...and while the screen is shared
+                property bool displayProfilesAuto: true // switch to the saved display profile for the displays plugged in (services/DisplayProfiles.qml)
                 property bool customFixes: false      // get the author's bug fixes (~/.local/bin/custom-update); asked in the setup wizard
                 property bool customFixesTest: false  // also see test releases (testers)
             }

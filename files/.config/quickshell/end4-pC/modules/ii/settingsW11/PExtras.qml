@@ -152,6 +152,12 @@ WPage {
             title: "Minimize to the dock"
             description: "The minimize button hides a window; clicking it in the dock restores it. Turning this off restores all minimized windows"
         }
+        Switch {
+            key: "workspaceGroups"
+            icon: "view_carousel"
+            title: "Own workspaces for each screen"
+            description: "The first screen uses workspaces 1-10, the second 11-20, the third 21-30. Super+1…0 work on the screen you're on"
+        }
     }
 
     WSection {

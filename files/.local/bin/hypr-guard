@@ -90,6 +90,13 @@ MANIFEST = {
     "sysstats.py": f"{QS}/scripts/sysstats/sysstats.py",
     # Shell: automatic Game Mode + Do Not Disturb for games (2026-10-08, ours; started from GlobalStates.qml)
     "GameAssist.qml": f"{QS}/services/GameAssist.qml",
+    # Shell: night light "Sunset to sunrise" (2026-10-08, ours; GlobalStates.qml starts it, ~/.local/bin/sun-times)
+    "NightSchedule.qml": f"{QS}/services/NightSchedule.qml",
+    # Shell: per-app notification settings (2026-10-08): NotificationRules.qml is ours; Notifications.qml (upstream) asks it
+    "NotificationRules.qml": f"{QS}/services/NotificationRules.qml",
+    # Shell: display profiles switching by themselves (2026-10-08, ours; ~/.local/bin/display-profiles)
+    "DisplayProfiles.qml": f"{QS}/services/DisplayProfiles.qml",
+    "Notifications.qml": f"{QS}/services/Notifications.qml",
     # Shell: bar update button runs ~/.local/bin/system-update; count includes pending shell updates
     "UpdatesCount.qml": f"{QS}/modules/ii/bar/UpdatesCount.qml",
     "Updates.qml": f"{QS}/services/Updates.qml",

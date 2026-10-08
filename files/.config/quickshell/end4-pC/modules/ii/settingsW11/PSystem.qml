@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
+import Quickshell.Widgets
 import Quickshell.Services.Pipewire
 import Quickshell.Services.UPower
 import qs
@@ -118,8 +119,25 @@ Item {
                     checked: Config.options.light.night.automatic
                     onToggled: v => Config.options.light.night.automatic = v
                 }
-                WCard {
+                WCombo {
                     visible: Config.options.light.night.automatic
+                    icon: "wb_twilight"
+                    title: "Schedule"
+                    description: Config.options.light.night.followSun
+                        ? (NightSchedule.ok ? `Sunset to sunrise in ${NightSchedule.place}, from your time zone` : "Sunset to sunrise (couldn't work out the times for your time zone)")
+                        : "Turn on and off at set hours"
+                    model: [{ displayName: "Sunset to sunrise", value: true }, { displayName: "Set hours", value: false }]
+                    currentValue: Config.options.light.night.followSun === true
+                    onSelected: v => {
+                        const night = Config.options.light.night
+                        if (v === night.followSun) return
+                        if (v) { night.ownFrom = night.from; night.ownTo = night.to }   // your hours come back with "Set hours"
+                        else if (night.ownFrom && night.ownTo) { night.from = night.ownFrom; night.to = night.ownTo }
+                        night.followSun = v
+                    }
+                }
+                WCard {
+                    visible: Config.options.light.night.automatic && !Config.options.light.night.followSun
                     icon: "bedtime"
                     title: "Schedule hours"
                     description: "24-hour time, HH:MM"
@@ -175,6 +193,95 @@ Item {
                     description: "Adaptive sync (FreeSync / G-Sync) for smoother games and video"
                     checked: dp.mon?.vrr ?? false
                     onToggled: v => dp.apply({ vrr: v })
+                }
+            }
+
+            // Display profiles (~/.local/bin/display-profiles, services/DisplayProfiles.qml; 2026-10-08)
+            WSection {
+                id: dpSection
+                title: "Display profiles"
+                property var profiles: []
+                property var current: []
+                property string status: ""
+                function refresh() { dpListProc.running = true; dpCurrentProc.running = true }
+                Component.onCompleted: refresh()
+                Connections { target: DisplayProfiles; function onProfilesChanged() { dpSection.refresh() } }
+                Connections { target: GlobalStates; function onSettingsOpenChanged() { if (GlobalStates.settingsOpen) dpSection.refresh() } }
+                Process {
+                    id: dpListProc
+                    command: [DisplayProfiles.tool, "list"]
+                    stdout: StdioCollector { onStreamFinished: { try { dpSection.profiles = JSON.parse(text) } catch (e) { dpSection.profiles = [] } } }
+                }
+                Process {
+                    id: dpCurrentProc
+                    command: [DisplayProfiles.tool, "current"]
+                    stdout: StdioCollector { onStreamFinished: { try { dpSection.current = JSON.parse(text) } catch (e) { dpSection.current = [] } } }
+                }
+                Process {
+                    id: dpActionProc
+                    stdout: StdioCollector {
+                        onStreamFinished: {
+                            let r = {}
+                            try { r = JSON.parse(text) } catch (e) {}
+                            dpSection.status = r.ok === false ? `Couldn't apply it: ${r.error || "unknown error"}` : ""
+                            dpSection.refresh()
+                        }
+                    }
+                }
+                function run(args) { dpActionProc.command = [DisplayProfiles.tool].concat(args); dpActionProc.running = true }
+                function summary(mons) {
+                    return mons.map(m => {
+                        const s = m.settings || {}
+                        const name = (m.description || m.name || "").replace(/\s+\S*\d\S*$/, "")   // without the serial number
+                        return s.disabled ? `${name} (off)` : `${name} ${(s.mode || "").replace(/@.*/, "")}${s.scale && s.scale !== 1 ? ` at ${Math.round(s.scale * 100)}%` : ""}`
+                    }).join(" + ")
+                }
+
+                WToggle {
+                    icon: "switch_video"
+                    title: "Switch automatically"
+                    description: "When displays are plugged in or out, use the profile saved for exactly those displays"
+                    checked: Config.options.extras.displayProfilesAuto !== false
+                    onToggled: v => Config.options.extras.displayProfilesAuto = v
+                }
+                WCard {
+                    icon: "add_to_queue"
+                    title: "Save this setup"
+                    description: dpSection.current.length ? `Now: ${dpSection.summary(dpSection.current)}` : "Reading the displays…"
+                    MaterialTextField {
+                        id: dpName
+                        Layout.preferredWidth: 170
+                        placeholderText: "Name, e.g. Desk"
+                    }
+                    WButton {
+                        accent: true
+                        buttonText: "Save"
+                        enabled: dpName.text.trim().length > 0 && !dpActionProc.running
+                        onClicked: { dpSection.run(["save", dpName.text.trim()]); dpName.text = "" }
+                    }
+                }
+                Repeater {
+                    model: dpSection.profiles
+                    WCard {
+                        required property var modelData
+                        icon: modelData.matches ? "check_circle" : "desktop_windows"
+                        title: modelData.name + (modelData.matches ? " · for the displays plugged in now" : "")
+                        description: dpSection.summary(modelData.monitors)
+                        WButton {
+                            buttonText: "Apply"
+                            enabled: modelData.connected && !dpActionProc.running
+                            onClicked: dpSection.run(["apply", modelData.name])
+                        }
+                        WButton { buttonText: "Delete"; onClicked: dpSection.run(["delete", modelData.name]) }
+                    }
+                }
+                StyledText {
+                    visible: dpSection.status !== ""
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    text: dpSection.status
+                    color: Appearance.colors.colError
+                    font.pixelSize: Appearance.font.pixelSize.small
                 }
             }
 
@@ -350,6 +457,96 @@ Item {
                     title: "Show unread count on the taskbar"
                     checked: Config.options.bar.indicators.notifications.showUnreadCount
                     onToggled: v => Config.options.bar.indicators.notifications.showUnreadCount = v
+                }
+            }
+            WSection {
+                title: "Sound"
+                WToggle {
+                    icon: "volume_up"
+                    title: "Play a sound when a notification arrives"
+                    description: "Not during Do not disturb. Can be turned off for single apps below."
+                    checked: Config.options.notifications.playSound
+                    onToggled: v => Config.options.notifications.playSound = v
+                }
+            }
+            // Per-app settings (services/NotificationRules.qml, 2026-10-08): every app that has sent a notification
+            WSection {
+                id: appsSection
+                title: "Notifications from apps"
+                property string expanded: ""
+                function when(ms) {
+                    if (!ms) return ""
+                    const mins = Math.round((Date.now() - ms) / 60000)
+                    return mins < 1 ? "just now" : mins < 60 ? `${mins} min ago` : mins < 1440 ? `${Math.round(mins / 60)} h ago`
+                        : new Date(ms).toLocaleDateString(Qt.locale(), "MMM d")
+                }
+                function iconSource(app) {
+                    const i = app.icon || ""
+                    if (i.startsWith("/")) return "file://" + i
+                    if (i.startsWith("file:") || i.startsWith("image:")) return i
+                    return Quickshell.iconPath(i || AppSearch.guessIcon(app.name), "dialog-information")
+                }
+                WCard {
+                    visible: NotificationRules.appList.length === 0
+                    icon: "apps"
+                    title: "No apps yet"
+                    description: "Apps show up here after they send a notification"
+                }
+                Repeater {
+                    model: NotificationRules.appList
+                    ColumnLayout {
+                        id: appRow
+                        required property var modelData
+                        readonly property bool open: appsSection.expanded === modelData.name
+                        Layout.fillWidth: true
+                        spacing: 2
+                        WToggle {
+                            Layout.fillWidth: true
+                            leading: Component {
+                                IconImage { implicitSize: 26; source: appsSection.iconSource(appRow.modelData) }
+                            }
+                            title: appRow.modelData.name
+                            description: (appRow.modelData.enabled === false ? "Off" : [
+                                    appRow.modelData.banners === false ? "Notification center only" : "Banners",
+                                    Config.options.notifications.playSound && appRow.modelData.sound !== false ? "sound" : ""
+                                ].filter(x => x).join(", ")) + (appRow.modelData.lastSeen ? ` · last ${appsSection.when(appRow.modelData.lastSeen)}` : "")
+                            checked: appRow.modelData.enabled !== false
+                            onToggled: v => NotificationRules.setOption(appRow.modelData.name, "enabled", v)
+                            WButton {
+                                buttonText: appRow.open ? "Done" : "Options"
+                                onClicked: appsSection.expanded = appRow.open ? "" : appRow.modelData.name
+                            }
+                        }
+                        WToggle {
+                            visible: appRow.open
+                            Layout.fillWidth: true
+                            Layout.leftMargin: 36
+                            icon: "web_asset"
+                            title: "Show notification banners"
+                            description: "Off: they go straight to the notification center"
+                            checked: appRow.modelData.banners !== false
+                            onToggled: v => NotificationRules.setOption(appRow.modelData.name, "banners", v)
+                        }
+                        WToggle {
+                            visible: appRow.open
+                            Layout.fillWidth: true
+                            Layout.leftMargin: 36
+                            icon: "volume_up"
+                            title: "Play a sound"
+                            description: Config.options.notifications.playSound ? "" : "Turn on \"Play a sound when a notification arrives\" above first"
+                            checked: appRow.modelData.sound !== false
+                            onToggled: v => NotificationRules.setOption(appRow.modelData.name, "sound", v)
+                        }
+                        WCard {
+                            visible: appRow.open
+                            Layout.fillWidth: true
+                            Layout.leftMargin: 36
+                            icon: "delete"
+                            title: "Remove from this list"
+                            description: "Its settings are reset; it comes back with its next notification"
+                            WButton { buttonText: "Remove"; onClicked: { appsSection.expanded = ""; NotificationRules.forget(appRow.modelData.name) } }
+                        }
+                    }
                 }
             }
             WSection {

@@ -6,6 +6,8 @@ if [ -f "$HOME/.config/hypr/custom/scripts/autostart-user.sh" ]; then
   echo "$(date +%T) running autostart-user.sh" >> "$log"
   sh "$HOME/.config/hypr/custom/scripts/autostart-user.sh" >> "$log" 2>&1 &
 fi
+# The login screen (phoenix login-screen install) shows this desktop's wallpaper and colors: refresh its copy
+[ -x "$HOME/.local/bin/phoenix-greeter-theme" ] && "$HOME/.local/bin/phoenix-greeter-theme" >> "$log" 2>&1 &
 # Custom-feature switches (Settings › Extras, written by ~/.local/bin/setup-features). Missing = on.
 feature() { ! grep -q "^ *$1 = false" "$HOME/.config/hypr/custom/features.lua" 2>/dev/null; }
 # Wallpaper Engine is off unless switched on in Settings › Extras (missing = off)

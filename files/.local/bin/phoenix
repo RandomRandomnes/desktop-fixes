@@ -5,6 +5,8 @@
 #   phoenix activate             use the Phoenix shell (your own illogical-impulse setup is kept aside)
 #   phoenix deactivate           back to your own illogical-impulse setup (Phoenix is kept aside)
 #   phoenix uninstall [--yes]    remove Phoenix and put back everything it replaced
+#   phoenix login-screen [install|remove|status]
+#                                a Phoenix-style login screen at startup (greetd) instead of signing in automatically
 #   phoenix power-meter [install|remove|status]
 #                                CPU power for the system stats: a small root service that publishes a coarse reading
 #                                (1 s average, 0.5 W steps), so the energy counter itself stays root-only
@@ -151,11 +153,77 @@ cmd_power_meter() {
     esac
 }
 
+# Login screen (P5, 2026-10-08): greetd runs the Phoenix greeter (Quickshell inside the cage compositor) on tty1
+# instead of signing in automatically. The greeter and the session starter are root-owned copies; the theme folder
+# belongs to the main user so phoenix-greeter-theme can refresh it at each login without sudo. What install changed
+# (tty1 autologin, another display manager, an existing greetd config) is kept in /etc/phoenix-login-screen/ and
+# put back by remove.
+GREETER_SRC="$HOME/.local/share/phoenix/greeter"
+GREETER_DIR=/usr/share/phoenix-greeter
+LS_SAVE=/etc/phoenix-login-screen
+GETTY_D=/etc/systemd/system/getty@tty1.service.d   # tty1 autologin drop-ins (Phoenix's installer: ovveride.conf)
+autologin_files() { grep -l -- "--autologin" "$GETTY_D"/*.conf 2>/dev/null; }
+cmd_login_screen() {
+    case "${1:-status}" in
+        install)
+            [ -f "$GREETER_SRC/greeter.qml" ] && [ -f "$GREETER_SRC/phoenix-session" ] \
+                || die "the login screen files are missing in $GREETER_SRC (update Phoenix first)"
+            echo "Installing the Phoenix login screen (asks for your password)."
+            sudo pacman -S --needed --noconfirm greetd cage || die "installing greetd and cage failed"
+            sudo install -D -m 644 -o root -g root "$GREETER_SRC/greeter.qml" "$GREETER_DIR/greeter.qml" \
+                && sudo install -D -m 755 -o root -g root "$GREETER_SRC/phoenix-session" /usr/local/bin/phoenix-session \
+                || die "copying the login screen failed"
+            # the font the login screen uses, also for the greeter user (Phoenix installs it for you only)
+            local font="$HOME/.local/share/fonts/illogical-impulse-google-sans-flex"
+            if [ -d "$font" ]; then
+                sudo mkdir -p /usr/local/share/fonts/phoenix-greeter && sudo cp -r "$font"/. /usr/local/share/fonts/phoenix-greeter/ \
+                    && sudo fc-cache -f /usr/local/share/fonts/phoenix-greeter >/dev/null
+            fi
+            sudo install -d -m 755 -o "$USER" -g "$(id -gn)" /var/lib/phoenix-greeter/theme
+            sudo install -d -m 755 -o greeter -g greeter /var/lib/phoenix-greeter/state
+            sudo mkdir -p "$LS_SAVE"
+            # what was there before, once (a second install doesn't overwrite the first backup)
+            if [ -f /etc/greetd/config.toml ] && [ ! -f "$LS_SAVE/config.toml" ]; then sudo cp -a /etc/greetd/config.toml "$LS_SAVE/config.toml"; fi
+            local f
+            for f in $(autologin_files); do sudo mkdir -p "$LS_SAVE/getty" && sudo mv "$f" "$LS_SAVE/getty/"; done
+            local dm; dm=$(basename "$(readlink /etc/systemd/system/display-manager.service 2>/dev/null)" 2>/dev/null)
+            if [ -n "$dm" ] && [ "$dm" != "greetd.service" ]; then
+                echo "$dm" | sudo tee "$LS_SAVE/display-manager" >/dev/null
+                sudo systemctl disable "$dm"
+            fi
+            printf '%s\n' "# Written by \`phoenix login-screen install\` (the Phoenix login screen). \`phoenix login-screen remove\` puts back what was here." \
+                "[terminal]" "vt = 1" "" "[default_session]" \
+                "command = \"env QT_WAYLAND_DISABLE_WINDOWDECORATION=1 cage -s -m last -- qs -p $GREETER_DIR/greeter.qml\"" "user = \"greeter\"" \
+                | sudo tee /etc/greetd/config.toml >/dev/null
+            sudo systemctl enable greetd.service || die "enabling the login screen failed"
+            "$HOME/.local/bin/phoenix-greeter-theme" 2>/dev/null
+            echo "Done: the login screen appears the next time the PC starts." ;;
+        remove)
+            [ -f "$GREETER_DIR/greeter.qml" ] || [ -d "$LS_SAVE" ] || { echo "The login screen isn't installed."; return; }
+            echo "Removing the Phoenix login screen (asks for your password)."
+            sudo systemctl disable greetd.service 2>/dev/null
+            if [ -d "$LS_SAVE/getty" ]; then sudo mkdir -p "$GETTY_D" && sudo cp -a "$LS_SAVE/getty/." "$GETTY_D/"; fi
+            if [ -f "$LS_SAVE/display-manager" ]; then sudo systemctl enable "$(cat "$LS_SAVE/display-manager")"; fi
+            if [ -f "$LS_SAVE/config.toml" ]; then sudo cp -a "$LS_SAVE/config.toml" /etc/greetd/config.toml; else sudo rm -f /etc/greetd/config.toml; fi
+            sudo rm -rf "${GREETER_DIR:?}" /var/lib/phoenix-greeter /usr/local/share/fonts/phoenix-greeter "${LS_SAVE:?}"
+            sudo rm -f /usr/local/bin/phoenix-session
+            sudo systemctl daemon-reload
+            echo "Removed: the PC signs in the way it did before, from the next start (greetd and cage stay installed)." ;;
+        status)
+            if systemctl is-enabled -q greetd.service 2>/dev/null && grep -q "$GREETER_DIR" /etc/greetd/config.toml 2>/dev/null; then
+                echo "Login screen: on (asks for the password at startup)"
+            elif [ -n "$(autologin_files)" ]; then echo "Login screen: off (signs in automatically)"
+            else echo "Login screen: off"; fi ;;
+        *) die "usage: phoenix login-screen [install|remove|status]" ;;
+    esac
+}
+
 case "${1:-status}" in
     status) cmd_status ;;
     activate) cmd_activate ;;
     deactivate) cmd_deactivate ;;
     uninstall) cmd_uninstall "${2:-}" ;;
     power-meter) cmd_power_meter "${2:-status}" ;;
-    *) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+    login-screen) cmd_login_screen "${2:-status}" ;;
+    *) sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
 esac

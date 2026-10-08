@@ -1,0 +1,16 @@
+#!/bin/bash
+# Starts the Phoenix desktop (2026-10-08, ours). Run by the login screen (greetd) as the user who signed in;
+# installed root-owned at /usr/local/bin/phoenix-session by `phoenix login-screen install`.
+# The argument (the login screen's session choice) is remembered in ~/.config/desktop-session, the same file
+# ~/.local/bin/switch-desktop and the tty1 autologin in ~/.bash_profile use.
+case "${1:-}" in
+    hyprland|plasma) mkdir -p "$HOME/.config" && echo "$1" > "$HOME/.config/desktop-session" ;;
+esac
+if [ "$(cat "$HOME/.config/desktop-session" 2>/dev/null)" = "plasma" ] && [ -x /usr/bin/startplasma-wayland ]; then
+    start=$SECONDS
+    /usr/lib/plasma-dbus-run-session-if-needed /usr/bin/startplasma-wayland
+    # Plasma died right away -> Hyprland next time instead of a loop (same rule as ~/.bash_profile)
+    (( SECONDS - start < 15 )) && echo hyprland > "$HOME/.config/desktop-session"
+    exit
+fi
+exec start-hyprland

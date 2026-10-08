@@ -339,23 +339,63 @@ Item {
         WPage {
             id: tp
             readonly property var layouts: Config.options.bar.layouts
-            function shown(id) {
+            // Phoenix (2026-10-08): "" = every screen; otherwise a screen's model: the toggles then show/hide items on that
+            // screen only (bar.hiddenOnScreen, read by BarContent.qml)
+            property string screenKey: ""
+            readonly property var screenKeys: Quickshell.screens.map(sc => sc.model || sc.name)
+            readonly property var hiddenList: Config.options.bar.hiddenOnScreen ?? []
+            function inLayout(id) {
                 return tp.layouts.leftLayout.includes(id) || tp.layouts.middleLayout.includes(id) || tp.layouts.rightLayout.includes(id);
             }
+            function hiddenOn(key, id) { return tp.hiddenList.includes(key + "\t" + id); }
+            function shown(id) {
+                return tp.inLayout(id) && (tp.screenKey === "" || !tp.hiddenOn(tp.screenKey, id));
+            }
             function setShown(id, on, side) {
+                if (tp.screenKey !== "") {
+                    const key = tp.screenKey;
+                    let h = tp.hiddenList.filter(e => e !== key + "\t" + id);
+                    if (on && !tp.inLayout(id)) {
+                        // not on any screen yet: add it, but only for this screen
+                        tp.screenKeys.filter(k => k !== key).forEach(k => h.push(k + "\t" + id));
+                        tp.addToLayout(id, side);
+                    }
+                    if (!on) h.push(key + "\t" + id);
+                    Config.options.bar.hiddenOnScreen = h;
+                    return;
+                }
+                // all screens: on = shown everywhere (no screen keeps hiding it), off = removed everywhere
+                Config.options.bar.hiddenOnScreen = tp.hiddenList.filter(e => !e.endsWith("\t" + id));
+                if (on) tp.addToLayout(id, side); else tp.removeFromLayout(id);
+            }
+            function removeFromLayout(id) {
                 const L = Config.options.bar.layouts;
-                if (on) {
-                    if (tp.shown(id)) return;
-                    const key = side === "left" ? "leftLayout" : side === "middle" ? "middleLayout" : "rightLayout";
-                    // keep the power button last on the right
-                    const list = L[key].slice();
-                    const pi = list.indexOf("powerButton");
-                    if (key === "rightLayout" && pi !== -1) list.splice(pi, 0, id); else list.push(id);
-                    L[key] = list;
-                } else {
-                    L.leftLayout = L.leftLayout.filter(w => w !== id);
-                    L.middleLayout = L.middleLayout.filter(w => w !== id);
-                    L.rightLayout = L.rightLayout.filter(w => w !== id);
+                L.leftLayout = L.leftLayout.filter(w => w !== id);
+                L.middleLayout = L.middleLayout.filter(w => w !== id);
+                L.rightLayout = L.rightLayout.filter(w => w !== id);
+            }
+            function addToLayout(id, side) {
+                if (tp.inLayout(id)) return;
+                const L = Config.options.bar.layouts;
+                const key = side === "left" ? "leftLayout" : side === "middle" ? "middleLayout" : "rightLayout";
+                // keep the power button last on the right
+                const list = L[key].slice();
+                const pi = list.indexOf("powerButton");
+                if (key === "rightLayout" && pi !== -1) list.splice(pi, 0, id); else list.push(id);
+                L[key] = list;
+            }
+
+            WSection {
+                visible: Quickshell.screens.length > 1 || tp.hiddenList.length > 0
+                WCombo {
+                    icon: "monitor"
+                    title: "Show items on"
+                    description: tp.screenKey === "" ? "Changes apply to the taskbar on every screen"
+                        : "Changes apply to this screen only; items stay in the same order on every screen"
+                    model: [{ displayName: "All screens", value: "" }].concat(Quickshell.screens.map(sc => ({
+                        displayName: `${sc.model || sc.name} (${sc.name}, ${sc.width}×${sc.height})`, value: sc.model || sc.name })))
+                    currentValue: tp.screenKey
+                    onSelected: v => tp.screenKey = v
                 }
             }
 

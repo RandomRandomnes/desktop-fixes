@@ -23,6 +23,14 @@
   Best performance power mode) and silences notifications while you play or share your screen.
   *Update › Restore points*: a restore point is saved before every update (settings and package versions), and
   one click goes back to it.
+  *System › Display*: night light can follow sunset and sunrise (worked out offline from your time zone).
+  *System › Notifications*: turn notifications off per app, or keep them out of pop-up banners, and an optional
+  notification sound.
+  *System › Display › Display profiles*: save a monitor setup and Phoenix switches to it by itself when those
+  displays are plugged in (monitors are recognised by model and serial number, not by port).
+  With several screens each one has its own workspaces (1-10, 11-20, 21-30, …) and its own choice of taskbar items.
+  *Accounts › Login screen at startup*: a Phoenix-style login screen (greetd) instead of signing in automatically,
+  with several users, Hyprland or KDE Plasma, and a clear message after too many wrong passwords.
 - **Setup assistant** at the first start: network, Bluetooth, time and region, keyboard, display, setup profile,
   colors, wallpaper, account, applications (with Gaming and Productivity packs), drivers and updates.
 - **Setup profiles**: one file with an appearance and a set of features, to apply or to share.

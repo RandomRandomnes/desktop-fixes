@@ -12,6 +12,7 @@ features read the config directly; this handles the parts outside the shell:
                    minimized windows back
   wallpaperEngine  starts/stops the Wallpaper Engine background (the shell falls back to the static wallpaper)
   steamTray        login only (custom/scripts/autostart.sh)
+  workspaceGroups  Hyprland: each screen its own 10 workspaces (custom/execs.lua workspace-groups block)
 Switching wallpaperEngine off also parks the app's own login entry (~/.config/autostart, which KDE runs) in
 ~/.local/state/setup-profiles/; switching it on puts it back.
 A missing key means on, so an old config keeps today's behaviour; except wallpaperEngine, which is off unless the
@@ -27,7 +28,7 @@ HOME = os.path.expanduser("~")
 CONFIG = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.join(HOME, ".config"), "illogical-impulse", "config.json")
 FEATURES_LUA = os.path.join(HOME, ".config", "hypr", "custom", "features.lua")
 FEATURES = ["windowsStyle", "minimizeToDock", "wallpaperEngine", "resourceGraphs", "appGrid",
-            "powerMenuKde", "claudeCodeAi", "updatesScript", "steamTray"]
+            "powerMenuKde", "claudeCodeAi", "updatesScript", "steamTray", "workspaceGroups"]
 OFF_BY_DEFAULT = {"wallpaperEngine"}
 HYPRBARS = "/usr/lib/libhyprbars.so"
 # The Wallpaper Engine app's own login entry (KDE runs it; Hyprland uses autostart.sh). Parked while the switch is off.
@@ -109,6 +110,8 @@ def apply():
             hyprctl("plugin", "load", HYPRBARS)
         elif not new["windowsStyle"] and loaded:
             hyprctl("plugin", "unload", HYPRBARS)
+        hyprctl("reload")
+    elif "workspaceGroups" in changed:   # the workspace-groups block in custom/execs.lua runs (or not) on reload
         hyprctl("reload")
     if "wallpaperEngine" in changed:
         subprocess.run([os.path.join(HOME, ".local", "bin", "wallpaper-engine-ctl"),

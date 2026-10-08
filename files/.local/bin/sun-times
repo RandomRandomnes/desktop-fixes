@@ -1,0 +1,123 @@
+#!/usr/bin/env python3
+"""Today's sunset and sunrise for night light (2026-10-08, ours). Used by the shell's "Sunset to sunrise" schedule.
+
+  sun-times            JSON: {"zone", "place", "sunset", "sunrise", "ok"} (local "HH:MM"; tomorrow's sunrise)
+  sun-times --lat N --lon E    use these coordinates instead of the time zone's
+
+Offline: the location is the main city of this PC's time zone (/etc/localtime → /usr/share/zoneinfo/zone1970.tab),
+old alias names like US/Central included; so no network or location service is needed; within a time zone the times are a few minutes off at most in most
+places. NOAA's sunrise equation (sun 0.833° below the horizon). Where the sun doesn't set or rise today (polar
+day/night), "ok" is false and the shell keeps the previous hours.
+"""
+import datetime
+import json
+import math
+import os
+import sys
+
+ZONETAB = "/usr/share/zoneinfo/zone1970.tab"
+
+
+def local_zone():
+    try:
+        target = os.path.realpath("/etc/localtime")
+        return target.split("/zoneinfo/", 1)[1] if "/zoneinfo/" in target else ""
+    except OSError:
+        return ""
+
+
+def iso6709(s):
+    """'+4151-08739' or '+415100-0873900' → (lat, lon) in degrees."""
+    i = max(s.rfind("+"), s.rfind("-"))
+    def part(p, deg_digits):
+        sign = -1 if p[0] == "-" else 1
+        p = p[1:]
+        d, rest = int(p[:deg_digits]), p[deg_digits:]
+        m = int(rest[:2]) if len(rest) >= 2 else 0
+        sec = int(rest[2:4]) if len(rest) >= 4 else 0
+        return sign * (d + m / 60 + sec / 3600)
+    return part(s[:i], 2), part(s[i:], 3)
+
+
+def canonical(zone):
+    """Old alias names (US/Central, …) → the zone they link to (tzdata.zi "L target alias" lines)."""
+    try:
+        with open("/usr/share/zoneinfo/tzdata.zi") as f:
+            for line in f:
+                if line.startswith("L "):
+                    parts = line.split()
+                    if len(parts) == 3 and parts[2] == zone:
+                        return parts[1]
+    except OSError:
+        pass
+    return zone
+
+
+def zone_coords(zone):
+    zone = canonical(zone)
+    try:
+        with open(ZONETAB) as f:
+            for line in f:
+                if line.startswith("#"):
+                    continue
+                cols = line.rstrip("\n").split("\t")
+                if len(cols) >= 3 and cols[2] == zone:
+                    return iso6709(cols[1])
+    except OSError:
+        pass
+    return None
+
+
+def sun_event(date, lat, lon, rising):
+    """UTC datetime of sunrise/sunset on `date` (NOAA general solar position), or None (no event that day)."""
+    n = date.timetuple().tm_yday
+    lng_hour = lon / 15
+    t = n + ((6 if rising else 18) - lng_hour) / 24
+    m = 0.9856 * t - 3.289
+    l = (m + 1.916 * math.sin(math.radians(m)) + 0.020 * math.sin(math.radians(2 * m)) + 282.634) % 360
+    ra = math.degrees(math.atan(0.91764 * math.tan(math.radians(l)))) % 360
+    ra = (ra + (math.floor(l / 90) * 90 - math.floor(ra / 90) * 90)) / 15
+    sin_dec = 0.39782 * math.sin(math.radians(l))
+    cos_dec = math.cos(math.asin(sin_dec))
+    cos_h = (math.cos(math.radians(90.833)) - sin_dec * math.sin(math.radians(lat))) / (cos_dec * math.cos(math.radians(lat)))
+    if cos_h > 1 or cos_h < -1:
+        return None
+    h = (360 - math.degrees(math.acos(cos_h)) if rising else math.degrees(math.acos(cos_h))) / 15
+    ut = (h + ra - 0.06571 * t - 6.622 - lng_hour) % 24
+    return datetime.datetime(date.year, date.month, date.day, tzinfo=datetime.timezone.utc) + datetime.timedelta(hours=ut)
+
+
+def local_hhmm(utc_dt, date):
+    """Local HH:MM of a UTC event computed for `date` (the UTC hour can belong to the neighbouring day)."""
+    loc = utc_dt.astimezone()
+    if loc.date() != date:   # move it onto the local day it belongs to
+        loc = (utc_dt + datetime.timedelta(days=(date - loc.date()).days)).astimezone()
+    return loc.strftime("%H:%M")
+
+
+def main():
+    a = sys.argv[1:]
+    zone = local_zone()
+    coords = None
+    if "--lat" in a and "--lon" in a:
+        try:
+            coords = (float(a[a.index("--lat") + 1]), float(a[a.index("--lon") + 1]))
+        except (ValueError, IndexError):
+            sys.exit(__doc__)
+    coords = coords or zone_coords(zone)
+    real = canonical(zone)
+    out = {"zone": zone, "place": real.split("/")[-1].replace("_", " ") if real else "", "ok": False}
+    if not coords:
+        print(json.dumps(out))
+        return 0
+    today = datetime.date.today()
+    sunset = sun_event(today, *coords, rising=False)
+    sunrise = sun_event(today + datetime.timedelta(days=1), *coords, rising=True)
+    if sunset and sunrise:
+        out.update(ok=True, sunset=local_hhmm(sunset, today), sunrise=local_hhmm(sunrise, today + datetime.timedelta(days=1)))
+    print(json.dumps(out))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

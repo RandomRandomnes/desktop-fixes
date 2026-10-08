@@ -75,6 +75,10 @@ Singleton {
     readonly property bool extrasStarted: Extras.extras !== undefined
     // Starts automatic Game Mode / Do Not Disturb for games (services/GameAssist.qml, ours).
     readonly property bool gameAssistStarted: GameAssist.extras !== undefined
+    // Starts the "Sunset to sunrise" night light schedule (services/NightSchedule.qml, ours).
+    readonly property bool nightScheduleStarted: NightSchedule.place !== undefined
+    // Starts automatic display profile switching (services/DisplayProfiles.qml, ours).
+    readonly property bool displayProfilesStarted: DisplayProfiles.tool !== undefined
 
     // Wallpaper Engine check lives here (not in Background.qml) so it survives reloadBackground():
     // a freshly created background surface starts with the known value instead of false, which used to

@@ -1,0 +1,232 @@
+#!/usr/bin/env python3
+"""Display profiles (2026-10-08, ours). Settings › System › Display › Display profiles.
+
+  display-profiles current               JSON: the connected displays (name, description, mode, position, scale, …)
+  display-profiles list                  JSON: saved profiles, with "connected" (its displays are all plugged in now)
+                                         and "matches" (exactly the displays plugged in now)
+  display-profiles save <name>           save the current setup as a profile (replaces one with the same name)
+  display-profiles apply <name>          use a profile now: rewrites ~/.config/hypr/monitors.lua and reloads Hyprland
+  display-profiles auto                  apply the profile made for exactly the displays plugged in now, if there is one
+                                         and monitors.lua isn't already set that way (the shell runs it when a display
+                                         is plugged in or out, and at login)
+  display-profiles delete <name>
+
+Displays are recognised by make, model and serial number, not by the port name (DP-1, HDMI-A-1, …), which can change
+after a restart or when cables move; monitors.lua is written with the port names of the moment. A profile keeps
+mode, position, scale, rotation, VRR, on/off, and the extra options in monitors.lua (bit depth, color management, …).
+Applying keeps the monitors.lua settings of displays the profile doesn't include (e.g. a TV that isn't plugged in).
+Profiles: ~/.local/state/phoenix/display-profiles.json (personal; not shipped, not in setup profiles). The first
+rewrite keeps the old file as monitors.lua.bak-display-profiles.
+"""
+import json
+import os
+import re
+import subprocess
+import sys
+
+HOME = os.path.expanduser("~")
+# DISPLAY_PROFILES_STORE / _LUA exist only to test on copies; DISPLAY_PROFILES_TEST=1 also skips the Hyprland reload.
+STORE = os.environ.get("DISPLAY_PROFILES_STORE", os.path.join(HOME, ".local", "state", "phoenix", "display-profiles.json"))
+MONITORS_LUA = os.environ.get("DISPLAY_PROFILES_LUA", os.path.join(HOME, ".config", "hypr", "monitors.lua"))
+TEST = os.environ.get("DISPLAY_PROFILES_TEST") == "1"
+CONFIGURATOR = os.path.join(HOME, ".config", "quickshell", "end4-pC", "scripts", "hyprland", "monitor_configurator.py")
+STRING_KEYS = {"output", "mode", "position", "cm", "mirror"}
+OWN_KEYS = {"output", "mode", "position", "scale", "transform", "vrr", "disabled"}   # taken from the live state
+
+
+def run(cmd):
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
+def live():
+    r = run(["hyprctl", "monitors", "all", "-j"])
+    try:
+        return json.loads(r.stdout) if r and r.returncode == 0 else []
+    except ValueError:
+        return []
+
+
+def lua_blocks():
+    """monitors.lua blocks by output name, via illogical-impulse's own parser."""
+    if not os.path.isfile(MONITORS_LUA) or not os.path.isfile(CONFIGURATOR):
+        return {}
+    r = run(["python3", CONFIGURATOR, "--file", MONITORS_LUA, "--dump-all"])
+    try:
+        return json.loads(r.stdout) if r and r.returncode == 0 else {}
+    except ValueError:
+        return {}
+
+
+def settings_of(m, block):
+    s = {k: v for k, v in (block or {}).items() if k not in OWN_KEYS}
+    s.update({"mode": f"{m['width']}x{m['height']}@{m['refreshRate']:.2f}Hz",
+              "position": f"{m['x']}x{m['y']}", "scale": round(float(m["scale"]), 4)})
+    if int(m.get("transform") or 0):
+        s["transform"] = int(m["transform"])
+    if m.get("vrr"):
+        s["vrr"] = 1
+    if m.get("disabled"):
+        s["disabled"] = True
+    return s
+
+
+def key_of(descriptions):
+    return "\n".join(sorted(descriptions))
+
+
+def load():
+    try:
+        with open(STORE) as f:
+            d = json.load(f)
+        return d if isinstance(d, list) else []
+    except (OSError, ValueError):
+        return []
+
+
+def store(profiles):
+    os.makedirs(os.path.dirname(STORE), exist_ok=True)
+    tmp = STORE + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(profiles, f, indent=2)
+    os.replace(tmp, STORE)
+
+
+def lua_value(k, v):
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if k in STRING_KEYS or isinstance(v, str):
+        return '"' + str(v).replace("\\", "\\\\").replace('"', '\\"') + '"'
+    return str(v)
+
+
+def render(profile, names, others):
+    """monitors.lua text for a profile; names: description → current port name; others: the existing blocks of
+    outputs the profile doesn't set (kept as they are, e.g. a TV that isn't plugged in now)."""
+    out = ["-- Written by Settings › System › Display › Display profiles (~/.local/bin/display-profiles):",
+           f"-- profile \"{profile['name']}\". Changes made in Display settings are kept until a profile is applied again.", ""]
+    for mon in profile["monitors"]:
+        fields = {"output": names[mon["description"]]}
+        fields.update(mon["settings"])
+        out.append("hl.monitor({")
+        out += [f"    {k} = {lua_value(k, v)}," for k, v in fields.items()]
+        out += ["})", ""]
+    for name, block in others.items():
+        out.append("hl.monitor({")
+        out += [f"    {k} = {lua_value(k, v)}," for k, v in dict(block, output=name).items()]
+        out += ["})", ""]
+    return "\n".join(out)
+
+
+def connected_names():
+    return {m["description"]: m["name"] for m in live() if m.get("description")}
+
+
+def cmd_current():
+    blocks = lua_blocks()
+    print(json.dumps([{"name": m["name"], "description": m.get("description", ""), "settings": settings_of(m, blocks.get(m["name"]))}
+                      for m in live()]))
+
+
+def cmd_list():
+    names = connected_names()
+    now = key_of(names)
+    out = []
+    for p in load():
+        descs = [m["description"] for m in p["monitors"]]
+        out.append(dict(p, connected=all(d in names for d in descs), matches=key_of(descs) == now))
+    print(json.dumps(out))
+
+
+def cmd_save(name):
+    name = name.strip()[:60]
+    if not name:
+        sys.exit("display-profiles: give the profile a name")
+    mons = live()
+    if not mons:
+        sys.exit("display-profiles: can't read the displays (is Hyprland running?)")
+    blocks = lua_blocks()
+    profile = {"name": name, "monitors": [{"description": m.get("description") or m["name"], "settings": settings_of(m, blocks.get(m["name"]))}
+                                          for m in mons]}
+    profiles = [p for p in load() if p["name"] != name] + [profile]
+    store(profiles)
+    print(json.dumps({"ok": True, "name": name}))
+
+
+def apply(profile, names):
+    mine = {names[m["description"]] for m in profile["monitors"]}
+    text = render(profile, names, {o: b for o, b in lua_blocks().items() if o not in mine})
+    try:
+        with open(MONITORS_LUA) as f:
+            if f.read() == text:
+                return False
+    except OSError:
+        pass
+    bak = MONITORS_LUA + ".bak-display-profiles"
+    if os.path.isfile(MONITORS_LUA) and not os.path.exists(bak):
+        with open(MONITORS_LUA) as src, open(bak, "w") as dst:
+            dst.write(src.read())
+    tmp = MONITORS_LUA + ".tmp"
+    with open(tmp, "w") as f:
+        f.write(text)
+    os.replace(tmp, MONITORS_LUA)
+    if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE") and not TEST:
+        run(["hyprctl", "reload"])
+    return True
+
+
+def cmd_apply(name):
+    p = next((p for p in load() if p["name"] == name), None)
+    if not p:
+        sys.exit(f"display-profiles: no profile called {name}")
+    names = connected_names()
+    missing = [m["description"] for m in p["monitors"] if m["description"] not in names]
+    if missing:
+        print(json.dumps({"ok": False, "error": "not connected: " + ", ".join(missing)}))
+        return 1
+    changed = apply(p, names)
+    print(json.dumps({"ok": True, "changed": changed}))
+    return 0
+
+
+def cmd_auto():
+    names = connected_names()
+    now = key_of(names)
+    p = next((p for p in load() if key_of(m["description"] for m in p["monitors"]) == now), None)
+    if not p:
+        print(json.dumps({"ok": True, "profile": None}))
+        return 0
+    changed = apply(p, names)
+    print(json.dumps({"ok": True, "profile": p["name"], "changed": changed}))
+    return 0
+
+
+def cmd_delete(name):
+    store([p for p in load() if p["name"] != name])
+    print(json.dumps({"ok": True}))
+
+
+def main():
+    a = sys.argv[1:]
+    cmd = a[0] if a else ""
+    if cmd == "current":
+        cmd_current()
+    elif cmd == "list":
+        cmd_list()
+    elif cmd == "save" and len(a) >= 2:
+        cmd_save(" ".join(a[1:]))
+    elif cmd == "apply" and len(a) >= 2:
+        return cmd_apply(" ".join(a[1:]))
+    elif cmd == "auto":
+        return cmd_auto()
+    elif cmd == "delete" and len(a) >= 2:
+        cmd_delete(" ".join(a[1:]))
+    else:
+        sys.exit(__doc__)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -98,6 +98,38 @@ WPage {
         // an open kitty window, and from the setup assistant it could open behind it
         WLink { icon: "password"; title: "Change your password"; description: "Opens a window that asks for the current password, then the new one twice"; chevronIcon: "open_in_new"
                 action: () => Quickshell.execDetached(["kitty", "--class", "phoenix-setup", "--title", "Change password", "--hold", "passwd"]) }
+        // Phoenix login screen (P5, 2026-10-08): `phoenix login-screen install|remove` in a terminal (asks for the password)
+        WCard {
+            id: loginScreen
+            property string lsState: ""   // "on" | "off" | ""
+            icon: "login"
+            title: "Login screen at startup"
+            description: lsState === "on" ? "On: the PC starts at the Phoenix login screen and asks for your password"
+                : lsState === "off" ? "Off: the PC signs you in automatically when it starts" : "Checking…"
+            function refresh() { lsStatus.running = true }
+            Component.onCompleted: refresh()
+            Connections { target: GlobalStates; function onSettingsOpenChanged() { if (GlobalStates.settingsOpen) loginScreen.refresh() } }
+            Process {
+                id: lsStatus
+                command: ["bash", "-c", "~/.local/bin/phoenix login-screen status"]
+                stdout: StdioCollector { onStreamFinished: loginScreen.lsState = /: on/.test(text) ? "on" : /: off/.test(text) ? "off" : "" }
+            }
+            Process {
+                id: lsChange
+                onExited: loginScreen.refresh()
+            }
+            WButton {
+                accent: loginScreen.lsState === "off"
+                enabled: loginScreen.lsState !== "" && !lsChange.running
+                buttonText: lsChange.running ? "Waiting…" : loginScreen.lsState === "on" ? "Turn off" : "Turn on"
+                onClicked: {
+                    const action = loginScreen.lsState === "on" ? "remove" : "install"
+                    lsChange.command = ["kitty", "--class", "phoenix-setup", "--title", "Login screen", "--", "bash", "-c",
+                        `~/.local/bin/phoenix login-screen ${action}; echo; read -r -p 'Press Enter to close.'`]
+                    lsChange.running = true
+                }
+            }
+        }
         WLink { icon: "key"; title: "Sign-in options"; description: "Lock screen, keyring, password requirements"; page: "privacy" }
         WLink { icon: "group"; title: "Other users"; description: "Add or manage user accounts"; chevronIcon: "open_in_new"; action: () => Quickshell.execDetached(["bash", "-c", Config.options.apps.manageUser]) }
     }

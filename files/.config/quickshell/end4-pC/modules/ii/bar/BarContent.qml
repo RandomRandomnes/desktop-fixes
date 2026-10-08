@@ -31,9 +31,15 @@ Item {
 
     readonly property bool trayHasItems: SystemTray.items.values.length > 0
 
+    // Phoenix (2026-10-08): widgets hidden on this screen only (bar.hiddenOnScreen, "<screen model>\t<widget id>")
+    readonly property string screenKey: screen?.model || screen?.name || ""
+    readonly property var hiddenHere: (Config.options.bar.hiddenOnScreen ?? [])
+        .filter(e => e.startsWith(root.screenKey + "\t")).map(e => e.split("\t")[1])
+
     function filterLayout(layout) {
         // the battery widget only on PCs with a laptop battery (Phoenix: the Default profile lists it, desktops hide it)
         let out = Battery.available ? layout : layout.filter(name => name !== "batteryIndicator")
+        out = out.filter(name => !root.hiddenHere.includes(name))
         if (trayHasItems) return out
         return out.filter(name => name !== "sysTray")
     }
