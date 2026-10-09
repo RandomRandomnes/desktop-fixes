@@ -30,6 +30,11 @@ AbstractQuickPanel {
                 root.openBluetoothDialog();
             }
         }
+        AudioOutputToggle {
+            altAction: () => {
+                root.openAudioOutputDialog();
+            }
+        }
         NightLight {}
         GameMode {}
         IdleInhibitor {}

@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 2.220 (2026-10-09, fix)
+- Right sidebar: sound button in the quick buttons (click mutes, right-click chooses the audio output)
+
 ## custom 2.210 (2026-10-09, fix)
 - Login screen: apps in ~/.local/bin (Claude Code, Phoenix tools) are found again in the terminal after signing in
 

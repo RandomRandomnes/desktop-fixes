@@ -6,15 +6,15 @@
   "format": "custom-fixes",
   "line": "custom",
   "version": 2.99,
-  "label": "2.210",
+  "label": "2.220",
   "kind": "fix",
   "date": "2026-10-09",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Login screen: apps in ~/.local/bin (Claude Code, Phoenix tools) are found again in the terminal after signing in"
+    "Right sidebar: sound button in the quick buttons (click mutes, right-click chooses the audio output)"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "b2ca4e273024cd7ea7c0dac0021b6bb2ee1866498ef995e0eed1d4dfc69ea063",
+  "payloadSha256": "6812c9c7802a29138f52820160dd732552ebfb0b9f234d5dd8aaca156fa47721",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
     ".config/hypr/custom/execs.lua": "7d39d1525b32999f8b0afa49b078610d4eaddc30752fc26e0fd8424c2e60cb1b",
@@ -642,7 +642,7 @@
     ".config/quickshell/end4-pC/modules/ii/sidebarRight/pomodoro/Stopwatch.qml": "e397dd322a49c45e06d5cf0fadc03dc1df9181dc486bdb43abdb6208fdd65c46",
     ".config/quickshell/end4-pC/modules/ii/sidebarRight/quickToggles/AbstractQuickPanel.qml": "dc05e0e0405c525d4c8d908729a2801b932441e38c6950f64c74d6a462a6b3f4",
     ".config/quickshell/end4-pC/modules/ii/sidebarRight/quickToggles/AndroidQuickPanel.qml": "c395a00fdde62727b9b82e734c57afb69ae1ce5ee66ea36673b573660cdeeed3",
-    ".config/quickshell/end4-pC/modules/ii/sidebarRight/quickToggles/ClassicQuickPanel.qml": "7bf3510ed9375b6780a860ee433182b7ce045cec9de9376e374a2279799c61f0",
+    ".config/quickshell/end4-pC/modules/ii/sidebarRight/quickToggles/ClassicQuickPanel.qml": "709684959f867d1208d0d5fc98da0120471425a40eeef75659ecb44f0cbe258f",
     ".config/quickshell/end4-pC/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidAntiFlashbangToggle.qml": "7fc6a59ee9fe943d969d9a11b08839974c33dbb2cba93b09eb36ecea14e210c8",
     ".config/quickshell/end4-pC/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidAudioToggle.qml": "73116da1121d0c34ce8b67e83ef8e2f9ca675ff9ad2fa2ce02248c4dd51b5901",
     ".config/quickshell/end4-pC/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidBluetoothToggle.qml": "b88101736583ebc396b6a97e156d30bdc8c4d1405a03e20c3b5095f0c4ceb16e",
@@ -663,6 +663,7 @@
     ".config/quickshell/end4-pC/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidScreenSnipToggle.qml": "81a858a8eb1e1980624cbf34eab55e38436a02a2a299b8963e747495ac6dd199",
     ".config/quickshell/end4-pC/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidToggleDelegateChooser.qml": "9d8e12dc0f4578b48e53cf402fe015f213cb386934271107611a219a607b3ed5",
     ".config/quickshell/end4-pC/modules/ii/sidebarRight/quickToggles/androidStyle/AndroidVpnToggle.qml": "9736fd8223f3985d75b347e3be3e9ad252c52382aa80d5dd8fd3c003fab2a381",
+    ".config/quickshell/end4-pC/modules/ii/sidebarRight/quickToggles/classicStyle/AudioOutputToggle.qml": "74d27fce069175030f14fc961178bdee95cac00bd2bf9f180fae7b24ed723cdb",
     ".config/quickshell/end4-pC/modules/ii/sidebarRight/quickToggles/classicStyle/BluetoothToggle.qml": "b58bc2476b07115d0feba1313f0b1af03634e70d0cde79fb8b176025e6844428",
     ".config/quickshell/end4-pC/modules/ii/sidebarRight/quickToggles/classicStyle/CloudflareWarp.qml": "7ac849392ca8c2b505127cc4340acf51546bd320127940057472302f9f7856d1",
     ".config/quickshell/end4-pC/modules/ii/sidebarRight/quickToggles/classicStyle/DesktopSwitch.qml": "0ce092398acecc2067b1d509426908a7ddafffb47239e0133dc3a5be9cbae0b4",
@@ -986,7 +987,8 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".local/share/phoenix/greeter/phoenix-session"
+    ".config/quickshell/end4-pC/modules/ii/sidebarRight/quickToggles/ClassicQuickPanel.qml",
+    ".config/quickshell/end4-pC/modules/ii/sidebarRight/quickToggles/classicStyle/AudioOutputToggle.qml"
   ],
   "test": false
 }
