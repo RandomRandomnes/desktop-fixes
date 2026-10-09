@@ -6,15 +6,15 @@
   "format": "custom-fixes",
   "line": "custom",
   "version": 2.99,
-  "label": "2.220",
+  "label": "2.230",
   "kind": "fix",
   "date": "2026-10-09",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Right sidebar: sound button in the quick buttons (click mutes, right-click chooses the audio output)"
+    "Desktop right-click menu redone in the Windows 11 style: opens at the cursor; View (desktop widgets with check marks), Live wallpaper, DropShelf, Open in Terminal, Display settings, Personalize, Settings"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "6812c9c7802a29138f52820160dd732552ebfb0b9f234d5dd8aaca156fa47721",
+  "payloadSha256": "a7cb85b227852cafa7b43dab810b595a6920cff6d42c7477ca19ccf4b9bed865",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
     ".config/hypr/custom/execs.lua": "7d39d1525b32999f8b0afa49b078610d4eaddc30752fc26e0fd8424c2e60cb1b",
@@ -456,7 +456,11 @@
     ".config/quickshell/end4-pC/modules/ii/bar/WeatherPopup.qml": "23c1033fe55de6012dbc9fb4a733e427d3ea7002083896e5a5caf5363eb41c65",
     ".config/quickshell/end4-pC/modules/ii/bar/Workspaces.qml": "2e4c6b1673516843fdcfa20e0c94a7eac162fc5c2045c9a321e0344a26d1c05b",
     ".config/quickshell/end4-pC/modules/ii/bar/WorkspacesAlt.qml": "58cec5ae39b18e8a777ef5970bff6bdf691dabc0f3dc535ceadcbc74b8bc9c56",
-    ".config/quickshell/end4-pC/modules/ii/desktopMenu/DesktopMenu.qml": "d3dba0d8df4b03ab4d8923749e4518b2dab678f47340dc664dfe402b8464cbe1",
+    ".config/quickshell/end4-pC/modules/ii/desktopMenu/DeskMenuFrame.qml": "dd0523e45a0109faeadd2a91b8c2395570b22a0bca2367dd2798ec8cd82b1638",
+    ".config/quickshell/end4-pC/modules/ii/desktopMenu/DeskMenuRow.qml": "8befdc262ab58b7667b0990e75f0cc37047b9c66ba9e5ddc9e45d8d219ac671e",
+    ".config/quickshell/end4-pC/modules/ii/desktopMenu/DeskMenuSeparator.qml": "334a2a730e308b3eebffa7b00bcbfccafc51869a4de32cc8054ccac6722c35db",
+    ".config/quickshell/end4-pC/modules/ii/desktopMenu/DeskMenuStyle.qml": "ae78ac44c98a1f6ec2cb90b7a4a378d5122e851d0640e52be0ef2f1419ca288c",
+    ".config/quickshell/end4-pC/modules/ii/desktopMenu/DesktopMenu.qml": "85215ce83019b18df459c0fee1d5f2b7a521f4e8fd4605daf085c1790b11d61a",
     ".config/quickshell/end4-pC/modules/ii/dock/Dock.qml": "9d784066d6efb9252bd6fbde8803e73a75d4c817e52efc0ad50e5ae8aa9c491d",
     ".config/quickshell/end4-pC/modules/ii/dock/DockActiveApps.qml": "3f8fdbb3ff5e2819ef31713cfcc20f47636fc8cd21e4598682872a5d2371dda9",
     ".config/quickshell/end4-pC/modules/ii/dock/DockAppsButton.qml": "a3a825da41efe9876e10fc3a7a0bc92e4279d61d02b2800f084f488dc070f202",
@@ -987,8 +991,11 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/quickshell/end4-pC/modules/ii/sidebarRight/quickToggles/ClassicQuickPanel.qml",
-    ".config/quickshell/end4-pC/modules/ii/sidebarRight/quickToggles/classicStyle/AudioOutputToggle.qml"
+    ".config/quickshell/end4-pC/modules/ii/desktopMenu/DeskMenuFrame.qml",
+    ".config/quickshell/end4-pC/modules/ii/desktopMenu/DeskMenuRow.qml",
+    ".config/quickshell/end4-pC/modules/ii/desktopMenu/DeskMenuSeparator.qml",
+    ".config/quickshell/end4-pC/modules/ii/desktopMenu/DeskMenuStyle.qml",
+    ".config/quickshell/end4-pC/modules/ii/desktopMenu/DesktopMenu.qml"
   ],
   "test": false
 }

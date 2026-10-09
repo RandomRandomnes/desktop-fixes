@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 2.230 (2026-10-09, fix)
+- Desktop right-click menu redone in the Windows 11 style: opens at the cursor; View (desktop widgets with check marks), Live wallpaper, DropShelf, Open in Terminal, Display settings, Personalize, Settings
+
 ## custom 2.220 (2026-10-09, fix)
 - Right sidebar: sound button in the quick buttons (click mutes, right-click chooses the audio output)
 
