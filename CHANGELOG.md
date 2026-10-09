@@ -1,5 +1,9 @@
 # Changelog
 
+## custom 2.170 (2026-10-09, fix)
+- Critical update check: updates that can break the desktop (a new Qt or Hyprland version, Quickshell, graphics drivers) are pointed out before installing, with a notification and a list in Settings › Update; on the PC that publishes Phoenix the update asks first so they can be tried in the test VM
+- Desktop check after every login and update and in Settings › Update: title bars missing, Hyprland config errors, the shell not running or built for an older Qt
+
 ## custom 2.160 (2026-10-09, fix)
 - Setup assistant and Settings: the Wi-Fi page says when the PC has no Wi-Fi adapter (it kept scanning) and shows the cable connection
 - Texts updated for the Phoenix-owned shell: the setup assistant's updates question says it also covers the shell; system fixes are for Arch, Hyprland or Quickshell updates

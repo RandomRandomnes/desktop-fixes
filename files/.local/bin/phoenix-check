@@ -1,0 +1,252 @@
+#!/usr/bin/env python3
+"""Critical update checker and desktop check for Phoenix (2026-10-09, ours).
+
+  phoenix-check updates [--json] [--notify]   pending package updates that can break the desktop, and why
+  phoenix-check health  [--json] [--notify]   is the desktop healthy now (after an update, at login)
+  phoenix-check                               both
+
+What counts as critical (learned the hard way, see HANDOFF):
+  - a new Qt minor version (6.12 -> 6.13): Quickshell is built against Qt's private parts and has to be rebuilt for
+    it; until then the shell may not start (it happened with 6.11 -> 6.12, and the rebuild needed a patch);
+  - a new Hyprland version: the title bar plugin (hyprbars) must be built for exactly that version, and a new minor
+    version (0.56 -> 0.57) can change the Lua config API;
+  - Quickshell itself, graphics drivers (mesa, nvidia) and the kernel (restart needed).
+
+--notify sends a desktop notification only when something is found, and only once per finding (updates: once per
+set of pending versions; health: once per problem until it is gone). "Host" = the PC that publishes Phoenix
+(~/.local/state/custom-fixes-publisher exists): system-update asks there before installing critical updates, so they
+can be tried in a VM first.
+"""
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+
+HOME = os.path.expanduser("~")
+STATE = os.path.join(HOME, ".local", "state", "phoenix")
+CACHE = os.path.join(STATE, "check-updates.json")       # pending updates, reused for 20 minutes
+NOTIFIED = os.path.join(STATE, "check-notified.json")
+FEATURES = os.path.join(HOME, ".config", "hypr", "custom", "features.lua")
+HOST = os.path.isdir(os.path.join(HOME, ".local", "state", "custom-fixes-publisher"))
+CACHE_AGE = 20 * 60
+
+
+def run(cmd, timeout=60):
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        return r.returncode, r.stdout
+    except (OSError, subprocess.SubprocessError):
+        return 127, ""
+
+
+def load(path, default):
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return default
+
+
+def save(path, data):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(data, f, indent=1)
+    os.replace(tmp, path)
+
+
+def minor(v):
+    """'6.12.0-2' -> '6.12'; '1:0.56.2-4' -> '0.56'."""
+    v = v.split(":", 1)[-1]
+    m = re.match(r"(\d+)\.(\d+)", v)
+    return f"{m.group(1)}.{m.group(2)}" if m else v
+
+
+def bare(v):
+    """Package version without epoch and release: '0.56.2-4' -> '0.56.2'."""
+    return v.split(":", 1)[-1].rsplit("-", 1)[0]
+
+
+# ── pending updates ──────────────────────────────────────────────────────────────────────────────────────────────
+
+def pending(fresh=False):
+    c = load(CACHE, None)
+    if not fresh and c and time.time() - c.get("time", 0) < CACHE_AGE:
+        return c["updates"], c.get("ok", True)
+    ups, ok = {}, True
+    rc, out = run(["checkupdates", "--nocolor"], timeout=120)   # 0 = updates, 2 = none, else an error
+    if rc not in (0, 2):
+        ok = False
+    for cmd in (["yay", "-Qua"], ["paru", "-Qua"]):
+        rc2, out2 = run(cmd, timeout=120)
+        if rc2 != 127:
+            out += "\n" + out2
+            break
+    for line in out.splitlines():
+        m = re.match(r"^(\S+)\s+(\S+)\s+->\s+(\S+)", line.strip())
+        if m:
+            ups[m.group(1)] = {"from": m.group(2), "to": m.group(3)}
+    save(CACHE, {"time": time.time(), "updates": ups, "ok": ok})
+    return ups, ok
+
+
+def installed(pkg):
+    rc, out = run(["pacman", "-Q", pkg], timeout=10)
+    return out.split()[1] if rc == 0 and len(out.split()) == 2 else ""
+
+
+def classify(ups):
+    """[{pkg, from, to, level: high|medium|info, why, after}] for the updates that matter to Phoenix."""
+    found = []
+    def add(pkg, level, why, after):
+        u = ups[pkg]
+        found.append({"pkg": pkg, "from": u["from"], "to": u["to"], "level": level, "why": why, "after": after})
+    if "qt6-base" in ups and minor(ups["qt6-base"]["from"]) != minor(ups["qt6-base"]["to"]):
+        add("qt6-base", "high", f"New Qt version {minor(ups['qt6-base']['to'])}: Quickshell, which draws the whole "
+            "desktop shell, is built for the old Qt and has to be rebuilt; until then the shell may not start.",
+            "Rebuild Quickshell for the new Qt (on 6.11 -> 6.12 this needed a patch); check `qs log` for \"built against Qt\".")
+    for qs in ("quickshell", "quickshell-git", "illogical-impulse-quickshell-git"):
+        if qs in ups:
+            add(qs, "high", "Quickshell itself (the program that draws the shell) changes.",
+                "Restart the shell and check it starts without errors.")
+    if "hyprland" in ups:
+        f, t = ups["hyprland"]["from"], ups["hyprland"]["to"]
+        bars = ups.get("hyprland-plugin-hyprbars", {}).get("to") or installed("hyprland-plugin-hyprbars")
+        bars_ok = bars and bare(bars) == bare(t)
+        if minor(f) != minor(t):
+            add("hyprland", "high", f"New Hyprland version {minor(t)}: its Lua configuration can change, so Phoenix's "
+                "settings may need a system fix" + ("" if bars_ok else "; the title bar plugin isn't available for it yet")
+                + ".", "Log out and in; check `hyprctl configerrors` and that windows have title bars.")
+        else:
+            add("hyprland", "medium" if not bars_ok else "info",
+                "Hyprland update" + ("" if bars_ok else ": the title bar plugin isn't built for this version yet, so "
+                                     "windows lose their title bars until it is") + ".",
+                "Log out and in once the update is done.")
+    for dep in ("aquamarine", "hyprutils", "hyprlang", "hyprgraphics", "hyprcursor", "hyprwayland-scanner"):
+        if dep in ups and "hyprland" not in ups:
+            add(dep, "medium", f"A Hyprland library ({dep}) changes without a Hyprland update; Hyprland or the title "
+                "bar plugin may then fail to start.", "Log out and in; check that windows have title bars.")
+    for g in ("mesa", "nvidia", "nvidia-open", "nvidia-open-dkms", "nvidia-dkms", "nvidia-utils"):
+        if g in ups:
+            add(g, "medium", "Graphics driver update.", "Restart the computer after updating.")
+    for k in ("linux", "linux-lts", "linux-zen", "linux-hardened"):
+        if k in ups:
+            add(k, "info", "Kernel update.", "Restart the computer after updating.")
+    return found
+
+
+# ── desktop health ───────────────────────────────────────────────────────────────────────────────────────────────
+
+def health():
+    """[{id, level, text, fix}] of problems; empty = healthy."""
+    probs = []
+    in_hypr = bool(os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"))
+    if in_hypr:
+        rc, errs = run(["hyprctl", "configerrors"], timeout=10)
+        errs = errs.strip()
+        if rc == 0 and errs and errs.lower() != "no errors":
+            probs.append({"id": "config", "level": "high", "text": "Hyprland reports configuration errors:\n" + errs[:600],
+                          "fix": "Usually after a Hyprland update; a Phoenix system fix follows. Restore points undo the update."})
+        try:
+            feats = open(FEATURES).read()
+        except OSError:
+            feats = ""
+        if not re.search(r"\bwindowsStyle\s*=\s*false\b", feats):
+            rc, plugins = run(["hyprctl", "plugin", "list"], timeout=10)
+            if rc == 0 and "hyprbars" not in plugins:
+                hv, bv = installed("hyprland"), installed("hyprland-plugin-hyprbars")
+                probs.append({"id": "hyprbars", "level": "high",
+                              "text": "Windows have no title bars: the title bar plugin isn't loaded"
+                                      + (f" (Hyprland {bare(hv)}, plugin built for {bare(bv)})" if hv and bv and bare(hv) != bare(bv) else "") + ".",
+                              "fix": "Update the plugin (`yay -S hyprland-plugin-hyprbars`), then log out and in."})
+    rc, shells = run(["pgrep", "-f", "^qs -c [e]nd4-pC$"], timeout=10)
+    n = len(shells.split())
+    if in_hypr and n != 1:
+        probs.append({"id": "shells", "level": "high",
+                      "text": "The desktop shell isn't running." if n == 0 else f"{n} copies of the desktop shell are running (bars stack).",
+                      "fix": "Log out and in."})
+    rc, log = run(["qs", "log", "-c", "end4-pC"], timeout=30)
+    log = re.sub(r"\x1b\[[0-9;]*m", "", log)
+    m = re.search(r"built against Qt ([\d.]+)", log)
+    if m:
+        probs.append({"id": "qt", "level": "high",
+                      "text": f"Quickshell was built for Qt {m.group(1)} but Qt {bare(installed('qt6-base'))} is installed; "
+                              "the shell can crash or fail to start.",
+                      "fix": "Rebuild Quickshell for the installed Qt."})
+    if os.path.isdir("/usr/lib/modules") and not os.path.isdir(f"/usr/lib/modules/{os.uname().release}"):
+        probs.append({"id": "reboot", "level": "info", "text": "The kernel was updated.", "fix": "Restart the computer."})
+    return probs
+
+
+# ── output ───────────────────────────────────────────────────────────────────────────────────────────────────────
+
+def notify(key, items, title, body):
+    """Once per distinct finding."""
+    seen = load(NOTIFIED, {})
+    sig = json.dumps(items, sort_keys=True)
+    if seen.get(key) == sig:
+        return
+    seen[key] = sig
+    save(NOTIFIED, seen)
+    if items:
+        run(["notify-send", "-a", "Phoenix", "-u", "critical" if any(i.get("level") == "high" for i in items) else "normal",
+             title, body], timeout=10)
+
+
+def cmd_updates(args):
+    ups, ok = pending(fresh="--fresh" in args)
+    found = classify(ups)
+    if "--json" in args:
+        print(json.dumps({"host": HOST, "ok": ok, "pending": len(ups), "critical": found}))
+    else:
+        if not ok:
+            print("Couldn't check for updates (offline?).")
+        elif not found:
+            print(f"Pending updates: {len(ups)}; none of them is critical for the desktop.")
+        for f in found:
+            print(f"[{f['level']}] {f['pkg']} {f['from']} -> {f['to']}\n    {f['why']}\n    After: {f['after']}")
+    if "--notify" in args:
+        risky = [{"pkg": f["pkg"], "to": f["to"], "level": f["level"]} for f in found if f["level"] in ("high", "medium")]
+        notify("updates", risky, "Critical update waiting" + (" — test it first" if HOST else ""),
+               "; ".join(f"{f['pkg']} {f['to']}" for f in risky) + (". Try it in the test VM before installing; "
+               "Settings › Update has the details." if HOST else ". Settings › Update has the details."))
+    return 1 if any(f["level"] in ("high", "medium") for f in found) else 0
+
+
+def cmd_health(args):
+    probs = health()
+    if "--json" in args:
+        print(json.dumps({"problems": probs}))
+    else:
+        if not probs:
+            print("Desktop check: everything looks fine.")
+        for p in probs:
+            print(f"[{p['level']}] {p['text']}\n    Fix: {p['fix']}")
+    if "--notify" in args:
+        serious = [{"id": p["id"], "level": p["level"]} for p in probs if p["level"] != "info"]
+        notify("health", serious, f"Desktop check: {len(serious)} problem(s)",
+               " ".join(p["text"].split("\n")[0] for p in probs if p["level"] != "info") + " Settings › Update has the details.")
+    return 1 if any(p["level"] != "info" for p in probs) else 0
+
+
+def main():
+    a = sys.argv[1:]
+    cmd = a[0] if a and not a[0].startswith("-") else ""
+    rest = a[1:] if cmd else a
+    if cmd == "updates":
+        return cmd_updates(rest)
+    if cmd == "health":
+        return cmd_health(rest)
+    if cmd in ("", "all"):
+        r1 = cmd_updates(rest)
+        print()
+        r2 = cmd_health(rest)
+        return r1 | r2
+    print(__doc__.strip())
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

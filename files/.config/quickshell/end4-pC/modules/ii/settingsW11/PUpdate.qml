@@ -132,6 +132,58 @@ date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
         }
     }
 
+    // ── desktop check (~/.local/bin/phoenix-check, 2026-10-09): pending updates that can break the desktop, and
+    //    problems now (no title bars, config errors, shell built for an older Qt). Replaced hypr-guard's check. ──
+    property var critical: []
+    property var problems: []
+    property bool checkHost: false
+    Process {
+        id: checkProc
+        running: true
+        command: ["bash", "-c", "~/.local/bin/phoenix-check updates --json; ~/.local/bin/phoenix-check health --json"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const lines = text.split("\n").filter(l => l.trim().startsWith("{"));
+                try { const u = JSON.parse(lines[0]); page.critical = u.critical ?? []; page.checkHost = !!u.host } catch (e) { page.critical = [] }
+                try { page.problems = JSON.parse(lines[1]).problems ?? [] } catch (e) { page.problems = [] }
+            }
+        }
+    }
+    WSection {
+        title: "Desktop check"
+        Repeater {
+            model: page.problems
+            WCard {
+                required property var modelData
+                icon: modelData.level === "info" ? "info" : "error"
+                title: modelData.text.split("\n")[0]
+                description: modelData.fix
+            }
+        }
+        Repeater {
+            model: page.critical
+            WCard {
+                required property var modelData
+                icon: modelData.level === "high" ? "warning" : modelData.level === "medium" ? "report" : "info"
+                title: `Waiting: ${modelData.pkg} ${modelData.to}` + (modelData.level === "high" ? " (can break the desktop)" : "")
+                description: modelData.why + "\nAfterwards: " + modelData.after
+                    + (page.checkHost && modelData.level !== "info" ? "\nThis PC publishes Phoenix: try it in the test VM first; the update asks before installing it." : "")
+            }
+        }
+        WCard {
+            icon: page.problems.some(p => p.level !== "info") ? "healing" : "verified"
+            title: page.problems.some(p => p.level !== "info") ? "The desktop needs attention"
+                : page.critical.some(c => c.level !== "info") ? "The desktop is fine; an update above needs care"
+                : "Everything looks fine"
+            description: "Checks the title bars, Hyprland's configuration, the shell, and pending updates that can break the desktop (a new Qt or Hyprland version, Quickshell, graphics drivers). It also runs after every login and update."
+            WButton {
+                buttonText: checkProc.running ? "Checking…" : "Check now"
+                enabled: !checkProc.running
+                onClicked: { checkProc.command = ["bash", "-c", "~/.local/bin/phoenix-check updates --json --fresh; ~/.local/bin/phoenix-check health --json"]; checkProc.running = true }
+            }
+        }
+    }
+
     WSection {
         visible: page.whatsNew.length > 0
         title: "What's new"

@@ -11,6 +11,26 @@ kernel_before=$(pacman -Q linux 2>/dev/null)
 plasma_before=$(pacman -Q plasma-workspace 2>/dev/null)
 pgrep -f '^qs -c [e]nd4-pC$' >/dev/null && in_hypr=1 || in_hypr=0
 
+# critical updates first (~/.local/bin/phoenix-check, 2026-10-09): a new Qt or Hyprland version, Quickshell, graphics
+# drivers. Shown on every PC; on the PC that publishes Phoenix the update stops to ask, so they can be tried in the
+# test VM first (and a system fix prepared) before they reach this desktop and everyone else's.
+if [ -x "$HOME/.local/bin/phoenix-check" ]; then
+    echo -e "\e[1m==> Critical updates\e[0m"
+    "$HOME/.local/bin/phoenix-check" updates --fresh
+    crit=$?
+    if [ $crit -ne 0 ] && [ -d "$HOME/.local/state/custom-fixes-publisher" ] && [ -r /dev/tty ]; then
+        echo
+        echo "This PC publishes Phoenix: try these in the test VM first (~/clone-usb/vm/vmlab.sh start fresh, then update there)."
+        read -r -p "Install everything now anyway? [y/N] " a < /dev/tty
+        if [[ ! "$a" =~ ^[yY] ]]; then
+            echo "Nothing was installed."
+            read -r -p "Press Enter to close." < /dev/tty
+            exit 0
+        fi
+    fi
+    echo
+fi
+
 # 0) a restore point: settings + package versions, so Settings › Update › Restore points can undo this update
 echo -e "\e[1m==> Restore point\e[0m"
 if "$HOME/.local/bin/restore-point" create --reason "Before update" >/dev/null; then
@@ -50,13 +70,21 @@ msgs=()
 [ "$hypr_before" != "$(pacman -Q hyprland 2>/dev/null)" ] && [ $in_hypr -eq 1 ] && msgs+=("Hyprland was updated: log out and log in again to complete the update.")
 [ "$plasma_before" != "$(pacman -Q plasma-workspace 2>/dev/null)" ] && [ $in_hypr -eq 0 ] && msgs+=("Plasma was updated: log out and log in again to complete the update.")
 [ "$kernel_before" != "$(pacman -Q linux 2>/dev/null)" ] && msgs+=("The kernel was updated: restart the computer when convenient.")
+# desktop check (only meaningful while Hyprland runs and before a Hyprland update takes effect; the login check after
+# the next login covers the rest)
+health_rc=0
+if [ $in_hypr -eq 1 ] && [ "$hypr_before" = "$(pacman -Q hyprland 2>/dev/null)" ] && [ -x "$HOME/.local/bin/phoenix-check" ]; then
+    health=$("$HOME/.local/bin/phoenix-check" health)
+    health_rc=$?
+    [ $health_rc -ne 0 ] && msgs+=("Desktop check: $health")
+fi
 
 echo
 echo -e "\e[1m==> Summary\e[0m"
 printf '%s\n' "${msgs[@]}"
 echo
 
-if [ $yay_rc -eq 0 ] && [ $sysfix_rc -eq 0 ] && [ $fixes_rc -eq 0 ]; then
+if [ $yay_rc -eq 0 ] && [ $sysfix_rc -eq 0 ] && [ $fixes_rc -eq 0 ] && [ $health_rc -eq 0 ]; then
     notify-send -a "System update" "Update finished" "$(printf '%s\n' "${msgs[@]}")"
     # A timed-out `read -t` returns 142 (SIGALRM). Exit 0 explicitly, or kitty reports it as a failure.
     read -t 10 -n 1 -s -p "Closing in 10s. Press any key to keep this window open." && read -r -p $'\nPress Enter to close.'

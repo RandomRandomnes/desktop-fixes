@@ -26,6 +26,9 @@ while [ $i -lt 60 ]; do
   i=$((i+1))
 done
 echo "$(date +%T) shell background ready after $i s" >> "$log"
+# Desktop check once the login has settled (replaces hypr-guard's login check): a notification only when something is
+# wrong, e.g. no title bars after a Hyprland update or a shell built for an older Qt (~/.local/bin/phoenix-check)
+[ -x "$HOME/.local/bin/phoenix-check" ] && (sleep 30; "$HOME/.local/bin/phoenix-check" health --notify >> "$log" 2>&1) &
 # Setup profile steps that need a running desktop (wallpaper + colors after an install). No-op otherwise.
 [ -x "$HOME/.local/bin/setup-profile" ] && "$HOME/.local/bin/setup-profile" first-login >> "$log" 2>&1
 # First-time setup wizard after a fresh install (the clone installer leaves this marker; the wizard removes it)

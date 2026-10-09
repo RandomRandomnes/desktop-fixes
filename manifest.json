@@ -6,24 +6,23 @@
   "format": "custom-fixes",
   "line": "custom",
   "version": 2.99,
-  "label": "2.160",
+  "label": "2.170",
   "kind": "fix",
   "date": "2026-10-09",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Setup assistant and Settings: the Wi-Fi page says when the PC has no Wi-Fi adapter (it kept scanning) and shows the cable connection",
-    "Texts updated for the Phoenix-owned shell: the setup assistant's updates question says it also covers the shell; system fixes are for Arch, Hyprland or Quickshell updates",
-    "phoenix status shows the shell as Phoenix's own"
+    "Critical update check: updates that can break the desktop (a new Qt or Hyprland version, Quickshell, graphics drivers) are pointed out before installing, with a notification and a list in Settings \u203a Update; on the PC that publishes Phoenix the update asks first so they can be tried in the test VM",
+    "Desktop check after every login and update and in Settings \u203a Update: title bars missing, Hyprland config errors, the shell not running or built for an older Qt"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "7673558c50192a13e070bb1dff09e87f646aecd7dc74bab8caaa64b6ae922c75",
+  "payloadSha256": "8b4dd2e7e9984980a679d18c4110d005d721c439e6ddbfb210e7540a4af35a78",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
     ".config/hypr/custom/execs.lua": "7d39d1525b32999f8b0afa49b078610d4eaddc30752fc26e0fd8424c2e60cb1b",
     ".config/hypr/custom/general.lua": "e5622221a80a5b98e4f6a85845149150ddbcd29f1481880d960f3805edcf93aa",
     ".config/hypr/custom/keybinds.lua": "8ee638e94053968d19b77a80a8fdb663a107063a0d0e42cf6b24ea142bca1baf",
     ".config/hypr/custom/rules.lua": "75ade8ef784f5325d456673f33af4cf07ee655f2b1f4d30f2cf5254873914395",
-    ".config/hypr/custom/scripts/autostart.sh": "31c1cda31fd1c28d136ff70eb858c11053a930ea5f3608186a5ef4211e386252",
+    ".config/hypr/custom/scripts/autostart.sh": "0e13dde5ef789b28733c9fe0c873b1db8a4c480e63bdf26f2343b353f2727f7d",
     ".config/hypr/custom/scripts/hb.sh": "e0f841a85cceed0425333d8946884b684edc76a13c35a152ef8ef41fb0206675",
     ".config/hypr/custom/variables.lua": "3859ea1ee32e82cdc61364c2d24248acf1d5a8063244f3dc96be9c39fb803337",
     ".config/quickshell/end4-pC/.gitignore": "6eeb5d38eeaeda8767818aa50d4fbd9eeac9a40b7d9cd34e97f6cbdfc0bdde70",
@@ -584,7 +583,7 @@
     ".config/quickshell/end4-pC/modules/ii/settingsW11/PPrivacy.qml": "287c1be3299f9e5ba89af97c422b758756c97ab401d9812c07d2e8ae5a9a78bb",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/PSystem.qml": "2a8c2a6d06722dc8e2e28f51d735214847fcc48e73eac152c05d745a528acb70",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/PTime.qml": "407b92d4c7059a3fd74c7bd7622895f283f4834c4cef37dae60f2e5a54f0b7d3",
-    ".config/quickshell/end4-pC/modules/ii/settingsW11/PUpdate.qml": "cfca78abe6dcfa70635de45f0c6ae457cc54b3e8d16cc47d5fb56fe5362ced0a",
+    ".config/quickshell/end4-pC/modules/ii/settingsW11/PUpdate.qml": "50d48b8027d4f51da0aa955d38ec8cc30d28a1770b42506a339b971eb024bbf3",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/W11Settings.qml": "22bdd63bcb8fb6789e995c8b19698b830b27dd3a17147d06cc55a12e1b4aadb5",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/WAppListEditor.qml": "28e3d23c4078b1dea50880ceb8d12725581a3cfa9b44766b7ccde8f1c886700a",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/WButton.qml": "70ec7d146222ac37363e15201c6edde249095af7c57db3bf93b40656c310b6da",
@@ -840,7 +839,7 @@
     ".config/quickshell/end4-pC/services/Todo.qml": "044f5ac9d5aba709f7d4b0a5de6388e5ce9fdb3d491834285a374a4399407037",
     ".config/quickshell/end4-pC/services/Translation.qml": "eb6faa824eb7471cd7115e033780640a71b53803ab6ea1decf29d25f83bc56d4",
     ".config/quickshell/end4-pC/services/TrayService.qml": "40732f5b95c6ae3f124b43084e60289b23d00e8d648bf9ed040fb061570653ac",
-    ".config/quickshell/end4-pC/services/Updates.qml": "167c819e0e079e744e707b081c9cafbe15a4b65ed7519ba29cb4d63926656fe0",
+    ".config/quickshell/end4-pC/services/Updates.qml": "70ee74b5b6019dc2ad39c9ff03c14f7c23ca878cc7591d7beb85aeecbbfcc32e",
     ".config/quickshell/end4-pC/services/Vpn.qml": "329895e971fdfa17789527a525ccb9c55125e9c1c015abba83fef8014b11544b",
     ".config/quickshell/end4-pC/services/WM.qml": "9edd4c6839615bd26e05768b8baa4b61014eef1b9f30ea4cf167db5db1774b60",
     ".config/quickshell/end4-pC/services/WallhavenSearch.qml": "31d88ff3fd2adbc1d17d136ada71d851be6462acb4f631947b43548c8ae6b9f3",
@@ -892,6 +891,7 @@
     ".local/bin/linux-wallpaper-engine": "42fad852f27ed5c452a1742d4b7053ba8cf85a6c19e1b927350f8ee4f6711813",
     ".local/bin/linux-wallpaper-engine-ux": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
     ".local/bin/phoenix": "1c6b3b38d4178684f89197bca6a9fdebc3653331f3344c1003ded449edd95ac6",
+    ".local/bin/phoenix-check": "10e38f21b89df4147a11c43329d48d1d4c9a1f1c23d1a97730b91bee432f449c",
     ".local/bin/phoenix-file-picker": "0721de431105a9c401a2784b47da7f9780068da6f6def76a5d234ccdbf7470ac",
     ".local/bin/phoenix-greeter-theme": "b22756525eae2ece3b45deca4b2d71e2cfd2f643a4b8c3344305f424b2a0e959",
     ".local/bin/phoenix-report": "93f7135c38f8897b022eaecaa8f19c958ed8d4a5fe4b1a1f2246c21bc013ffa2",
@@ -901,7 +901,7 @@
     ".local/bin/setup-profile": "c38962e6c5d7db833bec43df3c318d409dbd3d4572eb370aa968f873c0a0d75e",
     ".local/bin/sun-times": "3f7724459f52427eb76a9d5f45c8e1929c9a41edb302d9a884508adbaae93adc",
     ".local/bin/switch-desktop": "f5daca6e8e97c7d35581f448be14749a817ecf19d485cb844816209c6c775a29",
-    ".local/bin/system-update": "0edbd593d1462b764cf192243847c2cb2eab36175f12fc20cb9c89f157118c7b",
+    ".local/bin/system-update": "a30d432222f6612b7f886a500c009f610ae52f78a9c06d13821a8492371d1451",
     ".local/bin/wallpaper-engine-ctl": "a4f7731314f83716556b35b58995acb1ee46047233dba6c7eb3d45d1b4fc3417",
     ".local/bin/wallpaper-engine-kde": "295324c02b7559b88fd4a0c5e30119ddd473f4f46a16b883b3f7b9cb49f744a2",
     ".local/bin/window-rules": "06d2ab893ce48309b36282ea879e1a1d9ac9e8172c6d89a0f3357899aa1ac65c",
@@ -986,13 +986,11 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/quickshell/end4-pC/modules/ii/settingsW11/PNetwork.qml",
+    ".config/hypr/custom/scripts/autostart.sh",
     ".config/quickshell/end4-pC/modules/ii/settingsW11/PUpdate.qml",
-    ".config/quickshell/end4-pC/quick-start.qml",
-    ".config/quickshell/end4-pC/setup-wizard.qml",
-    ".local/bin/custom-update",
-    ".local/bin/phoenix",
-    ".local/share/quick-start/index.html"
+    ".config/quickshell/end4-pC/services/Updates.qml",
+    ".local/bin/phoenix-check",
+    ".local/bin/system-update"
   ],
   "test": false
 }

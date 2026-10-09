@@ -56,8 +56,10 @@ Singleton {
         id: checkUpdatesProc
         // ours also counts a pending Phoenix release (it carries the shell; applied by ~/.local/bin/system-update);
         // stock otherwise. The shell no longer follows upstream end4-pC (2026-10-09), so its commits aren't counted.
+        // phoenix-check (2026-10-09) then notifies once about a pending update that can break the desktop (new Qt or
+        // Hyprland version, Quickshell, graphics drivers).
         command: Config.options.extras.updatesScript
-            ? ["bash", "-c", "pacman=$(checkupdates 2>/dev/null | wc -l); aur=$(yay -Qua 2>/dev/null | wc -l || paru -Qua 2>/dev/null | wc -l || echo 0); fixes=0; $HOME/.local/bin/custom-update check --quiet >/dev/null 2>&1 && fixes=1; echo $((pacman + aur + fixes))"]
+            ? ["bash", "-c", "pacman=$(checkupdates 2>/dev/null | wc -l); aur=$(yay -Qua 2>/dev/null | wc -l || paru -Qua 2>/dev/null | wc -l || echo 0); fixes=0; $HOME/.local/bin/custom-update check --quiet >/dev/null 2>&1 && fixes=1; [ -x $HOME/.local/bin/phoenix-check ] && (setsid $HOME/.local/bin/phoenix-check updates --fresh --notify >/dev/null 2>&1 &); echo $((pacman + aur + fixes))"]
             : ["bash", "-c", "pacman=$(checkupdates 2>/dev/null | wc -l); aur=$(yay -Qua 2>/dev/null | wc -l || paru -Qua 2>/dev/null | wc -l || echo 0); echo $((pacman + aur))"]
         stdout: StdioCollector {
             onStreamFinished: {
