@@ -14,6 +14,12 @@ esac
 log() { logger -t phoenix-power -- "$*"; sync; }   # sync: the step is on disk even if the PC hangs right after
 log "$act: requested"
 
+# 0. the user's own last steps, if any: ~/.config/phoenix/before-power <action> (personal, never shipped; at most 2 min)
+if [ -x "$HOME/.config/phoenix/before-power" ]; then
+    timeout 120 "$HOME/.config/phoenix/before-power" "$act" >/dev/null 2>&1
+    log "$act: before-power hook finished ($?)"
+fi
+
 # 1. Wallpaper Engine: the app and its renderer, as at logout (switch-desktop)
 if pgrep -f '[l]inux-wallpaper-engine-ux/app.asar|[l]inux-wallpaperengine' >/dev/null; then
     pkill -TERM -f '[l]inux-wallpaper-engine-ux/app.asar'; pkill -TERM -x linux-wallpaper

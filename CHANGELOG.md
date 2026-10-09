@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 2.190 (2026-10-09, fix)
+- Restart / Shut down: an optional personal step can run first (~/.config/phoenix/before-power, if you create it; at most 2 minutes), e.g. a backup or sync
+
 ## custom 2.180 (2026-10-09, fix)
 - Restart and Shut down from the power menu no longer freeze or silently do nothing: they now run outside the shell, close Wallpaper Engine cleanly, never close the shell itself, log each step (journalctl -t phoenix-power) and show a message if the system refuses
 

@@ -6,15 +6,15 @@
   "format": "custom-fixes",
   "line": "custom",
   "version": 2.99,
-  "label": "2.180",
+  "label": "2.190",
   "kind": "fix",
   "date": "2026-10-09",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Restart and Shut down from the power menu no longer freeze or silently do nothing: they now run outside the shell, close Wallpaper Engine cleanly, never close the shell itself, log each step (journalctl -t phoenix-power) and show a message if the system refuses"
+    "Restart / Shut down: an optional personal step can run first (~/.config/phoenix/before-power, if you create it; at most 2 minutes), e.g. a backup or sync"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "f5e37a35ebb53d30293225a3a8a580af97aa120cbb1b49546c9e895edd78cc90",
+  "payloadSha256": "b19e42cb572af25e7e78f01915d6c0173adfa0e2145b8a354a8f3afac19c9e0f",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
     ".config/hypr/custom/execs.lua": "7d39d1525b32999f8b0afa49b078610d4eaddc30752fc26e0fd8424c2e60cb1b",
@@ -893,7 +893,7 @@
     ".local/bin/phoenix-check": "10e38f21b89df4147a11c43329d48d1d4c9a1f1c23d1a97730b91bee432f449c",
     ".local/bin/phoenix-file-picker": "0721de431105a9c401a2784b47da7f9780068da6f6def76a5d234ccdbf7470ac",
     ".local/bin/phoenix-greeter-theme": "b22756525eae2ece3b45deca4b2d71e2cfd2f643a4b8c3344305f424b2a0e959",
-    ".local/bin/phoenix-power": "42c6ab51b0fb4a5fd55f4d64a533fcdf825ba6d201dee9f847b2a28a5af1f98c",
+    ".local/bin/phoenix-power": "943c6b3c9773a375fcfbce285631865964f9e9be407774429e97d5303a08a95d",
     ".local/bin/phoenix-report": "93f7135c38f8897b022eaecaa8f19c958ed8d4a5fe4b1a1f2246c21bc013ffa2",
     ".local/bin/restore-point": "4a7ecc79aa930fe0087ef612276d18f441b6a9e402e161d7e371c5fd79016fed",
     ".local/bin/setup-apps": "8bf4051669286f8c263f3c79ae3e0ddc4af97d2ce2a9f7c7e0b3e8095c6431ed",
@@ -986,7 +986,6 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".config/quickshell/end4-pC/modules/common/functions/Session.qml",
     ".local/bin/phoenix-power"
   ],
   "test": false
