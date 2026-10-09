@@ -6,15 +6,15 @@
   "format": "custom-fixes",
   "line": "custom",
   "version": 2.99,
-  "label": "2.200",
+  "label": "2.210",
   "kind": "fix",
   "date": "2026-10-09",
   "publisher": "RandomRandomnes",
   "notes": [
-    "PCs installed from the ISO: three shell files no longer stay behind with a .fixes-new copy (the installer had put this PC's home folder into example text); the next update replaces them and removes the stray copies"
+    "Login screen: apps in ~/.local/bin (Claude Code, Phoenix tools) are found again in the terminal after signing in"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "397b94497f9f6ba6106255df87f1d69c8211a72c7b061d2e400f6cac7007140a",
+  "payloadSha256": "b2ca4e273024cd7ea7c0dac0021b6bb2ee1866498ef995e0eed1d4dfc69ea063",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
     ".config/hypr/custom/execs.lua": "7d39d1525b32999f8b0afa49b078610d4eaddc30752fc26e0fd8424c2e60cb1b",
@@ -912,7 +912,7 @@
     ".local/share/custom-fixes/allowed_signers": "1bc55052b9f5850a21273aff66d29e2dae2de5da7ea2e52afa341a2ba4740077",
     ".local/share/custom-fixes/source.json": "efeba863f6f4bb8ac5ce8aa7639e2bf5bb7ecae762a4cfe431e9486eb4ccc64a",
     ".local/share/phoenix/greeter/greeter.qml": "9004433d75a5fc2a81aa70fd8c0beff538472b4468bfac10e67028d208a0577a",
-    ".local/share/phoenix/greeter/phoenix-session": "6ae37e8094d1bb00f8c388ff251660866fa17e2174b76e2e97181061685ffbe1",
+    ".local/share/phoenix/greeter/phoenix-session": "cbf51c851c7dd18597c0593acb72f6f93e310f6693f0372e6905ab54fcf75fdd",
     ".local/share/phoenix/src/wallpaper-engine-hyprland/build.sh": "7a5c81330608903bfd2a893e9e2e484b66661e32ac66d9c230de150c5d1aa451",
     ".local/share/phoenix/src/wallpaper-engine-hyprland/phoenix.patch": "f088ee3aa754f7e8b62973f52597f262e1fe12a7247028c138940a067543f98b",
     ".local/share/phoenix/system/phoenix-power-meter": "ddbfaf483cd99b45375c1a2a8f697251523dcb4f9515f8e8d47101a528c8e05e",
@@ -986,7 +986,7 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".local/bin/custom-update"
+    ".local/share/phoenix/greeter/phoenix-session"
   ],
   "test": false
 }

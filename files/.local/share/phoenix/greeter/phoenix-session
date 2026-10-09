@@ -3,6 +3,10 @@
 # installed root-owned at /usr/local/bin/phoenix-session by `phoenix login-screen install`.
 # The argument (the login screen's session choice) is remembered in ~/.config/desktop-session, the same file
 # ~/.local/bin/switch-desktop and the tty1 autologin in ~/.bash_profile use.
+# greetd reads /etc/profile and ~/.profile but not ~/.bashrc, where ~/.local/bin is put on PATH; the tty1 autologin got it
+# from there. Without it the terminal (fish) and anything started by name can't find ~/.local/bin (claude, Phoenix's
+# tools) (2026-10-09)
+case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin:$PATH" ;; esac
 rm -f /var/lib/phoenix-greeter/theme/next-session 2>/dev/null   # switch-desktop's note for the login screen is used
 case "${1:-}" in
     hyprland|plasma) mkdir -p "$HOME/.config" && echo "$1" > "$HOME/.config/desktop-session" ;;

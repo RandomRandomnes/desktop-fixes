@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 2.210 (2026-10-09, fix)
+- Login screen: apps in ~/.local/bin (Claude Code, Phoenix tools) are found again in the terminal after signing in
+
 ## custom 2.200 (2026-10-09, fix)
 - PCs installed from the ISO: three shell files no longer stay behind with a .fixes-new copy (the installer had put this PC's home folder into example text); the next update replaces them and removes the stray copies
 
