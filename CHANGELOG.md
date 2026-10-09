@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 2.240 (2026-10-09, fix)
+- Desktop menu: "Live wallpaper" replaced by "Wallpaper Engine" (opens the running app and brings its window to your workspace; "Choose wallpaper…" when Wallpaper Engine is off)
+
 ## custom 2.230 (2026-10-09, fix)
 - Desktop right-click menu redone in the Windows 11 style: opens at the cursor; View (desktop widgets with check marks), Live wallpaper, DropShelf, Open in Terminal, Display settings, Personalize, Settings
 

@@ -6,6 +6,7 @@ import Qt.labs.folderlistmodel
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
+import Quickshell.Services.SystemTray
 import qs
 import qs.services
 import qs.modules.common
@@ -30,6 +31,35 @@ Scope {
         GlobalStates.desktopMenuX = screen.width / 2
         GlobalStates.desktopMenuY = screen.height / 2
         GlobalStates.desktopMenuOpen = true
+    }
+
+    // Wallpaper Engine runs in the tray (no single-instance lock: starting it again would run a second copy), so
+    // its window is opened through the tray item; it's only started when it isn't running.
+    function openWallpaperEngine() {
+        root.close()
+        const item = SystemTray.items.values.find(i => `${i.tooltipTitle ?? ""} ${i.title ?? ""}`.includes("Wallpaper Engine"))
+        if (item) item.activate()
+        else Quickshell.execDetached([`${Quickshell.env("HOME")}/.local/bin/linux-wallpaper-engine-ux`])
+        bringEngineTimer.tries = 0
+        bringEngineTimer.restart()
+    }
+
+    // Like Windows: the app's window comes to the workspace you're on (it may already be open on another one)
+    Timer {
+        id: bringEngineTimer
+        property int tries: 0
+        interval: 400
+        onTriggered: {
+            const win = HyprlandData.windowList.find(w => w.class === "Linux Wallpaper Engine")
+            const ws = Hyprland.focusedMonitor?.activeWorkspace?.id
+            if (win && ws !== undefined) {
+                if (win.workspace.id !== ws)
+                    Hyprland.dispatch(`hl.dsp.window.move({ workspace = ${ws}, follow = false, window = "address:${win.address}" })`)
+                Hyprland.dispatch(`hl.dsp.focus({ window = "address:${win.address}" })`)
+            } else if (++tries < 15) {
+                restart()   // the app can take a few seconds to start
+            }
+        }
     }
 
     function close() {
@@ -133,13 +163,18 @@ Scope {
                     text: Translation.tr("Next desktop background")
                     onTriggered: { root.nextWallpaper(); root.close() }
                 }
+                // Wallpaper Engine when that feature is on, otherwise a picture file picker
                 DeskMenuRow {
-                    icon: "video_library"
-                    text: Translation.tr("Live wallpaper")
+                    readonly property bool engine: Config.options.extras.wallpaperEngine
+                    icon: engine ? "animated_images" : "image"
+                    text: engine ? Translation.tr("Wallpaper Engine") : Translation.tr("Choose wallpaper…")
                     onTriggered: {
-                        root.close()
-                        Wallpapers.openFallbackPicker(Appearance.m3colors.darkmode,
-                            Config.options.wallpaperSelector.liveWallpapersPath ?? "")
+                        if (engine) {
+                            root.openWallpaperEngine()
+                        } else {
+                            root.close()
+                            Wallpapers.openFallbackPicker(Appearance.m3colors.darkmode)
+                        }
                     }
                 }
 
