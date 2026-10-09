@@ -1,5 +1,10 @@
 # Changelog
 
+## custom 2.160 (2026-10-09, fix)
+- Setup assistant and Settings: the Wi-Fi page says when the PC has no Wi-Fi adapter (it kept scanning) and shows the cable connection
+- Texts updated for the Phoenix-owned shell: the setup assistant's updates question says it also covers the shell; system fixes are for Arch, Hyprland or Quickshell updates
+- phoenix status shows the shell as Phoenix's own
+
 ## custom 2.150 (2026-10-09, fix)
 - Updates finish the clean-up of files Phoenix no longer ships also on PCs installed from the ISO (hypr-guard stayed there), and replace shell files a PC still has from an older illogical-impulse version
 

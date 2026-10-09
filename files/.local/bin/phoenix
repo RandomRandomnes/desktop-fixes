@@ -71,7 +71,7 @@ cmd_status() {
     echo "Phoenix:      installed $(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['date'])" "$STATE/installed.json")"
     echo "State:        $(active && echo "${B}active${N} (Phoenix shell)" || echo "inactive (your illogical-impulse setup)")"
     echo "Custom fixes: ${custom:-unknown}"
-    echo "Shell:        end4-pC $(git -C "$HOME/.config/quickshell/end4-pC" rev-parse --short HEAD 2>/dev/null || echo '?')"
+    echo "Shell:        Phoenix's own end4-pC (comes with Phoenix updates)"
 }
 
 cmd_activate() {

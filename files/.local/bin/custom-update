@@ -561,7 +561,7 @@ def cmd_offers(as_json):
               + "".join(f"; {p['label']} partly applied ({len(p['skipped'])} file(s) need newer custom fixes)" for p in sy['partial']))
         print(f"installed: {('v' + out['installed']) if out['installed'] else 'none'}")
         print(f"bug fix:   {'v' + out['fix']['label'] if out['fix'] else 'none'}"
-              + (f"  (v{out['waiting']['label']} waits for an illogical-impulse update)" if out.get("waiting") else ""))
+              + (f"  (v{out['waiting']['label']} waits for a newer shell version)" if out.get("waiting") else ""))
         u = out["upgrade"]
         print(f"upgrade:   {('version ' + str(u['major']) + ' (v' + u['label'] + '): ' + u['upgrade'].get('title', '')) if u else 'none'}")
         if out["error"]:

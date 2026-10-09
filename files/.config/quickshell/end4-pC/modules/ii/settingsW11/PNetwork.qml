@@ -150,24 +150,35 @@ Item {
         WPage {
             Component.onCompleted: if (root.wifiOn) Network.rescanWifi()
 
+            // Phoenix (VM check 2026-10-09): the setup assistant opens this page directly; on a PC without Wi-Fi it
+            // showed "Wi-Fi On · Scanning…" for ever
             WSection {
                 WToggle {
                     icon: "wifi"
                     title: "Wi-Fi"
-                    checked: root.wifiOn
+                    enabled: root.hasWifi
+                    description: root.hasWifi ? "" : "No Wi-Fi adapter. With a network cable plugged in, nothing needs to be done."
+                    checked: root.hasWifi && root.wifiOn
                     onToggled: v => Network.enableWifi(v)
                 }
                 WCard {
+                    visible: root.hasWifi
                     icon: "refresh"
                     title: Network.wifiScanning ? "Scanning…" : `${Network.friendlyWifiNetworks.length} networks found`
                     enabled: root.wifiOn
                     WButton { buttonText: "Refresh"; enabled: !Network.wifiScanning; onClicked: Network.rescanWifi() }
                 }
+                WCard {
+                    visible: !root.hasWifi && Network.ethernet
+                    icon: "lan"
+                    title: "Connected by cable"
+                    description: Network.networkInterface
+                }
             }
 
             WSection {
                 title: "Available networks"
-                visible: root.wifiOn
+                visible: root.hasWifi && root.wifiOn
                 Repeater {
                     model: Network.friendlyWifiNetworks.filter(n => n && n.ssid)
                     WCard {

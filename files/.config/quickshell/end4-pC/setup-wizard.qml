@@ -783,10 +783,10 @@ ApplicationWindow {
                     StyledText {
                         Layout.fillWidth: true
                         wrapMode: Text.WordWrap
-                        text: "Bug fixes for the custom features of this system (taskbar, Settings, this assistant, Wallpaper Engine and others). "
+                        text: "Updates and bug fixes for the desktop shell and the custom features of this system (taskbar, Settings, this assistant, Wallpaper Engine and others); without them the shell stays as it is now. "
                             + "Releases are digitally signed, so only authentic releases are installed, and they are applied together with regular updates. "
                             + "Personal settings and files are not modified. This choice can be changed later in Settings › Update. "
-                            + "System fixes, needed after Arch, Hyprland or illogical-impulse updates, are always installed and are not part of this choice."
+                            + "System fixes, needed after Arch, Hyprland or Quickshell updates, are always installed and are not part of this choice."
                         color: Appearance.colors.colOnPrimaryContainer
                     }
                     RowLayout {

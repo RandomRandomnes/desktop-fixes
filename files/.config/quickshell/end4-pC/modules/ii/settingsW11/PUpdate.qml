@@ -390,7 +390,7 @@ date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
     }
 
     WSection {
-        // system fixes: needed because of Arch / Hyprland / illogical-impulse updates; always on, installed by the
+        // system fixes: needed because of Arch / Hyprland / Quickshell updates; always on, installed by the
         // update button right after the updates they belong to (custom-update system-apply)
         visible: !page.isPublisher
         title: "System fixes"
@@ -406,7 +406,7 @@ date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
                 for (const p of (s.partial || [])) parts.push(`System fix ${p.label} left ${p.skipped.length} file(s) unchanged; installing the latest custom fixes completes it`)
                 for (const w of (s.waiting || [])) parts.push(`Waiting: ${w.label} (${w.reason})`)
                 if (parts.length === 0) parts.push((s.applied || []).length > 0 ? `Up to date. Applied: ${s.applied.join(", ")}` : "Up to date")
-                return parts.join("\n") + "\nThey fix problems caused by Arch, Hyprland or illogical-impulse updates and install with every update, only on systems with matching versions"
+                return parts.join("\n") + "\nThey fix problems caused by Arch, Hyprland or Quickshell updates and install with every update, only on systems with matching versions"
             }
             WButton { buttonText: offersProc.running ? "Checking…" : "Check now"; enabled: !offersProc.running; onClicked: page.refreshFixes() }
             WButton {
@@ -465,7 +465,7 @@ date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
         WCard {
             icon: "publish"
             title: "This system publishes the fixes"
-            description: "Two release lines: custom fixes (custom-publish publish: --feature +1, --fix +0.1, --minor +0.01) and system fixes for Arch / Hyprland / illogical-impulse updates (custom-publish publish-system, checked against every custom version). Other systems install system fixes always and custom fixes when enabled"
+            description: "Two release lines: custom fixes (custom-publish publish: --feature +1, --fix +0.1, --minor +0.01) and system fixes for Arch / Hyprland / Quickshell updates (custom-publish publish-system, checked against every custom version). Other systems install system fixes always and custom fixes when enabled"
         }
     }
 
