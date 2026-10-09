@@ -569,6 +569,18 @@ def cmd_offers(as_json):
     return 0
 
 
+def only_home_rewritten(path, data):
+    """True when the file differs from the release only because the ISO installer replaced the build account's home
+    (/home/user) with this one (it did so in the shell too until 2026-10-09: three files kept a .fixes-new for ever)."""
+    try:
+        with open(path, "rb") as f:
+            cur = f.read()
+    except OSError:
+        return False
+    home = HOME.encode()
+    return home != b"/home/user" and home in cur and cur.replace(home, b"/home/user") == data
+
+
 SHELL_REL = ".config/quickshell/end4-pC/"
 
 
@@ -677,6 +689,8 @@ def install(src, label, yes, what):
                 (base_files is not None and cur != base_files.get(rel))   # vs. how it came with the install
             if edited and rel not in inst["files"] and git_clean(rel):
                 edited = False   # a shell file as illogical-impulse shipped it (any upstream version): not the user's
+            if edited and rel not in inst["files"] and rel.startswith(SHELL_REL) and only_home_rewritten(dst, data):
+                edited = False   # the ISO installer only replaced /home/user with this home (2026-10-09)
             if edited and system_state().get("changed", {}).get(rel) == cur:
                 edited = False                                   # changed by a system fix, not by the user
             if edited:
@@ -695,6 +709,8 @@ def install(src, label, yes, what):
             f.write(data)
         os.chmod(tmp, mode)
         os.replace(tmp, dst)
+        if os.path.exists(dst + ".fixes-new"):   # left by an earlier update that wrongly kept this file
+            os.remove(dst + ".fixes-new")
         record[rel] = digest
         changed.append(rel)
     # files this update added: `phoenix uninstall` removes them too (it only knew the installer's list; QA 2026-10-09)

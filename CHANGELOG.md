@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 2.200 (2026-10-09, fix)
+- PCs installed from the ISO: three shell files no longer stay behind with a .fixes-new copy (the installer had put this PC's home folder into example text); the next update replaces them and removes the stray copies
+
 ## custom 2.190 (2026-10-09, fix)
 - Restart / Shut down: an optional personal step can run first (~/.config/phoenix/before-power, if you create it; at most 2 minutes), e.g. a backup or sync
 

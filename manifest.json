@@ -6,15 +6,15 @@
   "format": "custom-fixes",
   "line": "custom",
   "version": 2.99,
-  "label": "2.190",
+  "label": "2.200",
   "kind": "fix",
   "date": "2026-10-09",
   "publisher": "RandomRandomnes",
   "notes": [
-    "Restart / Shut down: an optional personal step can run first (~/.config/phoenix/before-power, if you create it; at most 2 minutes), e.g. a backup or sync"
+    "PCs installed from the ISO: three shell files no longer stay behind with a .fixes-new copy (the installer had put this PC's home folder into example text); the next update replaces them and removes the stray copies"
   ],
   "payload": "fixes.tar.gz",
-  "payloadSha256": "b19e42cb572af25e7e78f01915d6c0173adfa0e2145b8a354a8f3afac19c9e0f",
+  "payloadSha256": "397b94497f9f6ba6106255df87f1d69c8211a72c7b061d2e400f6cac7007140a",
   "files": {
     ".config/hypr/custom/env.lua": "1902700f304ac6fc6d6c484da2bce2e14821964285f199fdd36971381b347edf",
     ".config/hypr/custom/execs.lua": "7d39d1525b32999f8b0afa49b078610d4eaddc30752fc26e0fd8424c2e60cb1b",
@@ -885,7 +885,7 @@
     ".config/quickshell/end4-pC/translations/zh_CN.json": "06b781dbfdb4eeef3c2b42db478b2995628750fbde584bb6753175b673ba839d",
     ".config/quickshell/end4-pC/welcome.qml": "3a07109abe6bf8ee0cf2b02af828772f2138382c4b69576a836830eb4c348c2c",
     ".local/bin/boot-loader": "c42781f896313567bbdc18c78699594d7be283acb91546859eb96772709294ee",
-    ".local/bin/custom-update": "c2691b6048be1c38000e01765bc333044d1b3328be69173e893cdabc686edb0f",
+    ".local/bin/custom-update": "3c5f9a8c3018dab6c617f5ba2412deb47a2a00e40c6ad77b547199f8128ae6c0",
     ".local/bin/display-profiles": "35d27019115b69495daa5a897b146256e2a34aefe017940ede12b199f1551da3",
     ".local/bin/linux-wallpaper-engine": "42fad852f27ed5c452a1742d4b7053ba8cf85a6c19e1b927350f8ee4f6711813",
     ".local/bin/linux-wallpaper-engine-ux": "dee95f03a345c6a6c54f75d79cf9e343939ce27c9b2d094d1d21b37e2cf69fd6",
@@ -986,7 +986,7 @@
     ".local/share/setup-profiles/stock-config.json": "ba83849d539a915adf655ea127ec2550993927a01f69efa0ea05a8f16cb76328"
   },
   "changed": [
-    ".local/bin/phoenix-power"
+    ".local/bin/custom-update"
   ],
   "test": false
 }
