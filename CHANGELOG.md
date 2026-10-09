@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 2.150 (2026-10-09, fix)
+- Updates finish the clean-up of files Phoenix no longer ships also on PCs installed from the ISO (hypr-guard stayed there), and replace shell files a PC still has from an older illogical-impulse version
+
 ## custom 2.140 (2026-10-09, fix)
 - The desktop shell now comes only with Phoenix updates: Phoenix ships its own complete, tested copy of the illogical-impulse shell and no longer follows illogical-impulse's updates
 - hypr-guard is removed (it re-applied Phoenix's changes after illogical-impulse updates, which no longer happen); Settings › Update shows the shell under Phoenix updates, and Restore points undo a bad update

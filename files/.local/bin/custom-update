@@ -710,10 +710,20 @@ def install(src, label, yes, what):
     # for ever); a changed one is left alone
     removed = []
     for rel in m.get("removed", []):
-        if rel.startswith("/") or ".." in rel.split("/") or rel not in record:
+        if rel.startswith("/") or ".." in rel.split("/"):
+            continue
+        # a file that came with the installation (ISO) isn't in the record until an update replaced it: compare it
+        # with the release the PC was installed from (2.140 left hypr-guard on fresh installs; 2026-10-09)
+        if rel in record:
+            known = record[rel]
+        else:
+            if base_files is None:
+                base_files = baseline(src) or {}
+            known = base_files.get(rel)
+        if not known:
             continue
         dst = os.path.join(HOME, rel)
-        if os.path.isfile(dst) and sha256(dst) == record[rel]:
+        if os.path.isfile(dst) and sha256(dst) == known:
             os.makedirs(os.path.dirname(os.path.join(backup, rel)), exist_ok=True)
             shutil.copy2(dst, os.path.join(backup, rel))
             os.remove(dst)
