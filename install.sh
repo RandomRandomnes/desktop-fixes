@@ -10,8 +10,6 @@
 set -euo pipefail
 
 REPO="RandomRandomnes/phoenix"
-END4_REPO="https://github.com/pctrade/end4-pC.git"
-END4_COMMIT="166221ac0ea467d995a440ce097a7d09df578d79"   # fallback; normally the newest release names its own commit
 SIGNER='custom-fixes namespaces="custom-fixes" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKnbnJ3PHwZ6xygmFRpLEsfTAmsPc1fuy0UtHNKRKTCl custom-fixes'
 PACKAGES=(git python openssh patch curl jq efibootmgr pciutils vulkan-tools kitty kdialog libnotify flatpak)
 AUR_PACKAGES=(hyprland-plugin-hyprbars)             # title bars for Windows-style windows
@@ -111,42 +109,17 @@ if [ ${#aur_missing[@]} -gt 0 ]; then
 fi
 
 # ── 4. the end4-pC shell ───────────────────────────────────────────────────────────────────────────────────────────
-step "Shell (end4-pC, the illogical-impulse fork Phoenix extends)"
+# Since 2026-10-09 Phoenix releases carry the whole shell (Phoenix's own copy of the illogical-impulse fork end4-pC;
+# it no longer follows upstream), so nothing is downloaded from end4-pC itself: step 5 installs it.
+step "Shell (Phoenix's version of illogical-impulse's end4-pC)"
 mkdir -p "$STATE"
-# the exact commit the newest Phoenix release was made on (from the signed release index; fallback: END4_COMMIT)
-T=$(mktemp -d)
-curl -fsSL -o "$T/i.json" "https://github.com/$REPO/releases/download/index/index.json" \
-    && curl -fsSL -o "$T/i.sig" "https://github.com/$REPO/releases/download/index/index.json.sig" \
-    || die "can't download the Phoenix release index"
-printf '%s\n' "$SIGNER" > "$T/signers"
-ssh-keygen -Y verify -f "$T/signers" -I custom-fixes -n custom-fixes -s "$T/i.sig" < "$T/i.json" >/dev/null 2>&1 \
-    || die "the Phoenix release index has no valid signature"
-want=$(python3 - "$T/i.json" <<'PY'
-import json, sys
-rel = [r for r in json.load(open(sys.argv[1]))["releases"] if r.get("line") == "custom" and not r.get("test")]
-def key(r):
-    w, _, f = r["label"].partition(".")
-    return (int(w), int(f) * 10 if len(f) == 1 else int(f or 0))
-print(max(rel, key=key).get("shell", "") if rel else "")
-PY
-)
-rm -rf "$T"
-want="${want:-$END4_COMMIT}"
 E="$HOME/.config/quickshell/end4-pC"
-if [ -d "$E/.git" ]; then
+if [ -d "$E" ]; then
     echo no > "$STATE/cloned-end4pC"
-    if git -C "$E" merge-base --is-ancestor "$want" HEAD 2>/dev/null; then
-        info "already present ($(git -C "$E" rev-parse --short HEAD)); kept as it is"
-    else
-        warn "present but older than the version Phoenix needs (${want:0:8})"
-        ask "Update it to that version?" y || die "Phoenix needs end4-pC ${want:0:8} or newer"
-        git -C "$E" fetch -q origin && git -C "$E" merge -q --ff-only "$want" \
-            || die "end4-pC has local changes, so it can't be updated automatically; update it, then run this installer again"
-    fi
+    info "an end4-pC shell is already here: Phoenix's version replaces its files (backed up; phoenix uninstall puts them back)"
 else
-    info "Cloning $END4_REPO at the version Phoenix was made on (${want:0:8})"
-    git clone -q "$END4_REPO" "$E" && git -C "$E" reset -q --hard "$want"
     echo yes > "$STATE/cloned-end4pC"
+    info "comes with the Phoenix files in the next step"
 fi
 
 # ── 5. Phoenix files from the newest signed release ────────────────────────────────────────────────────────────────
@@ -240,10 +213,6 @@ if [ -e /sys/class/powercap/intel-rapl:0/energy_uj ] && [ -x "$HOME/.local/bin/p
         "$HOME/.local/bin/phoenix" power-meter install | sed 's/^/    /' || warn "not installed; CPU power shows n/a (later: phoenix power-meter install)"
     fi
 fi
-# the files just installed from the signed release are the known-good state hypr-guard restores and compares against
-# (--force: the Phoenix shell isn't running yet, so the usual "shell is healthy" check can't pass now)
-"$HOME/.local/bin/hypr-guard" snapshot --force >/dev/null 2>&1 && info "Recovery snapshot saved (hypr-guard)." \
-    || warn "couldn't save the hypr-guard recovery snapshot; after logging in to Phoenix run: hypr-guard snapshot"
 
 # ── 6. activate now or later ───────────────────────────────────────────────────────────────────────────────────────
 step "Done installing"

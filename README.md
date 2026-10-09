@@ -35,8 +35,9 @@
   colors, wallpaper, account, applications (with Gaming and Productivity packs), drivers and updates.
 - **Setup profiles**: one file with an appearance and a set of features, to apply or to share.
 - **App grid** in the `Super` menu, **Quick Start** guide, and an optional **Wallpaper Engine** background.
-- **Self-repair after updates**: when illogical-impulse updates, Phoenix's changes are re-applied and checked;
-  Settings › Update › *Run health check* reports anything that needs attention.
+- **One tested shell**: Phoenix ships its own complete copy of the illogical-impulse shell (from end4-pC) with
+  every release, so an upstream change can never break Phoenix's changes; it doesn't follow illogical-impulse's
+  own updates.
 - **Signed updates** in two kinds (see [Updates](#updates)).
 
 ## KDE Plasma
@@ -63,8 +64,7 @@ automatically, the chosen desktop then starts by itself. With a login screen (SD
 there.
 
 **In Plasma**, the Phoenix **System Update** widget can be added to the panel: it runs the same update as the
-Phoenix update button (packages, system fixes, custom fixes); the illogical-impulse shell part runs the next time
-you are in Phoenix. With Wallpaper Engine switched on, Plasma uses the Wallpaper Engine plugin for Plasma
+Phoenix update button (packages, system fixes, Phoenix updates). With Wallpaper Engine switched on, Plasma uses the Wallpaper Engine plugin for Plasma
 (`wallpaper-engine-kde-plugin-git` from the AUR) with the same wallpaper. Phoenix's own settings apply only in
 Phoenix; Plasma keeps its own.
 
@@ -89,10 +89,9 @@ The installer explains each step and asks before changing anything:
 
 1. Checks the system, and installs illogical-impulse with its official installer if it is missing.
 2. Installs the few packages Phoenix uses (shown first).
-3. Clones the end4-pC shell at the version Phoenix is tested with.
-4. Installs the Phoenix files from the newest **signed** release (the installer checks the signature with the key
-   it contains) and backs up every file they replace.
-5. Asks whether to **switch to Phoenix now**, or to install it only and switch later.
+3. Installs the Phoenix files from the newest **signed** release, including Phoenix's version of the end4-pC shell
+   (the installer checks the signature with the key it contains), and backs up every file they replace.
+4. Asks whether to **switch to Phoenix now**, or to install it only and switch later.
 
 After logging in to Phoenix, the setup assistant opens.
 
@@ -117,8 +116,8 @@ Phoenix and illogical-impulse share two things: the Hyprland folder `~/.config/h
 
 ## Updates
 
-The update button on the taskbar (or Settings › Update) installs, in this order: system packages, the
-illogical-impulse shell, **system fixes** and **custom fixes**.
+The update button on the taskbar (or Settings › Update) installs, in this order: system packages, **system fixes**
+and **custom fixes** (which carry the whole shell).
 
 | Kind | Tags | What it fixes | Installed |
 |---|---|---|---|
@@ -169,10 +168,10 @@ Releases and exported profiles never contain personal files or settings.
 Open an [issue](https://github.com/RandomRandomnes/phoenix/issues) and include the output of:
 
 ```bash
-phoenix status; custom-update status; hypr-guard doctor
+phoenix status; custom-update status
 ```
 
-and, if the desktop misbehaves, `~/hypr-guard/report.md`.
+or use Settings › System › *Report a problem*, which collects the details with personal data removed.
 
 ## Credits
 

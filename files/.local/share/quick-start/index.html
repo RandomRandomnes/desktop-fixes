@@ -249,19 +249,19 @@ flatpak install flathub &lt;app-id&gt;      # Flathub</code>
     <section id="updates">
       <h2>Updates</h2>
       <p>The taskbar's update button shows how many updates are waiting. One click installs, in this order, system
-        updates, the illogical-impulse shell, system fixes and, if enabled, custom fixes; the password is asked once.
+        updates, system fixes and, if enabled, custom fixes (they also carry the desktop shell); the password is asked once.
         Settings › Update shows what is installed.</p>
       <ul>
         <li><strong>System fixes</strong> repair problems caused by Arch, Hyprland or illogical-impulse updates. They are
           always installed, right after the update they belong to, and only on systems with matching versions. A fix
           that has to change a custom file uses the variant made for the installed custom version; if none fits, the
           file is left unchanged and Settings › Update says to install the latest custom fixes.</li>
-        <li><strong>Custom fixes</strong> (1.1, 1.11, …) repair the custom features (hypr-guard, Wallpaper Engine,
+        <li><strong>Custom fixes</strong> (1.1, 1.11, …) update the desktop shell and repair the custom features (Wallpaper Engine,
           Settings, the setup assistant). Optional, chosen in the setup assistant. Revert the last one:
           Settings › Update › <span class="q">Undo last</span>; it is not reinstalled until a newer fix is published.</li>
         <li><strong>Major custom versions</strong> (2, 3, …) never install by themselves. Settings › Update explains the
           changes and the risk, and upgrades only on confirmation.</li>
-        <li>After an update that breaks the desktop: Settings › Update › <span class="q">Run health check</span>.</li>
+        <li>After an update that breaks the desktop: Settings › Update › <span class="q">Restore points</span> puts back the state from before it.</li>
       </ul>
     </section>
 
@@ -300,7 +300,7 @@ boot-loader use direct         # back to no menu</code>
           <tr><td>Black screen after installing (NVIDIA)</td><td><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>F2</kbd>, log in, run <code>sudo pacman -S nvidia-open-dkms nvidia-utils linux-headers</code>, then <code>reboot</code>.</td></tr>
           <tr><td>Black screen after an update</td><td><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>F2</kbd>, log in, run <code>sudo pacman -Syu</code>, then <code>reboot</code>.</td></tr>
           <tr><td>Windows does not appear</td><td>Use the firmware boot menu, or add a boot menu (<a href="#startup">Boot menu and Windows</a>).</td></tr>
-          <tr><td>Desktop broken after an update</td><td>Settings › Update › <span class="q">Run health check</span>; for a bug fix, <span class="q">Undo last</span>.</td></tr>
+          <tr><td>Desktop broken after an update</td><td>Settings › Update › <span class="q">Restore points</span>; for a bug fix, <span class="q">Undo last</span>.</td></tr>
           <tr><td>Text too small or too large</td><td>Settings › System › Display › Scale.</td></tr>
           <tr><td>No Wi-Fi</td><td>Right sidebar (<kbd>Super</kbd> + <kbd>N</kbd>) › Wi-Fi.</td></tr>
           <tr><td>No GPU graph on the taskbar</td><td>Turn on Settings › Extras › <span class="q">Live system graphs</span>. AMD, NVIDIA (proprietary driver) and Intel are supported.</td></tr>

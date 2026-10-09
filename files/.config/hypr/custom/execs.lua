@@ -134,12 +134,6 @@ hl.on("hyprland.start", function()
 end)
 -- autostart-end
 
--- reapply-patches-start
-hl.on("hyprland.start", function()
-    hl.exec_cmd("python3 $HOME/.config/hypr/custom/scripts/reapply-shell-patches.py")
-end)
--- reapply-patches-end
-
 -- float-over-max-start
 -- Belongs to the windowsStyle feature (features-start in env.lua).
 if feature("windowsStyle") then

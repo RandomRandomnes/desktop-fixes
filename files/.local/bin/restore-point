@@ -256,9 +256,6 @@ def cmd_restore(pid, yes):
         subprocess.run([os.path.join(HOME, ".local", "bin", "custom-update"), "undo"])
     restore_settings(pid, meta)
     print("Desktop settings put back.")
-    hg = os.path.join(HOME, ".local", "bin", "hypr-guard")
-    if os.access(hg, os.X_OK) and not TEST:   # the restored files become the known-good state, so the guard doesn't "fix" them
-        run([hg, "snapshot", "--force"])
     if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE") and not TEST:
         run(["hyprctl", "reload"])
     if c["packages"]:

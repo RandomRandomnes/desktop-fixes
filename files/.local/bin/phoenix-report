@@ -5,8 +5,8 @@
                                 {"path", "title", "body", "url"}; url opens a new GitHub issue with it filled in
 
 The report holds: versions (Phoenix, kernel, Hyprland, Quickshell, Qt), the graphics card and processor,
-`phoenix status`, `custom-update status` and the hypr-guard desktop check (it runs `hypr-guard doctor`, which only
-reads): problems found, files that differ, Hyprland config errors, the shell's errors, crashes and the autostart log.
+`phoenix status`, `custom-update status` and a read-only desktop check: Hyprland config errors, the title bar
+plugin, the number of shells running, the shell's latest errors and the login (autostart) log.
 Personal data is removed before anything is shown or saved: user name, real name, home folder, computer name,
 e-mail, IP and MAC addresses, network names, drive labels and UUIDs. The report is saved in
 ~/.local/state/phoenix/reports/ (the last 10 are kept) and only leaves this PC if you post it.
@@ -110,45 +110,34 @@ def versions():
     return "\n".join(f"- **{k}:** {v}" for k, v in rows)
 
 
-def guard():
-    run(["hypr-guard", "doctor"], timeout=90)
+def desktop_check():
+    """Read-only: Hyprland config errors, the title bar plugin, how many shells run, the shell's latest errors and the
+    login (autostart) log. Replaced the hypr-guard report on 2026-10-09 (hypr-guard was removed)."""
+    out = []
+    errs = run(["hyprctl", "configerrors"])
+    out.append("#### Hyprland config errors\n\n" + (f"```\n{errs}\n```" if errs.strip() else "none"))
+    feats = ""
     try:
-        with open(os.path.join(HOME, "hypr-guard", "report.md")) as f:
-            text = f.read()
+        with open(os.path.join(HOME, ".config", "hypr", "custom", "features.lua")) as f:
+            feats = f.read()
     except OSError:
-        return "(no desktop check report)"
-    keep, mode, code = [], "", None
-    for line in text.splitlines():
-        if line.startswith("> "):
-            continue
-        if line.startswith("## "):   # the tracked-file table: only files that differ; the git status list: left out
-            mode = "files" if line.startswith("## Tracked files") else "skip" if "git status" in line else ""
-            if mode == "files":
-                keep.append("## Tracked files that differ")
-                files_heading = len(keep) - 1
-            if mode:
-                continue
-        if mode == "files":
-            if line.startswith("| ") and not line.endswith("| ok |") and not line.startswith(("| file", "|---")):
-                keep.append(line.replace("| ", "- ", 1).replace(" | ", ": ").rstrip(" |"))
-        elif mode == "skip":
-            pass
-        elif line.startswith("```"):   # code blocks: their last 25 lines
-            if code is None:
-                code = []
-            else:
-                keep.extend(code[-25:])
-                code = None
-            keep.append(line)
-        elif code is not None:
-            code.append(line)
-        else:
-            keep.append(line)
-    if "files_heading" in locals() and files_heading == len(keep) - 1 or (
-            "files_heading" in locals() and not str(keep[files_heading + 1] if files_heading + 1 < len(keep) else "").startswith("- ")):
-        keep.pop(files_heading)   # nothing differs: no empty heading
-    out = "\n".join(keep).strip()
-    return re.sub(r"^## ", "#### ", re.sub(r"^# ", "", out, flags=re.M), flags=re.M)
+        pass
+    if not re.search(r"\bwindowsStyle\s*=\s*false\b", feats):
+        loaded = "hyprbars" in run(["hyprctl", "plugin", "list"])
+        out.append("#### Title bar plugin\n\n" + ("loaded" if loaded else "NOT loaded (Hyprland was probably updated: "
+                                                                          "`yay -S hyprland-plugin-hyprbars`, then log out/in)"))
+    shells = [l for l in run(["pgrep", "-af", "^qs -c [e]nd4-pC$"]).splitlines() if l.strip()]
+    out.append(f"#### Shell\n\n{len(shells)} running (expected 1)")
+    log = [l for l in re.sub(r"\x1b\[[0-9;]*m", "", run(["qs", "log", "-c", "end4-pC"], timeout=30)).splitlines()
+           if re.search(r"\b(ERROR|WARN|FATAL)\b", l) and "propertyCache" not in l]   # Qt's harmless start-up notes
+    log = list(dict.fromkeys(l.strip() for l in log))   # the same message repeated: once
+    out.append("#### Shell errors (last 25)\n\n" + (f"```\n" + "\n".join(log[-25:]) + "\n```" if log else "none"))
+    try:
+        with open(os.path.join(HOME, ".local", "state", "phoenix", "autostart.log")) as f:
+            out.append("#### Login log\n\n```\n" + f.read().strip()[-3000:] + "\n```")
+    except OSError:
+        pass
+    return "\n\n".join(out)
 
 
 def make(note):
@@ -160,7 +149,7 @@ def make(note):
         "### What happened\n\n" + (note or "_(not described)_"),
         "### System\n\n" + versions(),
         "### Phoenix\n\n```\n" + run(["phoenix", "status"]) + "\n" + run(["custom-update", "status"]) + "\n```",
-        "### Desktop check (hypr-guard)\n\n" + guard(),
+        "### Desktop check\n\n" + desktop_check(),
         "_Made with Settings › System › Report a problem. Personal data was removed automatically._",
     ])
     body = scrub(body, words)

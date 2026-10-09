@@ -1,5 +1,11 @@
 # Changelog
 
+## custom 2.140 (2026-10-09, fix)
+- The desktop shell now comes only with Phoenix updates: Phoenix ships its own complete, tested copy of the illogical-impulse shell and no longer follows illogical-impulse's updates
+- hypr-guard is removed (it re-applied Phoenix's changes after illogical-impulse updates, which no longer happen); Settings › Update shows the shell under Phoenix updates, and Restore points undo a bad update
+- Report a problem includes a direct desktop check (config errors, title bar plugin, shell errors, login log)
+- The shell includes illogical-impulse's last update (media lyrics and searchable combo boxes)
+
 ## custom 2.130 (2026-10-09, fix)
 - Maximized windows no longer bounce back when an app asks to be maximized twice
 - Display profiles: settings left behind for a screen's old port are removed

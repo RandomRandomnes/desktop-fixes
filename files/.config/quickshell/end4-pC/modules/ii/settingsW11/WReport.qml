@@ -9,7 +9,7 @@ import qs.modules.common.widgets
 
 /**
  * Settings › System › Report a problem (2026-10-08, ours): you describe what went wrong, ~/.local/bin/phoenix-report
- * adds the system details (versions, phoenix/custom-update status, the hypr-guard desktop check) with personal data
+ * adds the system details (versions, phoenix/custom-update status, a desktop check) with personal data
  * removed, you read it, then it opens a new GitHub issue with everything filled in. Nothing is sent by Phoenix itself.
  */
 WPage {

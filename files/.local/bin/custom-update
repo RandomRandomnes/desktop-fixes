@@ -8,7 +8,7 @@ Two kinds of fixes, two numbered release lines in one GitHub repo:
                                       match ("requires", e.g. hyprland>=0.57). A system fix can patch a custom file:
                                       it carries one patch per custom-version range and applies the one that fits the
                                       installed custom version; if none fits, that file is left unchanged (reported).
-  custom fixes   tags custom-<label>  fixes for the custom additions (hypr-guard, Wallpaper Engine, Settings, the
+  custom fixes   tags custom-<label>  fixes for the custom additions and the shell (Wallpaper Engine, Settings, the
                                       setup assistant, …). Optional: extras.customFixes (the setup wizard asks).
                                       A new whole number (1 -> 2) is a major version: only offered, never automatic.
 
@@ -466,9 +466,6 @@ def cmd_system_apply():
     if any_changed:
         if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
             subprocess.run(["hyprctl", "reload"], capture_output=True)
-        guard = os.path.join(HOME, ".local", "bin", "hypr-guard")
-        if os.access(guard, os.X_OK):
-            subprocess.run([guard, "snapshot", "--force"], capture_output=True)
     return rc
 
 
@@ -572,6 +569,26 @@ def cmd_offers(as_json):
     return 0
 
 
+SHELL_REL = ".config/quickshell/end4-pC/"
+
+
+def git_clean(rel):
+    """A shell file nobody edited: it is exactly as in the shell's git checkout. Since 2026-10-09 releases carry the
+    whole shell, also files Phoenix never changed; a PC that had pulled a newer upstream version of one has a
+    different copy, which is replaced (backed up) instead of being kept as if the user had changed it."""
+    if not rel.startswith(SHELL_REL):
+        return False
+    repo = os.path.join(HOME, SHELL_REL)
+    path = rel[len(SHELL_REL):]
+    try:   # tracked (an untracked file never shows in a diff) and unchanged
+        return subprocess.run(["git", "-C", repo, "ls-files", "--error-unmatch", "--", path], capture_output=True,
+                              timeout=30).returncode == 0 and \
+            subprocess.run(["git", "-C", repo, "diff", "--quiet", "HEAD", "--", path], capture_output=True,
+                           timeout=30).returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
 def baseline(src):
     """sha256 of every file as it came with this installation: the signed manifest of the release named in base.json
     (the clone was built from it). Cached; None when it can't be had (offline, no label), and then files that this
@@ -658,6 +675,8 @@ def install(src, label, yes, what):
                 continue
             edited = (cur != inst["files"][rel]) if rel in inst["files"] else \
                 (base_files is not None and cur != base_files.get(rel))   # vs. how it came with the install
+            if edited and rel not in inst["files"] and git_clean(rel):
+                edited = False   # a shell file as illogical-impulse shipped it (any upstream version): not the user's
             if edited and system_state().get("changed", {}).get(rel) == cur:
                 edited = False                                   # changed by a system fix, not by the user
             if edited:
@@ -711,9 +730,6 @@ def install(src, label, yes, what):
 
     if any(r.startswith(".config/hypr/") for r in changed) and os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
         subprocess.run(["hyprctl", "reload"], capture_output=True)
-    guard = os.path.join(HOME, ".local", "bin", "hypr-guard")
-    if changed and os.access(guard, os.X_OK):
-        subprocess.run([guard, "snapshot", "--force"], capture_output=True)   # the fixes are the new known-good state
     record_whats_new(src, "custom", prev_key, m)
     print(f"Installed version {vlabel(m)}: {len(changed)} file(s) updated.")
     for rel in kept:
@@ -878,9 +894,6 @@ def cmd_undo():
     if prev.get("legacy"):
         rec.update(label="", legacy=True)        # back to "from before the release reset" (counts as custom 1 minus a step)
     save(INSTALLED, rec)
-    guard = os.path.join(HOME, ".local", "bin", "hypr-guard")
-    if restored and os.access(guard, os.X_OK):     # the restored files are the known-good state now; otherwise the
-        subprocess.run([guard, "snapshot", "--force"], capture_output=True)   # login check would put the fix back
     if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
         subprocess.run(["hyprctl", "reload"], capture_output=True)
     print(f"Reverted version {undone}: {restored} file(s) restored. Updates will not reinstall it; the next newer "

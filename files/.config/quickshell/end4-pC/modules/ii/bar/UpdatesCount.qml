@@ -42,7 +42,7 @@ MouseArea {
 
     Process {
         id: updateProc
-        // system packages + end4-pC shell update with customizations reapplied (hypr-guard), or the stock
+        // system packages + system fixes + Phoenix updates (which carry the shell), or the stock
         // yay update when Settings › Extras › update script is off
         command: Config.options.extras.updatesScript
             ? ["kitty", "fish", "-i", "-l", "-c", "~/.local/bin/system-update"]

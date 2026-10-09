@@ -54,10 +54,10 @@ Singleton {
 
     Process {
         id: checkUpdatesProc
-        // ours also counts a pending end4-pC shell update and a pending custom-fixes release (both applied by
-        // ~/.local/bin/system-update); stock otherwise
+        // ours also counts a pending Phoenix release (it carries the shell; applied by ~/.local/bin/system-update);
+        // stock otherwise. The shell no longer follows upstream end4-pC (2026-10-09), so its commits aren't counted.
         command: Config.options.extras.updatesScript
-            ? ["bash", "-c", "pacman=$(checkupdates 2>/dev/null | wc -l); aur=$(yay -Qua 2>/dev/null | wc -l || paru -Qua 2>/dev/null | wc -l || echo 0); shell=$(timeout 15 git -C ~/.config/quickshell/end4-pC fetch -q 2>/dev/null && git -C ~/.config/quickshell/end4-pC rev-list --count HEAD..@{u} 2>/dev/null || echo 0); [ \"$shell\" -gt 0 ] 2>/dev/null && shell=1 || shell=0; fixes=0; $HOME/.local/bin/custom-update check --quiet >/dev/null 2>&1 && fixes=1; echo $((pacman + aur + shell + fixes))"]
+            ? ["bash", "-c", "pacman=$(checkupdates 2>/dev/null | wc -l); aur=$(yay -Qua 2>/dev/null | wc -l || paru -Qua 2>/dev/null | wc -l || echo 0); fixes=0; $HOME/.local/bin/custom-update check --quiet >/dev/null 2>&1 && fixes=1; echo $((pacman + aur + fixes))"]
             : ["bash", "-c", "pacman=$(checkupdates 2>/dev/null | wc -l); aur=$(yay -Qua 2>/dev/null | wc -l || paru -Qua 2>/dev/null | wc -l || echo 0); echo $((pacman + aur))"]
         stdout: StdioCollector {
             onStreamFinished: {

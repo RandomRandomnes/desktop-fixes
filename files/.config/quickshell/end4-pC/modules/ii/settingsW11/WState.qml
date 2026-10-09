@@ -134,7 +134,7 @@ Singleton {
         ["Privacy", "microphone camera location", "privacy", ""],
         ["Work safety", "hide nsfw wallpaper clipboard", "privacy", ""],
         ["Windows Update", "updates upgrade pacman packages system update", "update", ""],
-        ["Shell update", "illogical impulse end4 dotfiles hypr-guard", "update", ""],
+        ["Shell update", "illogical impulse end4 dotfiles shell phoenix updates", "update", ""],
         ["Advanced settings", "illogical impulse original all settings", "advanced", ""],
     ]
 

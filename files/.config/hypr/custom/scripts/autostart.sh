@@ -1,5 +1,5 @@
 #!/bin/sh
-log="$HOME/hypr-guard/autostart.log"; mkdir -p "$HOME/hypr-guard"
+log="$HOME/.local/state/phoenix/autostart.log"; mkdir -p "$HOME/.local/state/phoenix"
 echo "$(date +%T) autostart script started" > "$log"
 # Your own login commands (not part of Phoenix, never shipped or overwritten): custom/scripts/autostart-user.sh
 if [ -f "$HOME/.config/hypr/custom/scripts/autostart-user.sh" ]; then
@@ -28,7 +28,6 @@ done
 echo "$(date +%T) shell background ready after $i s" >> "$log"
 # Setup profile steps that need a running desktop (wallpaper + colors after an install). No-op otherwise.
 [ -x "$HOME/.local/bin/setup-profile" ] && "$HOME/.local/bin/setup-profile" first-login >> "$log" 2>&1
-# (A fresh install's first hypr-guard snapshot is taken by the login check: hypr-guard check --login.)
 # First-time setup wizard after a fresh install (the clone installer leaves this marker; the wizard removes it)
 if [ -f "$HOME/.local/state/setup-wizard/pending" ]; then
   echo "$(date +%T) opening the first-time setup wizard" >> "$log"

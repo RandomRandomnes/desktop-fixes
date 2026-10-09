@@ -91,7 +91,7 @@ ApplicationWindow {
             { row: "System fixes", text: "Fix problems caused by Arch, Hyprland or illogical-impulse updates. Always installed, right after the update they belong to, only on matching versions" },
             { row: "Custom fixes (1.1, 1.11, …)", text: "Fix the custom features. Optional (setup assistant). Revert the last one: Settings › Update › Undo last" },
             { row: "Major custom versions (2, 3, …)", text: "Never automatic. Settings › Update explains the changes and the risk; upgrades only on confirmation" },
-            { row: "Desktop broken after an update", text: "Settings › Update › Run health check" },
+            { row: "Desktop broken after an update", text: "Settings › Update › Restore points" },
         ]},
         { id: "startup", title: "Boot menu", icon: "restart_alt", heading: "Boot menu and Windows", blocks: [
             { p: "The system starts directly, without a menu. Windows starts from the firmware's one-time boot menu (F8, F11 or F12 at power-on, depending on the PC)." },
@@ -109,7 +109,7 @@ ApplicationWindow {
         { id: "help", title: "Troubleshooting", icon: "help", heading: "Troubleshooting", blocks: [
             { row: "Black screen (NVIDIA)", text: "Ctrl+Alt+F2, log in, sudo pacman -S nvidia-open-dkms nvidia-utils linux-headers, reboot" },
             { row: "Black screen after an update", text: "Ctrl+Alt+F2, log in, sudo pacman -Syu, reboot" },
-            { row: "Desktop broken after an update", text: "Settings › Update › Run health check; for a bug fix, Undo last" },
+            { row: "Desktop broken after an update", text: "Settings › Update › Restore points; for a bug fix, Undo last" },
             { row: "Text too small or too large", text: "Settings › System › Display › Scale" },
             { row: "No Wi-Fi", text: "Right sidebar (Super+N) › Wi-Fi" },
             { row: "No GPU graph", text: "Settings › Extras › Live system graphs" },

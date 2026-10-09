@@ -7,13 +7,12 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 
-// Windows Update equivalent: pacman/AUR via ~/.local/bin/system-update, shell via hypr-guard.
+// Windows Update equivalent: pacman/AUR via ~/.local/bin/system-update; the shell comes with Phoenix updates (custom-update).
 WPage {
     id: page
     property string running: ""
     property string installed: ""
     property var history: []
-    property string guardStatus: ""
     property string lastSync: ""
 
     function refreshInfo() { infoProc.running = true; }
@@ -49,7 +48,6 @@ k=linux; for f in lts zen hardened rt; do case "$(uname -r)" in *-$f) k=linux-$f
 [ -d "/usr/lib/modules/$(uname -r)" ] && echo current || echo pending
 grep -E '\\[ALPM\\] (upgraded|installed|removed) ' /var/log/pacman.log | tail -n 14 | tac
 echo '---'
-head -n 1 ~/hypr-guard/report.md 2>/dev/null
 date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
         stdout: StdioCollector {
             onStreamFinished: {
@@ -63,8 +61,7 @@ date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
                     return m ? { date: m[1].substring(0, 16).replace("T", " "), action: m[2], pkg: m[3], ver: m[4] } : null;
                 }).filter(x => x);
                 const tail = (parts[1] ?? "").split("\n");
-                page.guardStatus = (tail[0] ?? "").trim();
-                page.lastSync = (tail[1] ?? "").trim();
+                page.lastSync = (tail[0] ?? "").trim();
             }
         }
     }
@@ -76,11 +73,6 @@ date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
         id: updateProc
         command: ["kitty", "fish", "-i", "-l", "-c", "~/.local/bin/system-update"]
         onExited: { Updates.refresh(); page.refreshInfo(); whatsNewProc.running = true; rpListProc.running = true; }
-    }
-    Process {
-        id: doctorProc
-        command: ["bash", "-c", "~/.local/bin/hypr-guard doctor"]
-        onExited: page.refreshInfo()
     }
 
     // Status banner
@@ -168,11 +160,9 @@ date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
             description: "Arch Linux packages and AUR apps (pacman + yay). You'll be asked for your password once."
         }
         WCard {
-            icon: "shield"
-            title: "Shell (illogical-impulse)"
-            description: page.guardStatus ? `Updated safely by hypr-guard, which keeps your customizations · ${page.guardStatus.replace(/^#+\s*/, "")}` : "Updated safely by hypr-guard, which keeps your customizations"
-            WButton { buttonText: doctorProc.running ? "Checking…" : "Run health check"; enabled: !doctorProc.running; onClicked: doctorProc.running = true }
-            WButton { buttonText: "View report"; onClicked: Quickshell.execDetached(["xdg-open", `${Quickshell.env("HOME")}/hypr-guard/report.md`]) }
+            icon: "dashboard"
+            title: "Desktop shell"
+            description: "Phoenix's own version of the illogical-impulse shell. It comes with Phoenix updates (below), tested as a whole, and no longer follows illogical-impulse's own updates."
         }
         WCard {
             icon: "memory"
@@ -434,7 +424,7 @@ date -r /var/lib/pacman/sync/core.db '+%b %-d, %-I:%M %p' 2>/dev/null`]
         WToggle {
             icon: "build_circle"
             title: "Receive custom bug fixes"
-            description: "Signed fixes for the custom features of this system (hypr-guard, Wallpaper Engine, Settings, the setup assistant and others). Bug fixes are installed with regular updates; new major versions are only offered here"
+            description: "Signed updates for the desktop shell and the custom features of this system (Wallpaper Engine, Settings, the setup assistant and others). Bug fixes are installed with regular updates; new major versions are only offered here"
             checked: Config.options.extras.customFixes
             onToggled: v => { Config.options.extras.customFixes = v; page.refreshFixes() }
         }

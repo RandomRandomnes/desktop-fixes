@@ -5,7 +5,7 @@
 #   Source: https://github.com/RainyPixel/wallpaper-engine-kde-plugin (GPL-2.0), folder hyprland/, at $COMMIT
 #   plus phoenix.patch next to this file: background layer (shell surfaces stay above it), Wallpaper Engine's audio API,
 #   an "audio" IPC command.
-# Run again after a Qt update if web wallpapers stop working (hypr-guard reports it).
+# Run again after a Qt update if web wallpapers stop working.
 set -euo pipefail
 COMMIT=b9fd9b3
 REPO=https://github.com/RainyPixel/wallpaper-engine-kde-plugin.git
