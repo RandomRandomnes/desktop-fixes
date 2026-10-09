@@ -118,7 +118,9 @@ Phoenix and illogical-impulse share two things: the Hyprland folder `~/.config/h
 
 The update button on the taskbar (or Settings › Update) installs, in this order: system packages, **system fixes**
 and **custom fixes** (which carry the whole shell). Before it starts, a restore point is saved, so Settings › Update ›
-*Restore points* can put the previous state back.
+*Restore points* can put the previous state back. Updates that can break the desktop (a new Qt or Hyprland version, Quickshell itself,
+graphics drivers) are pointed out first, with a notification and a list in Settings › Update, and a desktop check
+runs after every update and login (title bars, Hyprland configuration, the shell).
 
 | Kind | Tags | What it fixes | Installed |
 |---|---|---|---|
