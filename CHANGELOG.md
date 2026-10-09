@@ -1,5 +1,8 @@
 # Changelog
 
+## custom 2.180 (2026-10-09, fix)
+- Restart and Shut down from the power menu no longer freeze or silently do nothing: they now run outside the shell, close Wallpaper Engine cleanly, never close the shell itself, log each step (journalctl -t phoenix-power) and show a message if the system refuses
+
 ## custom 2.170 (2026-10-09, fix)
 - Critical update check: updates that can break the desktop (a new Qt or Hyprland version, Quickshell, graphics drivers) are pointed out before installing, with a notification and a list in Settings › Update; on the PC that publishes Phoenix the update asks first so they can be tried in the test VM
 - Desktop check after every login and update and in Settings › Update: title bars missing, Hyprland config errors, the shell not running or built for an older Qt

@@ -51,18 +51,25 @@ Singleton {
         Quickshell.execDetached(["bash", "-c", `systemctl hibernate || loginctl hibernate`]);
     }
 
+    // Phoenix (2026-10-09): Restart / Shut down run ~/.local/bin/phoenix-power, outside the shell. Killing every window's
+    // process from here while starting the restart could kill the shell itself first (a window of its own), and
+    // killed Wallpaper Engine abruptly; one restart froze the PC with nothing in the log. The helper closes Wallpaper
+    // Engine cleanly, then the apps (never the shell or Hyprland), logs each step, then asks systemd. The old way
+    // stays as the fallback when the helper is missing.
+    function power(action, fallback) {
+        const helper = `${Quickshell.env("HOME")}/.local/bin/phoenix-power`;
+        Quickshell.execDetached(["bash", "-c", `if [ -x "${helper}" ]; then exec setsid "${helper}" ${action}; fi; ${fallback}`]);
+    }
+
     function poweroff() {
-        closeAllWindows();
-        Quickshell.execDetached(["bash", "-c", `systemctl poweroff || loginctl poweroff`]);
+        root.power("poweroff", "systemctl poweroff || loginctl poweroff");
     }
 
     function reboot() {
-        closeAllWindows();
-        Quickshell.execDetached(["bash", "-c", `reboot || loginctl reboot`]);
+        root.power("reboot", "reboot || loginctl reboot");
     }
 
     function rebootToFirmware() {
-        closeAllWindows();
-        Quickshell.execDetached(["bash", "-c", `systemctl reboot --firmware-setup || loginctl reboot --firmware-setup`]);
+        root.power("firmware", "systemctl reboot --firmware-setup || loginctl reboot --firmware-setup");
     }
 }

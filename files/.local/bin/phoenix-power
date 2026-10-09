@@ -1,0 +1,50 @@
+#!/bin/bash
+# phoenix-power reboot|poweroff|firmware   (2026-10-09, ours) — the power menu's Restart / Shut down / firmware restart.
+# It used to kill every window's process and start `reboot` from the shell at the same moment: when a window belonged
+# to the shell itself, the shell could kill itself before the restart was requested, and Wallpaper Engine was killed
+# abruptly (it crashes Hyprland's exit). Once the restart froze the PC with nothing in the log. Now, in this order,
+# outside the shell and logged (journalctl -t phoenix-power): Wallpaper Engine closes cleanly, app windows are asked to
+# close (never the shell or Hyprland), then systemd restarts or shuts down, which stops everything else itself.
+act="${1:-}"
+case "$act" in
+    reboot) cmd=(systemctl reboot) ;; poweroff) cmd=(systemctl poweroff) ;;
+    firmware) cmd=(systemctl reboot --firmware-setup) ;;
+    *) echo "usage: phoenix-power reboot|poweroff|firmware" >&2; exit 2 ;;
+esac
+log() { logger -t phoenix-power -- "$*"; sync; }   # sync: the step is on disk even if the PC hangs right after
+log "$act: requested"
+
+# 1. Wallpaper Engine: the app and its renderer, as at logout (switch-desktop)
+if pgrep -f '[l]inux-wallpaper-engine-ux/app.asar|[l]inux-wallpaperengine' >/dev/null; then
+    pkill -TERM -f '[l]inux-wallpaper-engine-ux/app.asar'; pkill -TERM -x linux-wallpaper
+    for _ in $(seq 10); do
+        pgrep -f '[l]inux-wallpaper-engine-ux/app.asar|[l]inux-wallpaperengine --' >/dev/null || break
+        sleep 0.5
+    done
+    log "$act: Wallpaper Engine closed"
+fi
+
+# 2. app windows: each window's process gets SIGTERM, as before, but never the shell, Hyprland, Xwayland or a bad pid
+if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && command -v hyprctl >/dev/null; then
+    keep=" $$ $PPID $(pgrep -x Hyprland | tr '\n' ' ') $(pgrep -x Xwayland | tr '\n' ' ') $(pgrep -f '^qs ' | tr '\n' ' ') "
+    pids=$(hyprctl clients -j 2>/dev/null | python3 -c 'import json,sys
+for c in json.load(sys.stdin):
+    p = c.get("pid", 0)
+    if isinstance(p, int) and p > 1: print(p)' 2>/dev/null | sort -u)
+    n=0
+    for p in $pids; do
+        case "$keep" in *" $p "*) continue ;; esac
+        kill -TERM "$p" 2>/dev/null && n=$((n + 1))
+    done
+    log "$act: asked $n app(s) to close"
+    sleep 1
+fi
+
+# 3. the restart / shutdown itself (systemd stops the rest of the session)
+log "$act: calling ${cmd[*]}"
+if ! "${cmd[@]}" && ! loginctl "${cmd[@]:1}"; then
+    log "$act: FAILED (systemctl and loginctl refused)"
+    notify-send -a Phoenix -u critical "Couldn't $( [ "$act" = poweroff ] && echo "shut down" || echo restart)" \
+        "The system refused or the password prompt was cancelled. Try again from the power menu." 2>/dev/null
+    exit 1
+fi
