@@ -117,17 +117,28 @@ Phoenix and illogical-impulse share two things: the Hyprland folder `~/.config/h
 ## Updates
 
 The update button on the taskbar (or Settings › Update) installs, in this order: system packages, **system fixes**
-and **custom fixes** (which carry the whole shell).
+and **custom fixes** (which carry the whole shell). Before it starts, a restore point is saved, so Settings › Update ›
+*Restore points* can put the previous state back.
 
 | Kind | Tags | What it fixes | Installed |
 |---|---|---|---|
-| System fixes | `system-1`, `system-1.1`, … | Problems caused by updates to Arch, Hyprland or illogical-impulse | Always, right after the update it belongs to, and only on systems whose versions match |
-| Custom fixes | `custom-1`, `custom-1.1`, … | Problems in Phoenix's own features (Settings, the setup assistant, Wallpaper Engine support, …) | When enabled in the setup assistant. A new whole number (2, 3, …) is a major version: only offered, never installed automatically |
+| System fixes | `system-1`, `system-1.1`, … | Problems caused by updates to Arch, Hyprland or Quickshell | Always, right after the update it belongs to, and only on systems whose versions match |
+| Custom fixes | `custom-1`, `custom-1.1`, … | The desktop shell and Phoenix's own features (Settings, the setup assistant, Wallpaper Engine support, …) | When enabled in the setup assistant. A new whole number (2, 3, …) is a major version: only offered, never installed automatically |
 
 Every release is signed and checked before anything is installed; a damaged release is rejected as a whole. A file
 you edited yourself is never overwritten: the new version is saved next to it as `<file>.fixes-new`. The last custom
 fix can be undone in Settings › Update. A system fix that has to change a Phoenix file carries a version of the change
-for each range of Phoenix versions and is tested against all of them before release.
+for each range of Phoenix versions and is tested against all of them before release. Files Phoenix stops shipping
+are removed by the next update, unless you changed them.
+
+### The shell
+
+Since version 2.140, Phoenix ships its **own complete copy of the shell** with every release: the
+[end4-pC](https://github.com/pctrade/end4-pC) fork of illogical-impulse (as of its commit `7450c4f`) with Phoenix's
+changes. It no longer follows illogical-impulse's or end4-pC's own updates, so an upstream change can't break
+Phoenix, and every PC runs the exact shell that was tested. Useful upstream fixes are brought over by hand in a
+Phoenix release. (Earlier versions pulled upstream updates and re-applied Phoenix's changes with a tool called
+hypr-guard; it was removed in 2.140, and updates delete it.)
 
 ## Setup profiles
 
