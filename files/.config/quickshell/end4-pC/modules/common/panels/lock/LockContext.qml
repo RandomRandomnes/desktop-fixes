@@ -1,5 +1,6 @@
 import qs
 import qs.modules.common
+import qs.services
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -128,10 +129,16 @@ Scope {
                 root.clearText();
                 root.unlockInProgress = false;
                 // Phoenix: tell a lockout apart from a wrong password (faillock answers every attempt while it lasts)
-                const info = root.lastPamInfo;
-                const mins = (info.match(/(\d+)\s*minute/) || [])[1];
-                root.failureMessage = /lock/i.test(info)
-                    ? `Too many attempts. Try again in ${mins ? mins + " minute" + (mins === "1" ? "" : "s") : "a few minutes"}`
+                // Any notice that came with the failure means locked: pam_unix sends none for a wrong password, and the
+                // notice is in the system's language (L22). Minutes: the number before "minute", else the last number
+                // ("… due to 3 failed logins. (10 minutes left to unlock)").
+                const info = root.lastPamInfo.trim();
+                const nums = info.match(/\d+/g) || [];
+                const mins = (info.match(/(\d+)\s*minute/i) || [])[1] ?? nums[nums.length - 1];
+                root.failureMessage = info !== ""
+                    ? (mins ? (mins === "1" ? Translation.tr("Too many attempts. Try again in 1 minute")
+                                            : Translation.tr("Too many attempts. Try again in %1 minutes").arg(mins))
+                            : Translation.tr("Too many attempts. Try again in a few minutes"))
                     : "";
                 GlobalStates.screenUnlockFailed = true;
                 root.showFailure = true;

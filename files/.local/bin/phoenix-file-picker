@@ -1,0 +1,17 @@
+#!/bin/bash
+# phoenix-file-picker open|save <start path> <filter name> <pattern>...   (2026-10-09, Phoenix)
+# A file chooser for the shell's Settings pages and the setup assistant: kdialog, or zenity when kdialog isn't
+# installed (it used to be kdialog only, so the buttons did nothing without it). Prints the chosen path; nothing when
+# cancelled.
+mode=$1 start=$2 name=$3; shift 3
+if command -v kdialog >/dev/null; then
+    if [ "$mode" = save ]; then exec kdialog --getsavefilename "$start" "$name ($*)"; fi
+    exec kdialog --getopenfilename "$start" "$name ($*)"
+elif command -v zenity >/dev/null; then
+    [ -d "$start" ] && start="${start%/}/"
+    if [ "$mode" = save ]; then exec zenity --file-selection --save --confirm-overwrite --filename="$start" --file-filter="$name | $*"; fi
+    exec zenity --file-selection --filename="$start" --file-filter="$name | $*"
+else
+    notify-send -a Phoenix "No file chooser" "Install kdialog or zenity to pick a file." 2>/dev/null
+    exit 1
+fi

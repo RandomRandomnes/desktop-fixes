@@ -59,12 +59,12 @@ WPage {
     }
     Process {
         id: importPicker
-        command: ["kdialog", "--getopenfilename", Quickshell.env("HOME"), "Setup profiles (*.json)"]
+        command: [`${Quickshell.env("HOME")}/.local/bin/phoenix-file-picker`, "open", Quickshell.env("HOME"), "Setup profiles", "*.json"]
         stdout: StdioCollector { onStreamFinished: if (text.trim() !== "") page.importPath = text.trim() }
     }
     Process {
         id: exportPicker
-        command: ["kdialog", "--getsavefilename", `${Quickshell.env("HOME")}/my-setup.json`, "Setup profiles (*.json)"]
+        command: [`${Quickshell.env("HOME")}/.local/bin/phoenix-file-picker`, "save", `${Quickshell.env("HOME")}/my-setup.json`, "Setup profiles", "*.json"]
         stdout: StdioCollector {
             onStreamFinished: {
                 let f = text.trim()

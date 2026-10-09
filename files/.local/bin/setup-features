@@ -69,6 +69,14 @@ def hyprctl(*args):
     return subprocess.run(["hyprctl", *args], capture_output=True, text=True).stdout
 
 
+def opacity(option):
+    try:
+        v = float(json.loads(hyprctl("getoption", f"decoration:{option}", "-j") or "{}").get("float", 1))
+    except (ValueError, TypeError):
+        return "1"
+    return f"{v:.2f}" if 0 < v <= 1 else "1"
+
+
 def restore_minimized():
     """Bring windows hidden by the minimize feature back to the active workspace, visible."""
     try:
@@ -80,8 +88,9 @@ def restore_minimized():
         if c.get("workspace", {}).get("name") == "special:minimized":
             sel = "address:" + c["address"]
             hyprctl("dispatch", f'hl.dsp.window.move({{ workspace = {active}, follow = false, window = "{sel}" }})')
-            for prop in ("opacity", "opacity_inactive"):
-                hyprctl("dispatch", f'hl.dsp.window.set_prop({{ window = "{sel}", prop = "{prop}", value = "1" }})')
+            # back to the configured opacity (it used to be 1, so the window stayed solid while inactive)
+            for prop, option in (("opacity", "active_opacity"), ("opacity_inactive", "inactive_opacity")):
+                hyprctl("dispatch", f'hl.dsp.window.set_prop({{ window = "{sel}", prop = "{prop}", value = "{opacity(option)}" }})')
 
 
 def park_we_autostart(on):

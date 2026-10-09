@@ -13,9 +13,16 @@ WPage {
     property var terminalRunner: null
     id: page
 
+    // "Administrator" only for members of wheel (the group sudo allows); it was shown for every account
+    property bool isAdmin: true
+    Process {
+        running: true
+        command: ["id", "-nG"]
+        stdout: StdioCollector { onStreamFinished: page.isAdmin = text.trim().split(/\s+/).includes("wheel") }
+    }
     Process {
         id: pickProc
-        command: ["kdialog", "--getopenfilename", `${Quickshell.env("HOME")}/Pictures`, "image/png image/jpeg image/webp image/gif"]
+        command: [`${Quickshell.env("HOME")}/.local/bin/phoenix-file-picker`, "open", `${Quickshell.env("HOME")}/Pictures`, "Images", "*.png", "*.jpg", "*.jpeg", "*.webp", "*.gif"]
         stdout: StdioCollector {
             onStreamFinished: {
                 const f = text.trim();
@@ -43,7 +50,7 @@ WPage {
                 color: Appearance.colors.colOnLayer0
             }
             StyledText { text: `${SystemInfo.username}@${SystemInfo.hostname}`; color: Appearance.colors.colSubtext; font.pixelSize: Appearance.font.pixelSize.small }
-            StyledText { text: "Local account · Administrator"; color: Appearance.colors.colSubtext; font.pixelSize: Appearance.font.pixelSize.small }
+            StyledText { text: page.isAdmin ? "Local account · Administrator" : "Local account · Standard user"; color: Appearance.colors.colSubtext; font.pixelSize: Appearance.font.pixelSize.small }
         }
     }
 

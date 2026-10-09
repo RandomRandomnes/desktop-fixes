@@ -343,6 +343,13 @@ local function place(sel, b)
     hl.dispatch(hl.dsp.window.move({ x = b.x, y = b.y, window = sel }))
 end
 
+local function place_now(sel, b)   -- without the move/resize animation
+    local anims = hl.get_config("animations.enabled")
+    hl.config({ animations = { enabled = false } })
+    pcall(place, sel, b)
+    hl.config({ animations = { enabled = anims ~= false } })
+end
+
 local function convert(win)
     if not (win and win.fullscreen == 1 and win.floating) then return end
     local addr = win.address
@@ -364,11 +371,15 @@ local function convert(win)
             if not n then return end
             local now = box_of(n)
             local s = maxed[addr]
-            if s and same(now, s.max) then
+            -- an app that asks to be maximized again right after (some do on start or after their own resize) is put
+            -- back in the maximized box instead of being restored, which used to make it bounce between the two (L15/L20)
+            if s and s.t and os.time() - s.t <= 1 then
+                place_now(sel, s.max)
+            elseif s and same(now, s.max) then
                 place(sel, s.prev)   -- maximized by Phoenix and untouched since: restore
                 maxed[addr] = nil
             else
-                maxed[addr] = { max = max_box, prev = now }
+                maxed[addr] = { max = max_box, prev = now, t = os.time() }
                 place(sel, max_box)
             end
             save_maxed()

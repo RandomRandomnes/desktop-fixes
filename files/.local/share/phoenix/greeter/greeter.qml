@@ -132,9 +132,12 @@ ShellRoot {
             justFailed.restart()
             root.busy = false
             root.pendingPassword = ""
-            // faillock answers every attempt while the account is locked; its notice came as an info message
-            const locked = /lock/i.test(root.message)
-            const mins = (root.message.match(/(\d+)\s*minute/) || [])[1]
+            // faillock answers every attempt while the account is locked; its notice came as an info message (any
+            // notice counts: it is in the system's language; L22). Minutes: the number before "minute", else the last one.
+            const info = root.message.trim()
+            const locked = info !== ""
+            const nums = info.match(/\d+/g) || []
+            const mins = (info.match(/(\d+)\s*minute/i) || [])[1] ?? nums[nums.length - 1]
             root.message = locked ? `Too many attempts. Try again in ${mins ? mins + " minute" + (mins === "1" ? "" : "s") : "a few minutes"}.`
                                   : "That password isn't right. Try again."
             root.messageIsError = true

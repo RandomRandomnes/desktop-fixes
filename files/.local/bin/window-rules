@@ -82,13 +82,16 @@ def clean(r):
         out["position"] = r["position"]
     for k in ("width", "height"):
         try:
-            v = int(r.get(k) or 0)
-        except (TypeError, ValueError):
+            v = round(float(str(r.get(k) or 0).strip().rstrip("%")))   # also "60", "60.5", "60%" (WR-4)
+        except (TypeError, ValueError, OverflowError):
             v = 0
         if 10 <= v <= 100:
             out[k] = v
-    if out.get("position") and not (out.get("width") and out.get("height")):
-        out["width"], out["height"] = out.get("width", 50), out.get("height", 50)   # a position needs a size
+    # a size needs both (only one used to be ignored, and the window still floated at its own size; WR-4), and so
+    # does a position
+    if out.get("position") or out.get("width") or out.get("height"):
+        if not (out.get("width") and out.get("height")):
+            out["width"], out["height"] = out.get("width", 50), out.get("height", 50)
     for k in ("workspace", "monitor"):
         v = str(r.get(k) or "").strip()
         if v and re.fullmatch(r"[A-Za-z0-9:_.+-]{1,40}", v):

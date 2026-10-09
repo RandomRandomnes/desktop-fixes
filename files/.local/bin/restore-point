@@ -201,6 +201,11 @@ def restore_settings(pid, meta):
         for s in SETTINGS:
             src = os.path.join(tmp, s)
             if not os.path.isdir(src):
+                # a settings folder made after the point (e.g. illogical-impulse before the setup assistant ran) is
+                # moved aside, not deleted, so the restore is complete and still undoable (RP-6). Never the shell itself.
+                dst = os.path.join(CONFIG, s)
+                if s != QS_REL and os.path.isdir(dst) and not os.path.islink(dst):
+                    os.replace(dst, f"{dst}.bak-restore-{pid}")
                 continue
             # --delete: files added since go away too; excluded ones (backups, the shell's git history) are left alone
             # --checksum: by content (a file changed within the same second, with the same size, used to be skipped)

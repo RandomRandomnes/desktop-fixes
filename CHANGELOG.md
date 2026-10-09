@@ -1,5 +1,17 @@
 # Changelog
 
+## custom 2.130 (2026-10-09, fix)
+- Maximized windows no longer bounce back when an app asks to be maximized twice
+- Display profiles: settings left behind for a screen's old port are removed
+- Lockout message works in any system language
+- Restoring a restore point sets aside settings folders made after it
+- Window rules: a width or height alone now works
+- File choosers work without kdialog (zenity)
+- Accounts shows Standard user for non-admin accounts
+- Turning minimize off keeps your window transparency
+- Locking the screen tells the system the session is locked
+- Files added by updates are removed by phoenix uninstall
+
 ## custom 2.120 (2026-10-09, fix)
 - Settings fits small screens for real now (header and back arrow below the taskbar) and always opens at Home
 - No more 'Unlock Login Keyring' prompt at every start with automatic sign-in; signing in at the Phoenix login screen unlocks the keyring; password prompts always open in front

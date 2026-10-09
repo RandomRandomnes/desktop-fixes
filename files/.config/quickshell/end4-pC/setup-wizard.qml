@@ -273,7 +273,7 @@ ApplicationWindow {
     }
     Process {
         id: filePicker
-        command: ["kdialog", "--getopenfilename", root.home, "Setup profiles (*.json)"]
+        command: [`${root.home}/.local/bin/phoenix-file-picker`, "open", root.home, "Setup profiles", "*.json"]
         stdout: StdioCollector { onStreamFinished: if (text.trim() !== "") root.chosen = text.trim() }
     }
     Process {

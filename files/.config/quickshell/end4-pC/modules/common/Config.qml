@@ -854,7 +854,8 @@ Singleton {
 
             // Our custom features (2026-10-03, not upstream). Each can be switched off, falling back to stock behaviour.
             // Settings › Extras edits these; setup profiles set them. Hyprland-side ones are applied by
-            // ~/.local/bin/setup-features (writes ~/.config/hypr/custom/features.lua and reloads). Missing = on.
+            // ~/.local/bin/setup-features (writes ~/.config/hypr/custom/features.lua and reloads). A feature missing from
+            // features.lua counts as on there; here each one's default is the value below.
             property JsonObject extras: JsonObject {
                 property bool windowsStyle: true      // every window floats + title bars (hyprbars) with close/maximize/minimize
                 property bool minimizeToDock: true    // minimize button hides to the dock; clicking the dock restores (fade)

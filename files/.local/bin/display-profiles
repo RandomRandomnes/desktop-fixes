@@ -16,7 +16,9 @@ after a restart or when cables move; monitors.lua is written with the port names
 mode, position, scale, rotation, VRR, on/off, and the extra options in monitors.lua (bit depth, color management, …).
 Applying keeps the monitors.lua settings of displays the profile doesn't include (e.g. a TV that isn't plugged in).
 Profiles: ~/.local/state/phoenix/display-profiles.json (personal; not shipped, not in setup profiles). The first
-rewrite keeps the old file as monitors.lua.bak-display-profiles.
+rewrite keeps the old file as monitors.lua.bak-display-profiles. It is never refreshed on purpose: it stays the
+setup from before any profile, to go back to by hand. Blocks are tagged "-- for: <display>" so the block of a display
+that moved to another port is dropped instead of staying behind for the old port (2026-10-09).
 """
 import json
 import os
@@ -62,6 +64,16 @@ def lua_blocks():
     # (they used to gain a layer of backslashes on every apply; QA 2026-10-08)
     return {o: {k: (re.sub(r"\\(.)", r"\1", v) if isinstance(v, str) else v) for k, v in (b or {}).items()}
             for o, b in blocks.items() if isinstance(b, dict)}
+
+
+def block_tags():
+    """output → the display a block was written for (the "-- for:" line above it; files from before 2026-10-09 have none)."""
+    try:
+        with open(MONITORS_LUA) as f:
+            text = f.read()
+    except OSError:
+        return {}
+    return {o: d.strip() for d, o in re.findall(r'^-- for: (.*)\nhl\.monitor\(\{\s*output = "([^"]*)"', text, re.M)}
 
 
 def settings_of(m, block):
@@ -127,18 +139,23 @@ def lua_value(k, v):
     return str(v)
 
 
-def render(profile, names, others):
+def render(profile, names, others, tags=None):
     """monitors.lua text for a profile; names: description → current port name; others: the existing blocks of
-    outputs the profile doesn't set (kept as they are, e.g. a TV that isn't plugged in now)."""
+    outputs the profile doesn't set (kept as they are, e.g. a TV that isn't plugged in now); tags: output → display,
+    written as a "-- for:" line above each block so a display that moved to another port can be recognised."""
+    tags = tags or {}
     out = ["-- Written by Settings › System › Display › Display profiles (~/.local/bin/display-profiles):",
            f"-- profile \"{one_line(profile['name'])}\". Changes made in Display settings are kept until a profile is applied again.", ""]
     for mon in profile["monitors"]:
         fields = {"output": names[mon["description"]]}
         fields.update(mon["settings"])
+        out.append(f"-- for: {one_line(mon['description'])}")
         out.append("hl.monitor({")
         out += [f"    {k} = {lua_value(k, v)}," for k, v in fields.items()]
         out += ["})", ""]
     for name, block in others.items():
+        if tags.get(name):
+            out.append(f"-- for: {one_line(tags[name])}")
         out.append("hl.monitor({")
         out += [f"    {k} = {lua_value(k, v)}," for k, v in dict(block, output=name).items()]
         out += ["})", ""]
@@ -182,7 +199,23 @@ def cmd_save(name):
 
 def apply(profile, names):
     mine = {names[m["description"]] for m in profile["monitors"]}
-    text = render(profile, names, {o: b for o, b in lua_blocks().items() if o not in mine})
+    descs = {m["description"] for m in profile["monitors"]}
+    places = {m["settings"].get("position") for m in profile["monitors"]}
+    connected = set(names.values())
+    tags = block_tags()
+    tags.update({o: d for d, o in names.items()})   # connected outputs: what is plugged in there now
+
+    def stale(o, b):
+        """a block for a port nothing is plugged into, left from a display of this profile on its old port (it came
+        back when the display was plugged in there again, e.g. the TV at the desk's place on HDMI-A-2; QA 2026-10-09)"""
+        if o in connected:
+            return False
+        if o in tags:
+            return tags[o] in descs
+        return b.get("position") in places   # untagged (older file): it would take a profile display's place
+
+    others = {o: b for o, b in lua_blocks().items() if o not in mine and not stale(o, b)}
+    text = render(profile, names, others, tags)
     try:
         with open(MONITORS_LUA) as f:
             if f.read() == text:
