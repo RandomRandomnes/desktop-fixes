@@ -29,3 +29,7 @@ hl.on("hyprland.start", function()
     hl.timer(setup_hyprbars, { timeout = 1500, type = "oneshot" })
 end)
 -- hyprbars-end
+
+-- Phoenix (2026-10-09): no "Hyprland updated" news / donation screen at session start (QA: it appeared on top of
+-- the setup assistant and the keyring prompt after a login)
+pcall(hl.config, { ecosystem = { no_update_news = true, no_donation_nag = true } })

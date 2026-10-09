@@ -24,8 +24,9 @@ ApplicationWindow {
     id: root
     visible: true
     title: "Set up your PC"
-    width: 1080
-    height: 740
+    // fits small screens: on 1280×800 the 740 px window put its title bar under the taskbar (QA 2026-10-09)
+    width: Math.min(1080, (Screen.width || 1920) - 40)
+    height: Math.min(740, (Screen.height || 1080) - 160)
     minimumWidth: 780
     minimumHeight: 540
     color: Appearance.m3colors.m3background
@@ -96,6 +97,7 @@ ApplicationWindow {
     property var picked: []               // ids
     property string appsStatus: ""
     property bool confirmingApps: false   // the "these apps will be installed" prompt
+    signal nudgeRequested()   // the "custom fixes" question pulses when Next is pressed without an answer
     property var termQueue: []            // terminal jobs waiting for the open terminal window to close (F18)
 
     // internet: NetworkManager's connectivity check, every 5 s while the assistant is open, so connecting in the
@@ -565,7 +567,7 @@ ApplicationWindow {
                     buttonText: root.busy ? "Applying…" : root.cur.id === "welcome" ? "Get started"
                         : root.cur.id === "done" ? "Finish" : "Next"
                     onClicked: {
-                        if (root.blocked) { root.fixesNudge = true; nudgePulse.restart(); return }
+                        if (root.blocked) { root.fixesNudge = true; root.nudgeRequested(); return }
                         root.next()
                     }
                 }
@@ -736,6 +738,9 @@ ApplicationWindow {
                 color: Appearance.colors.colPrimaryContainer
                 border.width: root.fixesNudge ? 3 : 2
                 border.color: root.fixesNudge ? Appearance.colors.colError : Appearance.colors.colPrimary
+                // the Next button is outside this page: it asks through root.nudgeRequested() (QA 2026-10-09: calling
+                // nudgePulse directly was a ReferenceError)
+                Connections { target: root; function onNudgeRequested() { nudgePulse.restart() } }
                 SequentialAnimation {
                     id: nudgePulse
                     loops: 2

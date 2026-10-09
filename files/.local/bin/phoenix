@@ -221,6 +221,12 @@ cmd_login_screen() {
                 "[terminal]" "vt = 1" "" "[default_session]" \
                 "command = \"env QT_WAYLAND_DISABLE_WINDOWDECORATION=1$(greeter_xkb_env) cage -s -m last -- qs -p $GREETER_DIR/greeter.qml\"" "user = \"greeter\"" \
                 | sudo tee /etc/greetd/config.toml >/dev/null
+            # signing in at the login screen also unlocks the login keyring, like other login managers do (QA 2026-10-09:
+            # /etc/pam.d/greetd had no pam_gnome_keyring, so the keyring asked for the password again after login)
+            if [ -f /usr/lib/security/pam_gnome_keyring.so ] && [ -f /etc/pam.d/greetd ] && ! grep -q pam_gnome_keyring /etc/pam.d/greetd; then
+                [ -f "$LS_SAVE/pam-greetd" ] || sudo cp -a /etc/pam.d/greetd "$LS_SAVE/pam-greetd"
+                sudo sed -i -e '$a auth       optional     pam_gnome_keyring.so' -e '$a session    optional     pam_gnome_keyring.so auto_start' /etc/pam.d/greetd
+            fi
             if ! sudo systemctl enable greetd.service; then
                 # put the old way of signing in back rather than leave the PC with none (QA 2026-10-08)
                 for f in "${moved[@]}"; do sudo mv "$LS_SAVE/getty/$(basename "$f")" "$f"; done
@@ -236,6 +242,7 @@ cmd_login_screen() {
             [ "$olddm" = "greetd.service" ] || sudo systemctl disable greetd.service 2>/dev/null
             if [ -d "$LS_SAVE/getty" ]; then sudo mkdir -p "$GETTY_D" && sudo cp -a "$LS_SAVE/getty/." "$GETTY_D/"; fi
             if [ -n "$olddm" ]; then sudo systemctl enable "$olddm"; fi   # greetd too, when it was there before
+            if [ -f "$LS_SAVE/pam-greetd" ]; then sudo cp -a "$LS_SAVE/pam-greetd" /etc/pam.d/greetd; fi
             if [ -f "$LS_SAVE/config.toml" ]; then sudo cp -a "$LS_SAVE/config.toml" /etc/greetd/config.toml
             elif grep -q "phoenix login-screen" /etc/greetd/config.toml 2>/dev/null; then sudo rm -f /etc/greetd/config.toml; fi
             sudo rm -rf "${GREETER_DIR:?}" /var/lib/phoenix-greeter /usr/local/share/fonts/phoenix-greeter "${LS_SAVE:?}"

@@ -1,5 +1,11 @@
 # Changelog
 
+## custom 2.120 (2026-10-09, fix)
+- Settings fits small screens for real now (header and back arrow below the taskbar) and always opens at Home
+- No more 'Unlock Login Keyring' prompt at every start with automatic sign-in; signing in at the Phoenix login screen unlocks the keyring; password prompts always open in front
+- Window-rule corners and the setup assistant keep title bars below the taskbar on small screens; windows restored from the dock come to the front
+- Smaller fixes: Wi-Fi row on PCs without Wi-Fi, power mode shown when the active one isn't in the list, window-rule status messages, setup assistant reminder animation, no Hyprland update/donation screen at login
+
 ## custom 2.110 (2026-10-08, fix)
 - Virtual machines: Phoenix no longer lets a VM go to sleep when idle (waking up froze its graphics and the VM had to be reset)
 

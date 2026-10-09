@@ -202,7 +202,12 @@ Singleton {
         // Closing Settings leaves the original (advanced) pages: the next open starts at Phoenix's own Settings again
         // (2026-10-08; it used to stay in the advanced view for good)
         function onSettingsOpenChanged() {
-            if (!GlobalStates.settingsOpen) root.advanced = false;
+            if (GlobalStates.settingsOpen) return;
+            // the next open starts at Home, like Windows Settings (QA 2026-10-09: it reopened on the last page)
+            root.advanced = false;
+            root.page = "home";
+            root.sub = "";
+            root.history = [];
         }
     }
 }

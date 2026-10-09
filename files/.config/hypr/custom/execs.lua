@@ -105,6 +105,8 @@ local function restore_active()
     local sel = "address:" .. win.address
     without_animations(function() hl.dispatch(hl.dsp.window.move({ workspace = target.id, window = sel })) end)
     hl.dispatch(hl.dsp.focus({ window = sel }))
+    -- in front of the others (QA 2026-10-09: with the pointer over its old place it came back behind them)
+    hl.dispatch(hl.dsp.window.alter_zorder({ mode = "top", window = sel }))
     set_opacity(sel, hl.get_config("decoration.active_opacity"), hl.get_config("decoration.inactive_opacity"))
     faded[win.address] = nil
 end
@@ -383,6 +385,21 @@ hl.timer(function()
 end, { timeout = 1000, type = "oneshot" })
 
 hl.on("window.close", function(win) if win and maxed[win.address] then maxed[win.address] = nil; save_maxed() end end)
+
+-- Password prompts (login keyring, polkit) come to the front when they open; one appeared behind the setup assistant
+-- while it had the keyboard, so the password went into a field nobody could see (QA 2026-10-09)
+local PROMPTS = { ["gcr-prompter"] = true, ["polkit-gnome-authentication-agent-1"] = true, ["hyprpolkitagent"] = true,
+                  ["org.kde.polkit-kde-authentication-agent-1"] = true, ["lxqt-policykit-agent"] = true }
+hl.on("window.open", function(win)
+    if not (win and PROMPTS[win.class or ""]) then return end
+    local sel = "address:" .. win.address
+    hl.timer(function()
+        if hl.get_window(sel) then
+            hl.dispatch(hl.dsp.window.alter_zorder({ mode = "top", window = sel }))
+            hl.dispatch(hl.dsp.focus({ window = sel }))
+        end
+    end, { timeout = 150, type = "oneshot" })
+end)
 
 -- A window that gets the focus while the mouse isn't over it (dock, Alt+Tab, Overview, keyboard) comes to the front,
 -- like on Windows. Focus from just hovering it (follow_mouse) doesn't raise, so moving the mouse doesn't shuffle windows.

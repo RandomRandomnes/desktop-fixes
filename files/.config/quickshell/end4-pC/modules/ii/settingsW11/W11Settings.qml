@@ -44,6 +44,17 @@ Scope {
         }
         implicitWidth: Math.min(1240, monW - 40)
         implicitHeight: Math.min(820, monH - 120)
+        // measured while Settings is closed, so the size is right before the window appears (measuring when it became
+        // visible came too late: it stayed 1240×820 on an 800 px screen; QA 2026-10-09)
+        Component.onCompleted: measure()
+        Connections {
+            target: Hyprland
+            function onFocusedMonitorChanged() { if (!panelWindow.visible) panelWindow.measure() }
+        }
+        Connections {
+            target: GlobalStates
+            function onSettingsOpenChanged() { if (GlobalStates.settingsOpen) panelWindow.measure() }
+        }
 
         function hide() {
             GlobalStates.settingsOpen = false;
@@ -51,7 +62,6 @@ Scope {
 
         onVisibleChanged: {
             if (visible) {
-                panelWindow.measure();
                 win.forceActiveFocus();
             } else {
                 GlobalStates.settingsOpen = false;   // closed by the window manager (title bar ✕, Super+Q)

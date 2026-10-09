@@ -25,6 +25,7 @@ WPage {
     property string status: ""
     property bool statusError: false
     property bool saving: false
+    property string lastAction: "edit"   // "edit" | "toggle" | "delete": for the status line
 
     readonly property var sizeOptions: [
         { displayName: "Don't change", value: "" }, { displayName: "Small (30 × 40 %)", value: "30x40" },
@@ -84,6 +85,7 @@ WPage {
     }
     function saveDraft() {
         if (!page.draft.match || !page.draft.match.trim()) { page.status = "Choose an app first."; page.statusError = true; return }
+        page.lastAction = "edit"
         const l = page.rules.slice()
         if (page.draftIndex >= 0) l[page.draftIndex] = page.draft; else l.push(page.draft)
         page.save(l)
@@ -107,7 +109,9 @@ WPage {
                 let r = { ok: false, errors: ["no answer from window-rules"] }
                 try { r = JSON.parse(text) } catch (e) {}
                 if (r.ok) {
-                    page.status = r.note ? `Saved; ${r.note}.` : "Saved and applied. New windows of this app follow the rule."
+                    // the message fits what was done (QA 2026-10-09: "follow the rule" stayed after a delete or switch-off)
+                    page.status = r.note ? `Saved; ${r.note}.` : page.lastAction === "edit" ? "Saved and applied. New windows of this app follow the rule."
+                        : page.lastAction === "delete" ? "Rule removed." : "Saved."
                     page.statusError = false
                     page.draft = null
                 } else {
@@ -165,6 +169,7 @@ WPage {
                         // `!checked` saved the old one, so the switch never changed the rule)
                         const l = JSON.parse(JSON.stringify(page.rules))
                         l[ruleCard.index].enabled = checked
+                        page.lastAction = "toggle"
                         page.save(l)
                         checked = Qt.binding(() => ruleCard.modelData.enabled !== false)
                     }
@@ -172,7 +177,7 @@ WPage {
                 WButton { buttonText: "Edit"; onClicked: page.edit(ruleCard.index) }
                 WButton {
                     iconName: "delete"; buttonText: ""
-                    onClicked: { const l = page.rules.slice(); l.splice(ruleCard.index, 1); page.save(l) }
+                    onClicked: { const l = page.rules.slice(); l.splice(ruleCard.index, 1); page.lastAction = "delete"; page.save(l) }
                 }
             }
         }

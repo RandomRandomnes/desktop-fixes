@@ -31,8 +31,11 @@ OUT = os.path.join(HC, "user-rules.lua")
 
 # corners, as fractions of the monitor with a small margin (the bar is at the top). The move is computed from the
 # size this rule sets: Hyprland evaluates it before the size rule applies, so window_w would be the old size.
-POSITIONS = {"top-left": (0.02, 0.06, False, False), "top-right": (0.98, 0.06, True, False),
-             "bottom-left": (0.02, 0.96, False, True), "bottom-right": (0.98, 0.96, True, True)}
+# Corners as fractions of the monitor plus a fixed gap in pixels: below the taskbar and the window's title bar at the
+# top (6 % was under the taskbar on 800 px screens; QA 2026-10-09), above the dock at the bottom.
+POSITIONS = {"top-left": (0.02, 0.0, False, False), "top-right": (0.98, 0.0, True, False),
+             "bottom-left": (0.02, 1.0, False, True), "bottom-right": (0.98, 1.0, True, True)}
+TOP_GAP, BOTTOM_GAP = 100, 90
 
 
 def hyprctl(*args):
@@ -115,7 +118,8 @@ def lua_rule(r):
             fx -= r["width"] / 100
         if from_bottom:
             fy -= r["height"] / 100
-        props.append(f'move = {{"(monitor_w*{fx:.3f})", "(monitor_h*{fy:.3f})"}}')
+        gap = f"-{BOTTOM_GAP}" if from_bottom else f"+{TOP_GAP}"
+        props.append(f'move = {{"(monitor_w*{fx:.3f})", "(monitor_h*{fy:.3f}{gap})"}}')
     elif r.get("center"):
         props.append("center = true")
     if r.get("workspace"):

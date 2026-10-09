@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Io
 import Quickshell.Bluetooth
 import qs
 import qs.services
@@ -18,6 +19,14 @@ Item {
     }
 
     readonly property bool wifiOn: Network.wifiStatus !== "disabled"
+    // Phoenix (2026-10-09): is there a Wi-Fi adapter at all? (a wired-only PC showed "Wi-Fi On – Connected to Wired
+    // connection 1": the row used the general connection name)
+    property bool hasWifi: true
+    Process {
+        running: true
+        command: ["nmcli", "-t", "-f", "TYPE", "device"]
+        stdout: StdioCollector { onStreamFinished: root.hasWifi = /^wifi$/m.test(text) }
+    }
     readonly property bool connected: Network.ethernet || Network.wifiStatus === "connected"
 
     function setAirplane(on) {
@@ -72,11 +81,13 @@ Item {
                 WToggle {
                     icon: "wifi"
                     title: "Wi-Fi"
-                    description: root.wifiOn ? (Network.networkName ? `Connected to ${Network.networkName}` : "On") : "Off"
-                    checked: root.wifiOn
+                    enabled: root.hasWifi
+                    description: !root.hasWifi ? "No Wi-Fi adapter"
+                        : root.wifiOn ? (Network.active?.ssid ? `Connected to ${Network.active.ssid}` : "On") : "Off"
+                    checked: root.hasWifi && root.wifiOn
                     onToggled: v => Network.enableWifi(v)
                 }
-                WLink { icon: "wifi_find"; title: "Show available networks"; description: "Connect to a Wi-Fi network"; sub: "wifi" }
+                WLink { visible: root.hasWifi; icon: "wifi_find"; title: "Show available networks"; description: "Connect to a Wi-Fi network"; sub: "wifi" }
                 WCard {
                     visible: Network.ethernet
                     icon: "lan"

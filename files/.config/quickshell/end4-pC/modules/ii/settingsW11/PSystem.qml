@@ -601,7 +601,8 @@ Item {
                     model: [
                         { displayName: "Best power efficiency", value: PowerProfile.PowerSaver },
                         { displayName: "Balanced", value: PowerProfile.Balanced },
-                    ].concat(PowerProfiles.hasPerformanceProfile ? [{ displayName: "Best performance", value: PowerProfile.Performance }] : [])
+                    ].concat(PowerProfiles.hasPerformanceProfile || PowerProfiles.profile === PowerProfile.Performance
+                    ? [{ displayName: "Best performance", value: PowerProfile.Performance }] : [])   // shown when active (was "—")
                     currentValue: PowerProfiles.profile
                     onSelected: v => PowerProfiles.profile = v
                 }
